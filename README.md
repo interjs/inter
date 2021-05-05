@@ -8,7 +8,11 @@ It's: simple, intuitive and powerful.
   <p>Hey, { message }</p>
 </div>
 
-toHTML({})
+```javascript
+toHTML({
+in:"exemple"
+})
+```
 
 Get Started from it's official tutorial at http://interjs.epizy.com/v1/tutorial/instalacao
 
