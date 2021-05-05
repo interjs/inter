@@ -5,7 +5,7 @@ It's: **simple**, **intuitive** and **powerful**.
 # If you know Javascript, you already know Inter
 
 ````html 
-<div id="exemple">
+<div id="example">
   <p>Hey, { message }</p>
 </div> 
 
@@ -13,7 +13,7 @@ It's: **simple**, **intuitive** and **powerful**.
 
 ```javascript
 toHTML({
-in:"exemple",
+in:"example",
 data:{
 message:"i program in Inter!"
 },
