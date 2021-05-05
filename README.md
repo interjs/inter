@@ -64,7 +64,7 @@ reactive.rendered=false;
 
 And you'll see the magic!
 
-# You rarely touch in *DOM*
+# You rarely touch in the *DOM*
 
 Almost every dom manipulation in an Inter app are handled by Inter, you  must just focus in your application logic, this way your code base will be:
 
