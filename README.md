@@ -68,9 +68,9 @@ And you'll see the magic!
 
 Almost every dom manipulation in an Inter app are handled by Inter, you  must just focus in your application logic, this way your code base will be:
 
-* Item 1 Simpler
-* item 2 Intuitive
-* item Maintanaible
+* Simpler
+* Intuitive
+* Maintanaible
 
 # Reactivity
 
