@@ -1,10 +1,11 @@
 # Interjs
 Inter is a Javascript library designed to build interactive front-end applications.
-It's: simple, intuitive and powerful.
+It's: **simple**, **intuitive** and **powerful**.
 
 # If you know Javascript, you know Inter
 
-````html <div id="exemple">
+````html 
+<div id="exemple">
   <p>Hey, { message }</p>
 </div> 
 
