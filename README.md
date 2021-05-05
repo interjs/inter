@@ -2,7 +2,7 @@
 Inter is a Javascript library designed to build interactive front-end applications.
 It's: **simple**, **intuitive** and **powerful**.
 
-# If you know Javascript, you know Inter
+# If you know Javascript, you already know Inter
 
 ````html 
 <div id="exemple">
