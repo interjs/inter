@@ -24,7 +24,7 @@ react:"change"
 # There is no directives
 
 Directives are good for simple interactivities, but in complex situations
-it's weaknesses is obvious, rather than use directives,  *Inter* use just the *Jvascrit*
+it's weaknesses is obvious, rather than use directives,  *Inter* use just the *Javascrit*
 that you already Know.
 
 ```html
@@ -37,6 +37,7 @@ that you already Know.
 const reactive:{
 rendered:false
 }
+
 Inter.renderIf({
 in:"conditional-rendering",
 watch:reactive,
@@ -73,7 +74,7 @@ And you'll see the magic!
 
 # Lincense
 
-*Inter* was realede under the MIT LICENSE.
+*Inter* was realesed under the MIT LICENSE.
 
 # Guide
 
