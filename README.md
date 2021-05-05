@@ -4,9 +4,11 @@ It's: simple, intuitive and powerful.
 
 # If you know Javascript, you know Inter
 
-<div id="exemple">
+````html <div id="exemple">
   <p>Hey, { message }</p>
-</div>
+</div> 
+
+````
 
 ```javascript
 toHTML({
@@ -25,8 +27,54 @@ it's weaknesses is obvious, rather than use directives,  *Inter* use just the *J
 that you already Know.
 
 ```html
-<p></p>
+<div id="conditional-rendering">
+  <p>Hey</p>
+</div>
+```
+```javascript
+// A reactive object
+const reactive:{
+rendered:false
+}
+Inter.renderIf({
+in:"conditional-rendering",
+watch:reactive,
+conditions:[{
+index:0,
+render(){
+if(reactive.rendered){
+
+return template({
+elements:[{
+tag:"p", text:"I'm a conditional tag!"
+}]
+})
+}
+}
+}]
+})
+```
+Go in console and set:
+
+```javascript
+reactive.rendered=false;
 ```
 
-Get Started from it's official tutorial at http://interjs.epizy.com/v1/tutorial/instalacao
+And you'll see the magic!
+
+# Reactivity
+
+*Inter* is super reactive.
+
+# Compatibility
+
+*Inter* just supports the modern browsers, it's mean that no Internet Explorer support.
+
+# Lincense
+
+*Inter* was realede under the MIT LICENSE.
+
+# Guide
+
+To get an in-depth guide just read the official tutorial at [tutorial](http://interjs.epizy.com/v1/tutorial/instalacao)
 
