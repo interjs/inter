@@ -24,7 +24,7 @@ react:"change"
 # There is no directives
 
 Directives are good for simple interactivities, but in complex situations
-it's weaknesses is obvious, rather than use directives,  *Inter* use just the *Javascrit*
+it's weaknesses is obvious, rather than use directives,  *Inter* use just the *Javascript*
 that you already Know.
 
 ```html
