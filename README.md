@@ -21,6 +21,15 @@ react:"change"
 })
 ```
 
+# No complex setup
+
+You will not need to do any complex configuration to be up and running in Inter, just import the
+lib in top of your page in a script tag, and start building even the most complex web apps.
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.0.1/Inter.js"><script>
+```
+
 # There is no directives
 
 Directives are good for simple interactivities, but in complex situations
@@ -34,7 +43,7 @@ that you already Know.
 ```
 ```javascript
 // A reactive object
-const reactive:{
+const reactive={
 rendered:false
 }
 
