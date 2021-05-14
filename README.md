@@ -65,7 +65,7 @@ tag:"p", text:"I'm a conditional tag!"
 }]
 })
 ```
-Go in console and set:
+Go to the console and set:
 
 ```javascript
 reactive.rendered=false;
