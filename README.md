@@ -77,7 +77,7 @@ And you'll see the magic!
 
 # Small
 
-It does not mean that it is less capable, it means that it is easy to learn and cheaper to parse and download,
+It does not mean that it is less capable, it means that it is easy to learn and cheaper to parse and download.
 
 # You rarely touch in the *DOM*
 
@@ -178,7 +178,7 @@ reativo.renderizado=false;
 
 E você vai ver a mágica.
 
-# Pequena
+# Pequeno
 
 Isso não faz do Inter menos capaz, isso faz com que o Inter sege fácil de aprender e mais performático.
 
