@@ -130,7 +130,7 @@ react:"mudar"
 
 # Sem configurações complexas
 
-Você não vai precisar fazer nenhuma configuração complexa para começar a usar o Inter, apenas importa a biblioteca numa tag script, ae comece a construir até mesmo as aplicações mais complexas.
+Você não vai precisar fazer nenhuma configuração complexa para começar a usar o Inter, apenas importa a biblioteca numa tag script, e comece a construir até mesmo as aplicações web mais complexas.
 
 ```html
 <script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.0.1/Inter.js"><script>
@@ -138,7 +138,7 @@ Você não vai precisar fazer nenhuma configuração complexa para começar a us
 
 # Não há diretivas
 
-Diretivas são boas para interactividades simples, mas em sintuações complexas as suas fraquezas são óbvias, ao invés de usar diretivas, o *Inter* usa apenas o Javascript que você já conhece.
+Diretivas são boas para interactividades simples, mas em situações complexas as suas fraquezas são óbvias, ao invés de usar diretivas, o *Inter* usa apenas o Javascript que você já conhece.
 
 
 ```html
