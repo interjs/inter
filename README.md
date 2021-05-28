@@ -17,7 +17,7 @@ It's: **simple**, **intuitive** and **powerful**.
 toHTML({
 in:"example",
 data:{
-message:"i program in Inter!"
+message:"I program in Inter!"
 },
 react:"change"
 })
@@ -44,7 +44,7 @@ that you already Know.
 </div>
 ```
 ```javascript
-// A reactive object
+// A reactive object.
 const reactive={
 rendered:false
 }
@@ -107,7 +107,7 @@ To get an in-depth guide just read the official tutorial at [tutorial](http://in
 
 # Interjs
 
-Inter é uma biblioteca Javascript projetada para construir aplicações web front-end interativas.Ela é **simples**, **Intuitiva** e **poderosa**.
+Inter é uma biblioteca Javascript projetada para construir aplicações web front-end interativas. Ela é **simples**, **Intuitiva** e **poderosa**.
 
 # Se você conhece o Javascript, então você já conhece o Inter
 
@@ -120,9 +120,9 @@ Inter é uma biblioteca Javascript projetada para construir aplicações web fro
 
 ```javascript
 toHTML({
-in:"example",
+in:"exemplo",
 data:{
-message:"eu programo em Inter!"
+mensagem:"eu programo em Inter!"
 },
 react:"mudar"
 })
