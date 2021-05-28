@@ -107,7 +107,7 @@ To get an in-depth guide just read the official tutorial at [tutorial](http://in
 
 # Interjs
 
-Inter é uma biblioteca Javascript projetada para construir aplicações web front-end interativas. Ela é **simples**, **Intuitiva** e **poderosa**.
+Inter é uma biblioteca Javascript projetada para construir aplicações web front-end interativas. Ela é **simples**, **intuitiva** e **poderosa**.
 
 # Se você conhece o Javascript, então você já conhece o Inter
 
