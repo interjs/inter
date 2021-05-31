@@ -70,7 +70,7 @@ tag:"p", text:"I'm a conditional tag!"
 Go head in the console and set:
 
 ```javascript
-reactive.rendered=false;
+reactive.rendered=true;
 ```
 
 And you'll see the magic!
@@ -173,7 +173,7 @@ tag:"p", text:"Eu sou uma tag condicional"
 Vai para o console e defina:
 
 ```javascript
-reativo.renderizado=false;
+reativo.renderizado=true;
 ```
 
 E você vai ver a mágica.
