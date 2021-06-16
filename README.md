@@ -1,7 +1,7 @@
   # English Version
 
 # Interjs
-Inter is a Javascript library designed to build interactive front-end web applications.
+Inter is a Javascript framework designed to build interactive front-end web applications.
 It's: **simple**, **intuitive** and **powerful**.
 
 # If you know Javascript, you already know Inter
@@ -107,7 +107,7 @@ To get an in-depth guide just read the official tutorial at [tutorial](http://in
 
 # Interjs
 
-Inter é uma biblioteca Javascript projetada para construir aplicações web front-end interativas. Ela é **simples**, **intuitiva** e **poderosa**.
+Inter é um framework Javascript projetado para construir aplicações web front-end interativas. Ela é **simples**, **intuitiva** e **poderosa**.
 
 # Se você conhece o Javascript, então você já conhece o Inter
 
