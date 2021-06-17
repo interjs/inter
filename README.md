@@ -101,7 +101,7 @@ Almost every dom manipulation in an Inter app are handled by Inter, you  must ju
 
 # Guide
 
-To get an in-depth guide just read the official tutorial at [tutorial](http://interjs.epizy.com/v1/tutorial/instalacao)
+To get an in-depth guide just read the official tutorial at [tutorial](http://interjs.epizy.com/v1/tutorial/pt/instalacao)
 
 # Versão em português
 
@@ -204,4 +204,4 @@ O *Inter* apenas suporta navegadores modernos, isso significa que não há supor
 
 # Guia
 
-Para ter um guia mais aprofundado sobre o Inter, é só ler o tutorial oficial em [tutorial](http://interjs.epizy.com/v1/tutorial/instalacao)
+Para ter um guia mais aprofundado sobre o Inter, é só ler o tutorial oficial em [tutorial](http://interjs.epizy.com/v1/tutorial/pt/instalacao)
