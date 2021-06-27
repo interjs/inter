@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.1.1
+ * Version: 1.1.2
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
@@ -46,6 +46,7 @@ function hasOwn(key){
 
 }
 
+
 function isDefined(v){
   return   v!==void 0  && v!=null;
 }
@@ -81,7 +82,7 @@ function Warning(err){
 
 function getId(id){
 const theId=document.getElementById(id);
-if(String(id)=="null"){
+if(theId== void 0){
     SyntaxErr(`
     There is not an element by id ${id} in document.
     `)
@@ -187,7 +188,7 @@ function getRoutingTag(){
             url.setPath(routeTo);         
             }else{
                 SyntaxErr(`
-                A valid pathName must starts with /.
+                A valid pathName must start with /.
                 `)
             }
         }
@@ -201,7 +202,7 @@ function getRoutingTag(){
 			
 		}else{
 			 SyntaxErr(`
-                A valid pathName must starts with /.
+                A valid pathName must start with /.
                 `)
 			
 		}
@@ -1523,7 +1524,7 @@ let tags=array.create(null);
             })
             Object.entries($styles).forEach(sty=>{
                 const[styleName,styleValue]=sty;
-                childElement.style[styleName]=isCallable(styleValue) ? styleValue() : styleValue;
+                grand_son.style[styleName]=isCallable(styleValue) ? styleValue() : styleValue;
             })
             if(isDefined(text)){
                 if(isCallable(text)){
@@ -2826,6 +2827,7 @@ get(){
 }
 
 
+
 definePro(Inter, "for", (obj)=>{
     let{
     in:IN,
@@ -2837,24 +2839,62 @@ definePro(Inter, "for", (obj)=>{
 
 
 let pro=null;
-if(isArray(data)){
-    
-  
-  pro=new Proxy(data,{
-      set(target,key,value,prot){
-          target[key]=value;
-          if(isPlainObject(value)){
-            makeReactive(value,Work)
-        }
-          Work()
-          
-          
-          return true;
-         
-      },
 
-  }) 
+if(isArray(data)){
+
+function proSetup(){
+    
+     
+    pro=new Proxy(data,{
+        set(target,key,value,prot){
+            
+           target[key]=value;
+           
+            if(isPlainObject(value)){
+              makeReactive(value,Work)
+          }
+            Work()
+            
+         
+            return true;
+           
+        },
+    
+    })
+
+   
+   Object.defineProperty(pro,"otherArray",{
+       set(value){
+           
+     if(!isArray(value)){
+         SyntaxErr(`
+         "${value}" is not an array.
+         `)
+     }else{
+ data=value;
+Work()
+
+for(let v of value){
+    if(isPlainObject(v)){
+        makeReactive(v, Work)
+    }
+}
+
+     
+
+proSetup();
+
+     }
+
+},
+   
+       get(){
+           return null;
+       },
+       configurable:!0
+   })
   
+
   Object.defineProperty(pro, "concat",{
    value:(value)=>{
        //the proxy does not work for concat() method, reason why I did this polyfill
@@ -2875,18 +2915,20 @@ if(isArray(data)){
    }},
    configurable:!0,
 
+
   }) 
   if(isDefined(react)){
   window[react]=pro;
   }
-
+}
+proSetup()
 }
 
 if(!isArray(data)){
-    Warning("Inter warning: data must be an array.")
+    Warning("data in Inter.for() must be an array.")
 }
 if(!isCallable(DO)){
-Warning(" Inter warning: do must be a function");
+Warning("do in Inter.for() must be a function");
 }else{
     const root=getId(IN);
     for(let _obj of data){
@@ -2897,16 +2939,22 @@ Warning(" Inter warning: do must be a function");
 }
 }
    function Work(){
+  
        
+   
+    
+
      if(data.length<root.children.length){
-        
-         let undeedChilren=root.children;
+     let undeedChilren=root.children;
+
+         
          for(let undeep=undeedChilren.length; undeep>data.length; --undeep){
             
              root.removeChild(undeedChilren[undeedChilren.length-1])
          }
          
-     }
+     
+    }
     if(!someRef.has(IN)){
      
         [...data].forEach((item, i)=>{
@@ -2986,7 +3034,7 @@ function isUsingHash(){
 function ROUTER(obj){
 if(!isPlainObject(obj)){
 SyntaxErr(`
-The argument of ROUTER must be an object.
+The argument of ROUTER() must be an object.
 `)
 }else{
     /**
@@ -3028,7 +3076,7 @@ The argument of ROUTER must be an object.
          const[routeName,routeAction]=route;
     if(!validPath.test(routeName) && routeName!="*"){
         SyntaxErr(`
-        Route name must starts with /.
+        Route name must start with /.
         `)
     }
 
@@ -3258,14 +3306,14 @@ setState(state,IN){
   
     if(state in this[storeValue]){
       consoleWarnig(`
-      Oh no man, that state that you're register already exist ${state}.
+      Oh no man, the state that you're register already exist "${state}".
       
       `)
     }
     if(arguments.length<2){
         consoleWarnig(`
         input.sateSate() must have two arguments, first is the name of the state 
-        and second the value.
+        and second the input state container.
         `)
     }else{
         
@@ -3407,9 +3455,9 @@ if(!isCallable(callback)){
      * backend.upload({
      * path:"/users",
      * body:send,
-     * }).done(()=>{
+     * }).response(()=>{
      * console.log("User uploaded succefully!");
-     * }).catch(()=>{
+     * },()=>{
      * console.log("Something went wrong!")
      * })
      * 
@@ -3486,7 +3534,7 @@ STORAGE.prototype.has=function(key){
     const _symbol=Object.getOwnPropertySymbols(this)[0];
     if(!isDefined(key)){
         SyntaxErr(`
-        You must define the element to check it's existence in the storage.
+        You must define the element to check its existence in the storage.
         `)
     }else{
         return hasOwn.call(this[_symbol],key)
@@ -3613,12 +3661,17 @@ Object.entries(original).reduce(($, $attr)=>{
                 if(!attrName.startsWith("on")){
                     el.removeAttribute(attrName);
                 }else{
-                    el.removeEventListener(attrName)
+                    el[attrName]=void 0;
                 }
             }else{
                 if(!attrName.startsWith("on")){
             setAttr(el,attrName,v);
                 }else{
+                    if(!isCallable(v)){
+                        SyntaxErr(`
+                        The value of "${v}" event, must be a function.
+                        `)
+                    }
                     el[attrName]=function(e){
                         v.call(original,e)
                     }
@@ -3628,7 +3681,7 @@ Object.entries(original).reduce(($, $attr)=>{
         get(){
            if(attrName.startsWith("on")){
                SyntaxErr(`
-               ${attrName} seems to be an event listener, 
+               "${attrName}" seems to be an event listener, 
                and you can not get the value of an event.
                `)
            }else{
@@ -3646,7 +3699,7 @@ Object.defineProperty(emptyObj,[attrManager],{
         if(hasOwn.call(target,key)){
             if(propValue==void 0){
                 if(key.startsWith("on")){
-                    el.removeEventListener(key)
+                el[key]=void 0;
                 }else{
                el.removeAttribute(key);   
                 }
@@ -3662,9 +3715,17 @@ Object.defineProperty(emptyObj,[attrManager],{
                 Reflect.set(target, key, propValue, pro)
             }else{
                 if(key.startsWith("on")){
+                    if(!isCallable(propValue)){
+                        SyntaxErr(`
+                        Oh, the value of "${key}" event, must be a function.
+                        `)
+                    }
                     
-                    el[key]=value;
-                    Reflect.set(target, key, propValue, pro)
+                    el[key]=function(e){
+                        propValue.call(target,e);
+                    };
+                    
+                   
                 }
             }
         
@@ -3673,7 +3734,7 @@ Object.defineProperty(emptyObj,[attrManager],{
     },
     get(target,key,pro){
         if(key.startsWith("on")){
-            SyntaxErr(`${key} seems to be an event listener, and you can
+            SyntaxErr(`"${key}" seems to be an event listener, and you can
             not get the value of an event`)
         }else{
       return el[key];  
@@ -4262,7 +4323,7 @@ function reativeAttributes(root){
              }
              sibling.default=true;
              config.default=sibling;
-                 sibling.removeAttribute("default")
+                 sibling.removeAttribute("_default")
              removed.push(sibling)
 
                
@@ -4300,14 +4361,16 @@ const{
     react,
 }=obj;
 const reatives=reativeAttributes(getId(IN));
-Object.seal(data);
+
 const _react=Object.assign({}, data);
 const share=Object.assign({}, data);
 const dataKeys=Object.getOwnPropertyNames(data);
 for(let key of dataKeys){
+    
 Object.defineProperty(_react, [key],{
     set(v){
     share[key]=v;
+    
     checkEls();
     },
     get(){
@@ -4335,16 +4398,20 @@ Object.defineProperty(_react, "register",{
             The array is empty.
             `)
         }else{
+            
             for(let prop of value){
                 if(!hasOwn.call(data,prop)){
                     consoleWarnig(`
                     There is not a property called "${prop}"
                     in ${react}
                     `)
+                    
                 }else{
                     registered.push(prop);
+                    just=true;
                 }
             }
+            
             Object.defineProperty(this, "setRegistered",{
                 enumerable:!1,
                 configurable:!1,
@@ -4358,7 +4425,7 @@ Object.defineProperty(_react, "register",{
                         for(let re of registered){
                             _global[react][re]=v;
                         }
-                        just=true;
+                        
                     }
                 }
             })
@@ -4382,7 +4449,15 @@ function checkEls(){
          const rootChildren=root.children;
         
         if(hasOwn.call(_react, cond)){
-        if(!notEqual(_react[cond], true) && isDefined(Default)){
+            const own=isCallable(_react[cond]) ? _react[cond]() : _react[cond];
+            if(!isBoolean(own)){
+                consoleWarnig(`
+            The values of properties in data object, in renderContainer(), must be
+            only boolean(true/false), and in property "${cond}" you defined
+            "${own}" as its value.
+                `)
+            }
+        if(!notEqual(own, true) && isDefined(Default)){
          
             if(rootChildren[index]==void 0){
                 root.appendChild(ifTrue);
@@ -4400,7 +4475,7 @@ function checkEls(){
                 }
             }
         }else{
-       if(!notEqual(_react[cond], false) && isDefined(Default)){
+       if(!notEqual(own, false) && isDefined(Default)){
       
         if(rootChildren[index]==void 0){
             root.appendChild(Default);
@@ -4418,7 +4493,7 @@ function checkEls(){
             }
         }
        }
-       if(!notEqual(_react[cond], true) && !isDefined(Default)){
+       if(!notEqual(own, true) && !isDefined(Default)){
         
         if(rootChildren[index]==void 0){
             root.appendChild(ifTrue);
@@ -4433,7 +4508,7 @@ function checkEls(){
             }
         }
        }
-       if(!notEqual(_react[cond],false) && !isDefined(Default)){
+       if(!notEqual(own,false) && !isDefined(Default)){
     if(ifTrue.parentNode!==null){
         root.removeChild(ifTrue);
     }   
@@ -4454,30 +4529,29 @@ checkEls();
     }
 
 
-if(typeof window!="undefined"){
-window.renderContainer=renderContainer;
-window.interface=interface;
-window.storage=storage;
-window.input=input;
-window.form=form;
-window.toHTML=toHTML;
-window.validate=validate;
- window.Inter=Inter;
- window.simulate=simulate;
-window.ROUTER=ROUTER;
- window.supportInter=supportInter;
- window.url=url;
- window.data=data;
- window.getValue=getValue;
- window.backend=backend;
- window.event=event; 
- window.whileLoading=whileLoading
-window.app=app;
-window.template=template;
-window.toATTR=toATTR;
-window.reativeTemplate=reativeTemplate;
+_global.renderContainer=renderContainer;
+_global.interface=interface;
+_global.storage=storage;
+_global.input=input;
+_global.form=form;
+_global.toHTML=toHTML;
+_global.validate=validate;
+_global.Inter=Inter;
+_global.simulate=simulate;
+_global.ROUTER=ROUTER;
+_global.supportInter=supportInter;
+_global.url=url;
+_global.data=data;
+_global.getValue=getValue;
+_global.backend=backend;
+_global.event=event; 
+_global.whileLoading=whileLoading
+_global.app=app;
+_global.template=template;
+_global.toATTR=toATTR;
+_global.reativeTemplate=reativeTemplate;
 
-}
+
 
   //Import just the code needed
 
