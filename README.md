@@ -29,7 +29,7 @@ You will not need to do any complex configuration to be up and running in Inter,
 lib in top of your page in a script tag, and start building even the most complex web apps.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.0.1/Inter.js"><script>
+<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.1.2/Inter.js"><script>
 ```
 
 # There is no directives
@@ -133,7 +133,7 @@ react:"mudar"
 Você não vai precisar fazer nenhuma configuração complexa para começar a usar o Inter, apenas importa a biblioteca numa tag script, e comece a construir até mesmo as aplicações web mais complexas.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.0.1/Inter.js"><script>
+<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.1.2/Inter.js"><script>
 ```
 
 # Não há diretivas
