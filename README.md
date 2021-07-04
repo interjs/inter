@@ -133,7 +133,7 @@ react:"mudar"
 Você não vai precisar fazer nenhuma configuração complexa para começar a usar o Inter, apenas importa a biblioteca numa tag script, e comece a construir até mesmo as aplicações web mais complexas.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.1.2/inter.min.js"><script>
+<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.1.3/inter.min.js"><script>
 ```
 
 # Não há diretivas
