@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.1.2
+ * Version: 1.1.3
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
@@ -81,6 +81,7 @@ function Warning(err){
 }
 
 function getId(id){
+    if(document instanceof Document){
 const theId=document.getElementById(id);
 if(theId== void 0){
     SyntaxErr(`
@@ -91,6 +92,9 @@ if(theId== void 0){
 
 return theId;
 }
+    }else{
+        return void 0;
+    }
 }
 
 function consoleWarnig(msm){
@@ -103,16 +107,28 @@ function consoleWarnig(msm){
 }
 
 function TEXT(node){
+    if(document instanceof Document){
     return document.createTextNode(node);
+}else{
+    return void 0;
+}
 }
 function hasAttr(el, attr){
+    if(el!=void 0){
     if(isElement(el)){
         return el.hasAttribute(attr);
     }
+}else{
+    return false;
+}
 }
 
 function CreatEL(EL){
+    if(document instanceof Document){
     return document.createElement(EL)
+}else{
+    return void 0;
+}
 };
 
 function setAttr(el,attr, value){
@@ -435,6 +451,7 @@ return first>second ? first : second;
 }
   function noTextTag(first,second){
     
+//These are just the tags that must not be rerendered.
 const noTextTag={
     video:!0,
     audio:!0,
@@ -616,6 +633,7 @@ const parser={
 }
 
 
+
   /**
  * Changing the onload method, for inputHandler be more performant.
  * 
@@ -769,13 +787,13 @@ var validate=new Proxy(validator,{
 const INTER=new HTML();
 const Inter=new Proxy(INTER,{
     set(...values){
-        SyntaxErr(`You can not set any propriety in object Inter,
+        SyntaxErr(`You can not set any property in Inter object,
         this is a fatal action.
         `);
         return false;
     },
     deleteProperty(...values){
-        SyntaxErr(`Fatal error: do not try to delete any propriety of Inter object`);
+        SyntaxErr(`Fatal error: do not try to delete any property of Inter object`);
         return false;
     },
     getPrototypeOf(Target){
@@ -835,7 +853,7 @@ The argument in data.query() must be an object.
     }
 let filtered=IN.filter(item=>{
     if(!hasOwn.call(item,query)){
-    console.log(`There was not found a property called ${query} in target object.`)
+    console.log(`It's was not found a property called "${query}" in target object, in data.query()`)
     }
     const keyword=item[query];
 let lower=lowerCase.call(keyword);
@@ -1010,7 +1028,7 @@ function isaNodeElement(supposedElement){
 
     /**
  *There is already a function that do a work similiar to this, called
-*isElement(), but that function does not work as espected in Inter.renderIf() checking,
+*isElement(), but that function does not work as expected in Inter.renderIf() checking,
 * that's why I'm doing
  * a strong checking with this one.
      */
@@ -1152,8 +1170,7 @@ definePro(Inter, "renderIf",(obj)=>{
                      
                     
                      else{
-                         SyntaxErr(`The last rendered children in element by id ${IN} is at index ${allundeepChildren} and 
-                         to render a children at index ${pos}.
+                         SyntaxErr(`Invalid index, it's impossible to render the element at index "${pos}"!
                          `)
                      
                      }
@@ -1207,7 +1224,7 @@ class SIMULATE{
         * semulate.typing({
         * in:"container",
         * setting:[{
-        * text:"Hey, i'm Denis the creator of Inter.",
+        * text:"Hey, I'm Denis the creator of Inter.",
         * speed:100
         * }]
         * }) 
@@ -1336,7 +1353,8 @@ const{
     elements,
 }=obj;
 
-//Note: render  is just usual for reative template.
+//Note: render  is just usual for reactive template.
+
 /**
  * templates({
  * elements:[{
@@ -1454,15 +1472,15 @@ let tags=array.create(null);
               const[evName,evValue]=ev;
               
               childElement[evName]=evValue;
-              childElement[`_${evName}`]=evValue; //Reative template
-              childElement.rerender=true; // Reative listining.
+              childElement[`_${evName}`]=evValue; //Reactive template
+              childElement.rerender=true; // Reactive listing.
           })
           
           Object.values(_handlers).forEach(handler=>{
              
               if(isCallable(handler)){
                   childElement.rerender=true;
-                  return _handlers[handler].call(childElement);
+                  handler.call(childElement);
               }
           })
           Object.entries(_styles).forEach(sty=>{
@@ -1518,7 +1536,7 @@ let tags=array.create(null);
                
                 if(isCallable(value)){
                     grand_son.rerender=true;
-                    value()
+                    value.call(grand_son)
                 }
 
             })
@@ -2014,7 +2032,7 @@ BACKEND.prototype.request=function(obj){
    
 }
 }
-const backend=new BACKEND();
+const backend=Object.freeze(new BACKEND());
 
  const globalNativeEventListener={
 
