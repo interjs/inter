@@ -7,8 +7,7 @@
  *  2021.
  * 
  */
-
-                           
+                        
  const Inter=require("./server").Inter;
  const _var=require("./variable")._var;
 
