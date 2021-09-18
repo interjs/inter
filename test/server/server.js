@@ -168,7 +168,7 @@ Object.isObj=function(obj){
                      if(Number.isNaN(Number(n))){
                       
                        throw new Error(`
-                       The value of host property must be a number.
+                       The value of host method must be a number.
                        `)
 
                      }
