@@ -10,6 +10,10 @@
 
 <div align="center">
  <span align="center">
+
+<a href="https://github.com/DenisPower1/inter/blob/main/LICENSE">
+ <img src="https://github.com/DenisPower1/inter/blob/main/license.svg"
+
 <a href="https://github.com/DenisPower1/inter/blob/main/LICENSE.md">
  <img src="https://github.com/DenisPower1/inter/blob/Edit/license.svg"
       width="100" 
@@ -18,7 +22,10 @@
  
   </span>
    <span align="center">
+
+<a href="https://github.com/DenisPower1/inter/">
 <a href="https://github.com/DenisPower1/inter/blob/main/LICENSE.md">
+
  <img src="https://img.shields.io/github/v/release/DenisPower1/inter.svg"
       width="100" 
       >
