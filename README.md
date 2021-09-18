@@ -1,14 +1,41 @@
-
- 
-# [Interjs](http://interjs.epizy.com)
-
+<p align="center">
 <a href="http://interjs.epizy.com">
  <img src="https://github.com/DenisPower1/inter/blob/main/Inter.png"
-      width="120" height="110" align="right"
+      width="200" 
       >
       </a>
  
- #
+ </p>
+
+<div align="center">
+ <span>
+
+<a href="https://github.com/DenisPower1/inter/blob/main/LICENSE">
+ <img  width="97" src="https://github.com/DenisPower1/inter/blob/main/license.svg">
+
+
+  </a>
+ 
+  </span>
+   <span>
+
+<a href="https://github.com/DenisPower1/inter/">
+
+
+
+
+ <img src="https://img.shields.io/github/v/release/DenisPower1/inter.svg"
+      width="100" 
+      >
+      </a>
+ 
+ 
+ </span>
+ 
+</div>
+ 
+<h1 align="center"> <a href="http://interjs.epizy.com">Interjs</a></h1>
+
 
 Inter is a Javascript framework designed to build highly interactive front-end web applications.
 It's: **simple**, **intuitive** and **powerful**.
