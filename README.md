@@ -8,7 +8,7 @@
       >
       </a>
  
- 
+ #
 
 Inter is a Javascript framework designed to build highly interactive front-end web applications.
 It's: **simple**, **intuitive** and **powerful**.
