@@ -41,9 +41,9 @@
         },
         private:true,
         load:true,
-        loadState(state){
-            alert(state)
-         if(state=="ready"){
+        loadState(status){
+            console.log(status)
+         if(status=="ready"){
              event.fire("router")
         return   document.querySelector(".cover").removeAttribute("class")
          }
