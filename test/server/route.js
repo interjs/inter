@@ -1,5 +1,5 @@
  * 
- *  THIS FILE USE the Inter(server)  AND THE (variable) modules.
+ *  THIS FILE USES the Inter(server)  AND THE (variable) modules.
  * 
  *  CREATED BY DENIS POWER(https://github.com/DenisPower1).
  * 
