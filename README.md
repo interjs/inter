@@ -1,12 +1,37 @@
 
- 
-# [Interjs](http://interjs.epizy.com)
-
+<p align="center">
 <a href="http://interjs.epizy.com">
  <img src="https://github.com/DenisPower1/inter/blob/main/Inter.png"
-      width="120" height="110" align="right"
+      width="200" 
       >
       </a>
+ 
+ </p>
+
+<div align="center">
+ <span align="center">
+<a href="https://github.com/DenisPower1/inter/blob/main/LICENSE">
+ <img src="https://github.com/DenisPower1/inter/blob/main/license.svg"
+      width="100" 
+      >
+      </a>
+ 
+  </span>
+   <span align="center">
+<a href="https://github.com/DenisPower1/inter/">
+ <img src="https://img.shields.io/github/v/release/DenisPower1/inter.svg"
+      width="100" 
+      >
+      </a>
+ 
+ 
+ </span>
+ 
+</div>
+ 
+<h1 align="center"> <a href="http://interjs.epizy.com">Interjs</a></h1>
+
+
  
  
 
