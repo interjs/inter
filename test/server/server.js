@@ -57,17 +57,6 @@ Object.isObj=function(obj){
 
         }else{
               
-              fs.access(`./${fileName}`,(obj)=>{
-                //When the file does not exist, the obj argument is an object
-                //otherwise it's null.
-                const noExist=Object.prototype.toString.call(obj)==["object Error"];
-                  
-                if(noExist){
-                      
-                  throw new Error(`
-                  ${obj.syscall} does not exits on ${__dirname} directory.
-                  `)
-                }else{
                       if(!fileName.endsWith("favicon.ico")){
                       fs.readFile(`./${fileName}`, (err,data)=>{
                         
@@ -80,7 +69,7 @@ Object.isObj=function(obj){
                               this.send(data);
                         }
 
-                      })
+                      
                 }
             }
               })
