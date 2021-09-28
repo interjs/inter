@@ -55,6 +55,9 @@
     const int=new Interfy();
     
     event.listen("router",()=>{
+        
+        event.removeListener("router")
+        
     int.createRouter((re)=>{
         
         if(re.url=="/agenda"){
@@ -143,6 +146,10 @@
              }
          })
       })
+    
+
+
+
 
 function login(){
     int.useHash("/login")
