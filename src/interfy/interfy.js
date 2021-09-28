@@ -1,8 +1,8 @@
 /** 
  *  Interfy - A Javascript library for robust web front-end routing.
  * 
- *  Github's repo - https://github.com/DenisPower1/Int
- *  version - 1.0.0
+ *  Github's repo - https://github.com/DenisPower1/interfy
+ *  version - 1.0.1
  * 
  *  Created by - Denis Power/ https://github.com/DenisPower1
  * 
@@ -12,7 +12,9 @@
 
    (function(){
 
-    if(typeof global =="object"
+  
+
+    if(typeof window==void 0 && typeof global =="object"
     && typeof process.on=="function"
     ){
 
@@ -22,7 +24,6 @@
      
      Interfy is a client-side Javascript routing library,
      you can only use it in a browser.
-
      `)
 
     }
@@ -33,7 +34,7 @@
 		
 		throw new Error(`
 		
-		Interfy can only be used in an http: or https: protocol.
+		Interfy can only be used in an "http:" or "https:" protocol.
 		
 		`)
 		
@@ -95,7 +96,7 @@
 
    function isTrue(bool){
    
-    return  ( Object.is(true,bool));
+    return  (Object.is(true,bool));
 
    }
 
@@ -162,38 +163,7 @@
 
 
 
-  //A demo.
-
   
-
- /**
- *   const int=new Interfy();
- * 
- *   int.createRouter((req)=>{
- *    const profile=req.is("/profile/(id)"); 
- *    if(req.url=="/"){
- *    //Home
- *   }
- *  if(profile){
- *    
- *  const userId=req.getParam("/profile/(id)","id");
- * 
- *  // Inter concept.
- * 
- *  backend.request({
- *  type:"get",
- *  path:`/profile/${id}`
- *  }).okay(()=>{}) 
- *
- * 
- *  } 
- * 
- * 
- *  })
- *  
- *  const userId=2039
- *  int.setPath(`/profile/${userId}`)
- */
 
 
  class UrlParser{
@@ -211,7 +181,9 @@
         const repl=new Array();
         const dyP=new Array();
 
+        
         path.replace(/\/(:?[a-z]+)\/|\/(\d+)/g, (m,_)=>{
+         
           repl.push(m);
         })
 
@@ -340,7 +312,7 @@ function _setPath(path, hash){
 
 
 
-// The request obj
+
 
 const UrlInfo=new Map();
 
@@ -350,11 +322,16 @@ void 0);
 
 const call=Symbol.for("callBack");
 
+// The request obj
+
  const req={
+
      [call]:void 0,
 
     get url(){
+
         return UrlInfo.get("path");
+
     },
     
     set url(v){
@@ -404,7 +381,6 @@ const call=Symbol.for("callBack");
        
        Invoke the [INTERFY CONSTRUCTOR] only
        with the new keyword.
-
        
        `)
        
@@ -426,7 +402,7 @@ if(!isAFunction(fn)){
     
     warn("sy", `
      
-     INTERFY.createRouter() accepts only
+    [ INTERFY INSTANCE ].createRouter() accepts only
      a function as its argument, and you defined
      "${ typeof fn }" as its argument.
     
@@ -479,10 +455,9 @@ setPath(pathName){
 
     warn("sy",`
     A pathName must start with a slash(/).
-
      You used:
    
-     [INTERFY INSTANCE ].setPath(${pathName})    
+     [INTERFY INSTANCE ].setPath("${pathName}")    
    
      `)
 
@@ -555,15 +530,15 @@ window.onpopstate=function(){
 
 }
 
-if(typeof module=="object" && module.exports){
 
-    exports.Interfy=INTERFY
-
-}else{
-
-    globalThis.Interfy=INTERFY
     
 
-}
+    globalThis.Interfy=INTERFY;
+    
+
+  
+  
+    
+
 
 })()
