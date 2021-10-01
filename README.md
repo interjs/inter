@@ -66,7 +66,7 @@ You will not need to do any complex configuration to be up and running in Inter,
 lib in top of your page in a script tag, and start building even the most complex web apps.
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter@1.1.3/inter.min.js"><script>
+<script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter/inter.min.js"><script>
 ```
 
 # There is no directives
