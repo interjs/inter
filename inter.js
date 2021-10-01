@@ -1,6 +1,7 @@
+
 /**
  * Inter.
- * Version: 1.1.3
+ * Version: 1.2.0
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
@@ -11,32 +12,46 @@
 
 
 
-
 (function(){
 
+
+    // Some helpers functions.
+
 function isJson(v){
+
      return Object.prototype.toString.call(v)=="[object Json]";
+
 }
 
 
 function isPlainObject(v){
+
 return Object.prototype.toString.call(v)=="[object Object]";
+
 }
 
 function isArray(arr){
+
    return Array.isArray(arr);
+
 }
 
 function isNumber(n){
+
    return valueType(Number(n))=="number";
+
 }
 
  function isCallable(fn){
+
   return valueType(fn)=="function"
+
  }
 
 function valueType(v){
+
 return typeof v;
+
 }
 
 
@@ -46,23 +61,78 @@ function hasOwn(key){
 
 }
 
+function isTag(supposed){
+
+    if(supposed==void 0){
+
+        return false;
+
+    }else{
+
+        if(supposed.nodeType==1){
+
+            return true;
+
+        }
+
+    }
+
+}
+
+function extend(reciever,source){
+
+    // The source properties will be reactives
+    // if i used the Object.assign() method they would'nt
+    // be anymore.
+
+
+    for(let key in source){
+
+        reciever[key]=source[key];
+
+    };
+
+    return void 0;
+
+}
+
 
 function isDefined(v){
-  return   v!==void 0  && v!=null;
+
+  return   !(v==void 0)  
+
 }
+
+
 
 function isBoolean(v){
     
     return v==true || v==false;
 }
+
 function isInput(target){
+
     const tag=target.tagName;
     return lowerCase.call(tag)=="input" || lowerCase.call(tag)=="textarea";
+
 }
+
+const Dev={
+
+    get status(){
+
+        return _global.app.status;
+
+    }
+
+}
+
 function SyntaxErr(err){
-    if(Dev.status=="production" || Dev.status!="development"){
+
+    if(Dev.status=="production"){
        
         return false;
+
     }else{
 
     throw new SyntaxError(err)
@@ -97,9 +167,10 @@ return theId;
     }
 }
 
+
 function consoleWarnig(msm){
 
-    if(Dev.status=="production" || Dev.status!="development"){
+    if(Dev.status=="production"){
         return;
     }
     
@@ -109,10 +180,13 @@ function consoleWarnig(msm){
 function TEXT(node){
     if(document instanceof Document){
     return document.createTextNode(node);
+
 }else{
+
     return void 0;
 }
 }
+
 function hasAttr(el, attr){
     if(el!=void 0){
     if(isElement(el)){
@@ -154,54 +228,65 @@ function getAttr(el, attr){
  * direct checking.
  * 
  */
+
 function isTrue(value){
+
 return value==true;
+
 }
 
 function isFalse(value){
+
     return value==false;
+
 }
 
 
 //Adding some methods in Object constructor.
 
 Object.destroyAll=(obj)=>{
+
     const keys=Object.keys(obj);
+
     for(let key of keys){
+
      delete obj[key];
+
     }
+
 }
 
 
 
-//globalThis is not old enough to include it without checking its support.
 
-const _global=globalThis || function(){
-    if(window){
-        return window;
-    }
-    if(self){
-        return self;
-    }
-    if(global){
-        return  global;
-    }
-}
+
+
+
+const _global=globalThis;
 
 //Special for routing.
 const validPath=/^\/(:?[\s\S]+)|\/$/;
 function isButtonOrAnchor(tag){
+
 return lowerCase.call(tag.nodeName)=="a" || lowerCase.call(tag.nodeName)=="button";
+
 }
+
 function getRoutingTag(){ 
+
     const children=this.getElementsByTagName("*");
+
     for(let child of children){
         if(isButtonOrAnchor(child) && hasAttr(child, "setPath")){
             child.onclick=(ev)=>{
+
                      ev.preventDefault();
+
             const routeTo=getAttr(child,"setPath");
             if(validPath.test(routeTo)){
-            url.setPath(routeTo);         
+
+            url.setPath(routeTo);  
+
             }else{
                 SyntaxErr(`
                 A valid pathName must start with /.
@@ -209,7 +294,9 @@ function getRoutingTag(){
             }
         }
     }
+
 	if(isButtonOrAnchor(child) && hasAttr(child,"useHash")){
+
 	child.onclick=(ev)=>{
 		ev.preventDefault();
 		const routeTo=getAttr(child, "useHash");
@@ -230,57 +317,18 @@ function getRoutingTag(){
 }
 }
 
-// Special for reativeTemplate.
 
-function nodeCloner(root){
-const clone=CreatEL(root.nodeName);
 
-for(let child of root.children){
-    const childClone=child.cloneNode(!0);
-    
-    Object.entries(child).forEach(pr=>{
-        const[prop, value]=pr;
-        const transformed=prop.replace("_","");
-        childClone[transformed]=value;
-        if(prop.startsWith("_")){
-            //For consistence clone.
-            childClone[prop]=value;
-        }
-        
-     
-    })
-    if(hasUndeepChild(child)){
-        let index=-1;
-        for(let son of child.children){
-            index++;
-            const sonClone=son.cloneNode(!0);
-            Object.entries(son).forEach(cl=>{
-                const[prop, value]=cl;
-                const transformed=prop.replace("_","");
-                sonClone[transformed]=value;
-            })
-            childClone.replaceChild(sonClone, childClone.children[index]);
-        }
-    }
-    clone.appendChild(childClone);
-}
-return clone;
-}
 function notEqual(first,second){
  
     return !(Object.is(first,second));
+
 }
 
-var Dev={
-    /**
-     * status:"development" 
-     *
-     */
-   
-    status:"development"
-}
+
 
 const private=Symbol("StrictRed");
+
 const StrictRef={
 [private]:Object.create(null),
 create(key){
@@ -366,28 +414,72 @@ const memory={
 
 
 
-const app=new Proxy(Dev, {
-    set(Target, key, value, pro){
-        if(key=="status" && value=="production"){
-            console.log("You're using Inter in production mode.");
-            Reflect.set(Target, key, value, pro);
+
+
+// The default app.status value.
+
+let _status="development"
+
+
+const app={
+    set status(v){
+
+        if(_status=="production"){
+
+            return void 0;
+
         }
-        if(key=="status" && value=="development"){
-            console.log("You're using Inter in development mode. When you deploy your app turn on production mode.");
-            Reflect.set(Target, key, value, pro);
-        }else{
-            return false;
+
+        if(v=="development"){
+
+            return void 0;
+
         }
+
+        if(v=="production" ){
+        
+        console.log(`The app is now in production, every error will be
+        hidden.
+        `)
+        
+      _status=v;
+
+    }else{
+  
+     throw new Error(`
+        "${v}" is an invalid value for the app.status property.
+     `)
+
     }
-})
+},
+
+get status(){
+ 
+    return _status;
+
+}
+}
     
+Object.preventExtensions(app);
 
 
 
 function supportInter(){
+
+    if(new.target!=void 0){
+
+        SyntaxErr(`
+        
+        Do not call the "supportInter()" function with the "new" keyword,
+        just invoke it like that: supportInter()
+        
+        `)
+
+    }
+
     try{
         let map=new Map()
-        map.set("Libray", "Inter");
+        map.set("framework", "Inter");
         map.set("Creator", "Denis");
         map.clear();
         return true;
@@ -398,239 +490,6 @@ function supportInter(){
 
 }
 
-
-//ES200 feaures, they are not so old  to include them without checking if they are supported.
-
-function supportOptionalChaining(){
-try{
-  const creators={
-
-  }
- creators.inter?.name;
- return true;  
-
-}catch(e){
-    return false;
-}
-
-}
-
-function supportNullishCoalising(){
-    try{
-      let und=undefined;
-      und ?? "not";
-      return true;  
-    }catch(e){
-        return false;
-    }
-}
-
-
-
-
-/**
- * OLD TEMPLATE
- * <div>
- * <p>Hey, are you fine?</p>
- * <input type="text">
-
- * </div>
- * 
- * NEW TEMPLATE
- * 
- * <div>
- * <input type="text">
- * </div>
- * 
- */
-const greaterAttrs=(one,two)=>{
-    
-const first=one.attributes.length;
-const second=two.attributes.length;
-return first>second ? first : second;
-}
-  function noTextTag(first,second){
-    
-//These are just the tags that must not be rerendered.
-const noTextTag={
-    video:!0,
-    audio:!0,
-    input:!0,
-    textarea:!0,
-    
-};
-const FirstTag=lowerCase.call(first.nodeName);
-const secondTag=lowerCase.call(second.nodeName);
-
-   return hasOwn.call(noTextTag,FirstTag) && !notEqual(FirstTag,secondTag);     
-
-  }
-  function notSameText(node1,node2){
-    
-        return !(Object.is(node1.textContent,node2.textContent))
-  }
-
- function oneHasChildAndOtherNot(first,second){
-     if(hasUndeepChild(first) && !hasUndeepChild(second) ||
-     !hasUndeepChild(first) && hasUndeepChild(second)
-     ){
-         return true;
-     }
- }
-
-
-function makeChange(newChild,oldChild){
-    
-    if(noTextTag(newChild,oldChild)){
-        
-     const length=greaterAttrs(newChild,oldChild);
-     const newChildAttrs=newChild.attributes;
-     const oldChildAttrs=oldChild.attributes;
-     for(let i=0; i<length; i++){
-         /**
-          * brand
-          * <input type="text">
-          * 
-          * Old
-          * 
-          * <input type="text" placeholder="Yes">
-          * 
-          */
-         const brand=newChildAttrs[i];
-         const old=oldChildAttrs[i];
-        
-             if(!hasAttr(newChild,old.name)){
-                         
-                   oldChild.removeAttribute(old.name);
-             }else{
-                 if(notEqual(old.value,brand.value)){
-                     
-                     if(old.name!="value"){
-                         setAttr(oldChild,old.name,brand.value);
-                     }else{
-                         oldChild.value=brand.value;
-                     }
-                 }
-             }
-         
-
-     }
-    }else{
-/**
- *<p></p>
- *<p></p>
- * <button></button>
- *
- */
-        //Any diff, we can rerender it.
-        
-        const newChildAttrs=newChild.attributes;
-        const oldChildAttrs=oldChild.attributes;
-        if(notSameText(newChild,oldChild)){
-          
-    
-            oldChild.parentNode.replaceChild(newChild,oldChild);
-
-        }else{
-            
-          if(newChildAttrs.length!=oldChildAttrs.length){
-         
-              oldChild.parentNode.replaceChild(newChild, oldChild);
-          }else{
-            
-              for(let brand of newChildAttrs){
-                
-                
-                if(!hasAttr(oldChild,brand.name)){
-    
-                    oldChild.parentNode.replaceChild(newChild,oldChild);
-                    break;
-                }
-                if(hasAttr(oldChild, brand.name) && notEqual(getAttr(oldChild, brand.name), brand.value)){
-                     oldChild.parentNode.replaceChild(newChild, oldChild);
-                     break;
-                }
-              }
-          }
-        }
-        }
-    
-}
-function isTag(supposedTag){
-if( supposedTag == void 0){
-    return false;
-}else{
-    return supposedTag.nodeType==1;;
-}
-}
-function hasSibling(tag){
-
-    if(isTag(tag.previousElementSibling)){
-           return true;
-    }else{
-        return false;
-    }
-}
-function applyChange($new,$old){
-    const oldChildren=$old.children;
-    const newChildren=$new.children;
-    
-    
-    const length=$new.children.length;
-
-    for(let i=length-1; i>-1; i--){
-        const newChild=newChildren[i];
-        const oldChild=oldChildren[i];
-
-      
-    
-       
-    if(notSameTag(newChild,oldChild) && isTag(newChild) && isTag(oldChild)){
-        
-        
-            oldChild.parentNode.replaceChild(newChild,oldChild);
-        
-        continue;
-    }
-    if(hasUndeepChild(newChild)){
-    for(let n=newChild.children.length-1; n>-1; n--){
-        
-        const newGrandSon=newChild.children[n];
-        const oldGrandSon=oldChild.children[n];
-      
-        makeChange(newGrandSon, oldGrandSon)
-    }
-    continue;
-    }
-    if(!notSameTag(newChild,oldChild) && isTag(newChild) && isTag(oldChild)){
-           makeChange(newChild,oldChild);  
-    }
-    }
-}
-
-const parser={
-    applyChange(n,o){
-    return applyChange(n,o);
-    },
-    has(root){
-   return has(root);
-    },
-    change($new,$old){
-
-        
-        if(hasUndeepChild($new) && hasUndeepChild($old)){
-          
-            
-        this.applyChange($new,$old);
-    
-        
-      
-      
-
-    }
-    
-}
-}
 
 
 
@@ -693,64 +552,91 @@ window.onload=()=>{
            attrs={},
            events={}
        }=el;
-     let _el=CreatEL(tag)
+
+       if(tag==void 0){
+
+        return false;
+
+       }
+      
+
+
+         let _el=CreatEL(tag)
+
         Object.entries(attrs).forEach(attr=>{
             const[attribute,value]=attr;
             setAttr(_el,attribute,value);
         })
+
         Object.entries(events).forEach(event=>{
             const[ev,trigger]=event;
             _el[ev]=trigger;
-        })
-        if(isDefined(text)){
-            _el.appendChild(TEXT(text))
-        }
-        if(!isEmptyArray(children)){
-            children.forEach(child=>{
-                /**
-                 *{tag:"p", text:"Oi"}
-                 */
-                const{
-                    tag,
-                    text,
-                    events={},
-                    attrs={},
-                }=child;
-                const elementChild=CreatEL(tag);
-                Object.entries(events).forEach(ev=>{
-                    const[evName,evValue]=ev;
-                    elementChild[evName]=evValue;
-                })
-                Object.entries(attrs).forEach(attr=>{
-                    const[attrName, attrValue]=attr;
-                    setAttr(elementChild,attrName,attrValue);
-                })
-                if(isDefined(text)){
-                    elementChild.appendChild(TEXT(text));
-                }
-                _el.appendChild(elementChild);
-            })
-        }
+
         root.appendChild(_el);
-       })
+      
+    
+    })
+
+    if(text!=void 0 && children.length==0){
+
+        if(isCallable(text)){
+       if(text()!=void 0){
+        _el.appendChild(
+          
+                   TEXT(text())
+
+
+        )
+
+    }
+}else{
+    
+
+    _el.appendChild(TEXT(text))
+
+    }
+
    
        
     }
-}
+
+    if(children.length>0){
+
+        createChildren(_el,children)
+
+    }
+
+    root.appendChild(_el)
+
+})
 
 
 
    
     
 }
-
+   }
+ }
 
 
 var validator={
     url:function(u){
+   if(!isDefined(u)){
+
+    SyntaxErr("The argument in validate.url() method must not be null or undefined.")
+
+   }
+
  return   /^(?:http:\/\/|https:\/\/)+(:?[A-Z]{2,8}\.)*(:?[a-z]+)+\.+(:?[a-z]{2,8})+(:?[\s\S])*$/i.test(u);
-    },
+   
+},
     email:function(em){
+        if(!isDefined(em)){
+
+
+            SyntaxErr("The argument in validate.email() method must not be null or undefined.")
+
+        }
      return   /^(?:[A-Z]+)+(:?[0-9]+)*@+(:?[A-Z]+)\.[A-Z]+$/i.test(em)
     },
   
@@ -894,7 +780,8 @@ Object.defineProperty(INTER, Symbol.hasInstance,{
 function whileLoading(obj){
    if(new.target!==void 0){
        SyntaxErr(`
-       You must not create an instance for whileLoading() function. 
+       You must not create an instance for whileLoading() function, call it
+       whileLoading(argument(object)). 
        `)
    }
    if(!isPlainObject(obj)){
@@ -905,45 +792,31 @@ function whileLoading(obj){
        `)
    }else{
 
-    /**
-     * wileLoading({
-     * 
-     * elements:[{
-     * tag:"div", children:[{
-     * 
-     * tag:"img", attrs:{
-     * src:"loader.gif"
-     * }
-     * },{
-     * 
-     * tag:"h3", text:"Page loading..."
-     * }]
-     * }]
-     * })
-     */
 
     const{
       elements,  
       
     }=obj;
+
     let elArr=[...elements]
+
    let root=null;
   
    
    elArr.forEach(el=>{
        const{
            tag,
+           text,
            attrs={},
            events={},
-           children,
+           children=[],
+           styles={}
+
            
        }=el;
-       if(!isDefined(children) || isEmptyArray(children)){
-          SyntaxErr(`
-          Oh, you must define the children array, and it must not be empty.
-          `)
-       }
+     
        const _el=CreatEL(tag);
+
        Object.entries(attrs).forEach(attr=>{
            const[attrName,attrValue]=attr;
            setAttr(_el,attrName,attrValue);
@@ -952,31 +825,47 @@ function whileLoading(obj){
            const[evName,evValue]=ev;
            _el[evName]=evValue;
        })
-       children.forEach(child=>{
-           const{
-               tag,
-               events={},
-               attrs={},
-               text,
-           }=child;
-           const childElement=CreatEL(tag);
-           Object.entries(events).forEach(event=>{
-               const[eventName, eventValue]=event;
-               childElement[eventName]=eventValue;
-           })
-           Object.entries(attrs).forEach(att=>{
-               const[attName, attValue]=att;
-               setAttr(childElement, attName, attValue);
-           })
-           if(isDefined(text)){
-               if(!isCallable(text)){
-               childElement.appendChild(TEXT(text));
-               }else{
-                   childElement.appendChild(TEXT(text()))
-               }
-           }
-           _el.appendChild(childElement);
+
+       Object.entries(styles).forEach(style=>{
+
+        const [name, value]=style;
+
+        if(isCallable(value)){
+
+            _el.style[name]=value();
+
+        }else{
+
+            _el.style[name]=value;
+
+        }
+
+
        })
+
+       if(isDefined(text) && children.length==0){
+
+          if(isCallable(text)){
+
+            _el.appendChild(TEXT(text))
+
+          }else{
+
+
+            _el.appendChild(TExt(text));
+
+          }
+
+       }
+
+       if(children.length>0){
+
+        createChildren(_el, children);
+
+       }
+
+
+
        root=_el;
        document.body.appendChild(_el);
        
@@ -984,9 +873,13 @@ function whileLoading(obj){
    
    
    document.onreadystatechange=function(){
+
        if(this.readyState=="complete"){
+
            this.body.removeChild(root);
+
        }
+
    }
  
  
@@ -1043,6 +936,8 @@ function hasOnlyAChild(parent){
 
 
 definePro(Inter, "renderIf",(obj)=>{
+
+
     /**
      * Inter.renderIf({
      * in:"container",
@@ -1059,10 +954,21 @@ definePro(Inter, "renderIf",(obj)=>{
      * })
      * 
      */
+
+
     const insertedElements=array.create(null);
+    const indexes=new Set();
 
     if(!isPlainObject(obj)){
-        //error
+        
+
+        SyntaxErr(`
+        
+        The argument of Inter.renderIf() method must be a function must be
+        an object.
+
+        `)
+
     }else{
         const{
             in:IN,
@@ -1071,40 +977,32 @@ definePro(Inter, "renderIf",(obj)=>{
         }=obj;
         
 
-        if(isPlainObject(watch)){
+        if(!isPlainObject(watch)){
           
-            const share=Object.create(null);
-            objShareKeys(watch,share);
-
-            Object.keys(watch).forEach(key=>{
-                
-                Object.defineProperty(watch,key,{
-                    set(value){
-                    share[key]=value;
-               theWork();
-                     
-                        
-                    },
-                    get(){
-                    return share[key];
-                    }
-                })
-            })
+        
+           SyntaxErr("You must define the watch proprety and it's value must be an object.") 
+               
+        
+               
+            
         }
         
+        makeReactive(watch,theWork)
       
         function theWork(){
             const root=getId(IN);
         if(insertedElements.length>0){
         
-           insertedElements.forEach(ind=>{
-                const theEL=root.children[ind];
-                if(isDefined(theEL)){
-            root.removeChild(theEL);
-                }
+           insertedElements.forEach((elObj,i)=>{
+                const {el, index}=elObj;
+               
+                root.removeChild(el);
+                
                 
             })
-         array.destroy(insertedElements)   
+
+            array.destroy(insertedElements)
+          
         }
     if(!isArray(conditions)){
         SyntaxErr(`
@@ -1117,6 +1015,8 @@ definePro(Inter, "renderIf",(obj)=>{
             render,
             
         }=condition;
+
+       
     
  if(!isDefined(render.call(condition)) && hasOwn.call(insertedElements,String(condition.index))){
           const theElement=root.children[condition.index];
@@ -1138,9 +1038,15 @@ definePro(Inter, "renderIf",(obj)=>{
                   if(hasOnlyAChild(root) && !isDefined(condition.replace)){
                       if(pos==0){
                       const theFirstChild=root.children[0];
-                      root.insertBefore(render()[i],theFirstChild);
-                     insertedElements.push(pos);
+                      root.insertBefore(render()[0],theFirstChild);
+                     insertedElements.push({
+
+                        el:root.children[pos],
+                        index:pos
+
+                     });
                     
+                     indexes.add(pos)
                  
                        
                       return false;    
@@ -1148,22 +1054,42 @@ definePro(Inter, "renderIf",(obj)=>{
                   }
                   if(isDefined(defined) && isTrue(condition.replace)){
                       root.replaceChild(render()[0],defined);
-                      insertedElements.push(pos)
+                      insertedElements.push({
+                          el:root.children[pos],
+                          index:pos
+                      })
                      
+                      indexes.add(pos)
+
                       return false;
                   }
                  if(isDefined(beforeThis)){
                      root.insertBefore(render()[0],beforeThis);
-                     insertedElements.push(pos)
-                    
+                     insertedElements.push({
+
+                        el:root.children[pos],
+                        index:pos,
+
+                     })
+
+                     indexes.add(pos)
                     
                      
                  }else{
                      const allundeepChildren=root.children.length-1;
                      if(allundeepChildren+1==pos){
                    
-                root.appendChild(render()[i]);
-                   insertedElements.push(pos)
+                root.appendChild(render()[0]);
+                
+                   insertedElements.push({
+
+                    el:root.children[pos],
+                    index:pos
+
+                   })
+
+                  
+                   
                      
                      }
            
@@ -1348,233 +1274,6 @@ function isEmptyArray(arr){
 return arr.length==0;
 }
 
-function template(obj){
-const{
-    elements,
-}=obj;
-
-//Note: render  is just usual for reactive template.
-
-/**
- * templates({
- * elements:[{
- * tag:"p", text:"Conditional", render:this.render,
- * }
- * }]
- * })
- * 
- */
-if(!isArray(elements)){
-    SyntaxErr(`
-    The property "elements" must be an array.
-    `)
-}
-let tags=array.create(null);
-
-
-  elements.forEach(el=>{
-      if(!isPlainObject(el)){
-          SyntaxErr(`
-          The itens of array "elements" must be objects with at least
-          "tag" property. 
-          `)
-      }
-      const{
-          tag,
-          text,
-        
-          attrs={},
-          events={},
-          children=[],
-          handlers={},
-          styles={},
-      }=el;
-
-      const htmlElement=CreatEL(tag);
-      
-
-      Object.entries(attrs).forEach(attr=>{
-          const[attrName,attrValue]=attr;
-          if(isCallable(attrs[attrName])){
-              if(isDefined(attrs[attrName]())){
-          setAttr(htmlElement, attrName, attrs[attrName]())
-              }
-          }else{
-              if(isDefined(attrValue)){
-              setAttr(htmlElement, attrName, attrValue);
-              }
-          }
-      });
-      Object.entries(events).forEach(event=>{
-          const[eventName,eventValue]=event;
-          htmlElement[eventName]=eventValue;
-          htmlElement.rerender=true;
-      });
-      Object.values(handlers).forEach(handler=>{
-         if(isCallable(handler)){
-          htmlElement.rerender=true;
-            return handlers[handler].call(htmlElement);
-         }
-      })
-      Object.entries(styles).forEach(style=>{
-        const[styleName,styleValue]=style;
-        if(isCallable(styleValue)){
-            if(isDefined(styleValue())){
-                htmlElement.style[styleName]=styleValue();
-            }
-        }else{
-            if(isDefined(styleValue)){
-                htmlElement.style[styleName]=styleValue;
-            }
-        }
-            })
-    if(!isEmptyArray(children)){
-      /**
-       *children:[{}]
-       */
-      children.forEach((child, i)=>{
-          const{
-              tag:_tag,
-              text:_text,
-              attrs:_attrs={},
-              events:_events={},
-              render,
-              handlers:_handlers={},
-              styles:_styles={},
-              children=[],
-          }=child;
-          const childElement=CreatEL(_tag);
-        
-        if(!notEqual(render, true) || !notEqual(render, false)){
-            
-            childElement.render=render;
-            childElement.index=i;
-        
-        }
-
-            
-          Object.entries(_attrs).forEach(att=>{
-              
-              const[attName,attValue]=att;
-            
-              if(isCallable(attValue)){
-                  if(isDefined(attValue())){
-                   
-                  setAttr(childElement,attName, attValue());
-                  }
-              }else{
-               if(isDefined(attValue)){
-              setAttr(childElement,attName,attValue);
-               }
-              }
-          })
-          Object.entries(_events).forEach(ev=>{
-              const[evName,evValue]=ev;
-              
-              childElement[evName]=evValue;
-              childElement[`_${evName}`]=evValue; //Reactive template
-              childElement.rerender=true; // Reactive listing.
-          })
-          
-          Object.values(_handlers).forEach(handler=>{
-             
-              if(isCallable(handler)){
-                  childElement.rerender=true;
-                  handler.call(childElement);
-              }
-          })
-          Object.entries(_styles).forEach(sty=>{
-              const[styleName,styleValue]=sty;
-              childElement.style[styleName]=isCallable(styleValue) ? styleValue() : styleValue;
-          })
-          
-          if(isDefined(_text)){
-              if(!isCallable(_text)){
-            
-              childElement.appendChild(TEXT(_text));
-          }else{
-              childElement.appendChild(TEXT(_text()))
-          }}
-          Array.from(children).forEach((grandson, ind)=>{
-            const{
-                tag,
-                text,
-                render,
-                attrs:$attrs={},
-                events:$events={},
-                handlers:$handlers={},
-                styles:$styles={},
-            }=grandson;
-        
-            const grand_son=CreatEL(tag);
-            if(!notEqual(render,true) || !notEqual(render, false)){
-                grand_son.render=render;
-                grand_son.index=ind;
-            }
-            Object.entries($attrs).forEach($attr=>{
-                const[name,value]=$attr;
-                
-                if(isCallable(value)){
-                    if(isDefined(value())){
-                        setAttr(grand_son,name,value());
-                    }
-                }else{
-                    if(isDefined(value)){
-                    
-                        setAttr(grand_son,name,value);
-                    }
-                }
-            })
-            Object.entries($events).forEach($ev=>{
-                const[name,value]=$ev;
-                
-                grand_son[name]=value;
-                grand_son[`_${name}`]=value;
-                grand_son.rerender=true;
-            })
-            Object.values($handlers).forEach(value=>{
-               
-                if(isCallable(value)){
-                    grand_son.rerender=true;
-                    value.call(grand_son)
-                }
-
-            })
-            Object.entries($styles).forEach(sty=>{
-                const[styleName,styleValue]=sty;
-                grand_son.style[styleName]=isCallable(styleValue) ? styleValue() : styleValue;
-            })
-            if(isDefined(text)){
-                if(isCallable(text)){
-                    grand_son.appendChild(TEXT(text()));
-                }else{
-                    grand_son.appendChild(TEXT(text));
-                }
-            }
-            if(lowerCase.call(grand_son.tagName)!="null" && lowerCase.call(grand_son.tagName)!="undefined"){
-                childElement.appendChild(grand_son);
-            }
-        })
-          if(lowerCase.call(childElement.tagName)!="null" && lowerCase.call(childElement.tagName)!="undefined"){
-            
-          htmlElement.appendChild(childElement)
-          }
-      })
-     
-    }
-    if(isDefined(text)){
-        if(!isCallable(text)){
-        htmlElement.appendChild(TEXT(text));
-    }else{
-        htmlElement.appendChild(TEXT(text()))
-    }}
-    if(lowerCase.call(htmlElement.tagName)!="null" && lowerCase.call(htmlElement.tagName)!="undefined"){
-     tags.push(htmlElement);
-    }
-    })
-   return tags;
-}
-
 
 
 
@@ -1585,15 +1284,23 @@ function URL(){
 }
 
 URL.prototype.useHash=(pathname)=>{
+
     if(!validPath.test(pathname)){
+
         SyntaxErr(`
         pathName must starts with /.
         `)
+
     }
+
 const atualUrl=window.location.pathname;
+
 if(!isDefined(pathname)){
-consoleWarnig("You must define the path of the url.")
+   
+    SyntaxErr("You must define the path of the url.")
+
 };
+
 if(pathname=="/"){
     window.history.pushState(null, null,`/#${pathname}`);
     event.fire("URLCHANGED")
@@ -1643,62 +1350,7 @@ else{
 
 const url=Object.freeze(new URL());
       
-function GetVALUE(obj){
- const{
-     in:IN,
-   
- }=obj;  
 
-  if(!isPlainObject(obj)){
-SyntaxErr(`
-getValue()'s argument must be only an object.
-`)
-  }else{
-
-   return {
-       only(){
-    
-        let value=getId([IN]).value;
-        return value;   
-       
-       },
-       done(id,prop){
-      getId(IN).oninput=(ev)=>{
-          toHTML({
-              in:id,
-              data:{
-                  [prop]:ev.target.value,
-              }
-          })
-      }
-   
-    }    
-   
-}   
-
-}
-
-
-}
-
-
-
-let getValue=new Proxy(GetVALUE, {
-
-    construct(...values){
-      SyntaxErr(`
-     You've create an instance for getValue, it's forbidden.
-     `)
-    }});
-
-    /**
-     * As my focus on Inter syntax is to let it be really very simple, so 
-     * using the getValue() function is not very elegant, reason wy there's the
-     *  handleValue diretive 
-     * <input type="text" in="mensagem" placeholder="write something" handleValue="message">
-     * <p id="mensagem">{message}</p>
-     * 
-     */
  
     //For handleValue;
     const SHARE={
@@ -1866,7 +1518,7 @@ for(let lookRef of children){
 
 }
 
-//ajax based in promise
+//ajax 
 
 function BACKEND(){
 
@@ -1878,6 +1530,22 @@ const toUpperCase=String.prototype.toUpperCase;
 
 
 BACKEND.prototype.request=function(obj){
+
+const pro=window.location.protocol;
+
+
+
+if(pro=="file:"){
+
+    SyntaxErr(`
+    
+    You can not use the backend.request() method
+    in an "file:" protocol, use a http: or https: protocol instead.
+
+    `)
+
+}
+
     /**
      * type,
      * requestName,
@@ -1895,7 +1563,17 @@ BACKEND.prototype.request=function(obj){
           
     }
 
-   if(isPlainObject(obj)){
+   if(!isPlainObject(obj)){
+
+       SyntaxErr(`
+       
+       The argument of backend.request()
+       must be an object and not: ${Array.isArray(obj) ? "Array" :
+      typeof obj
+    }
+
+       
+       `)
 
    }
     
@@ -1910,71 +1588,219 @@ BACKEND.prototype.request=function(obj){
            withCridentials,
        }=obj;
       
+
+       const _request={
+
+           get status(){
+
+            return theRequest.status;
+
+           },
+
+           set status(v){
+
+            return false;
+
+           },
+
+           get statusText(){
+
+            return theRequest.statusText;
+
+           },
+
+           set statusText(v){
+
+            return false;
+
+           },
+
+           isObj(){
+
+            try{
+                JSON.parse(theRequest.responseText);
+                return true;
+
+            }catch(e){
+
+                return false;
+
+            }
+
+           },
+
+          get headers(){
+
+            return theRequest.getAllResponseHeaders();
+
+          },
+          set headers(v){
+
+            return false;
+
+          },
+
+
+       }
+
+       const AllowedAjaxEvents={
+         
+         ontimeout:true,
+         onabort:true,
+         onprogress:true,
+
+
+       };
  
        let theRequest=new XMLHttpRequest();
       
        function REQUEST(){
       
        if(isTrue(withCridentials)){
+
            theRequest.withCredentials=true;
+
        }
        
        
        const method=toUpperCase.call(type);
+
     if(emptyOBJ(security) || !isDefined(security)){
+
        theRequest.open(method,path,true);
+
     }else{
         if(isPlainObject(security)){
+
             theRequest.open(method,path,true,security.username,security.password);
+        
         }
     }
        Object.entries(headers).forEach(header=>{
+
            const[name,value]=header;
            theRequest.setRequestHeader(name,value);
+
        });
-       Object.entries(events).forEach(event=>{
+
+        Object.entries(events).forEach(event=>{
 
            const[evName,evValue]=event;
-           if(evName=="onerror" || evName=="onload"){
-               SyntaxErr(`
-               You can not listen for "${evName}" event in backend.request(), it's ilegal.
-               `)
+       
+           if(!(lowerCase.call(evName) in AllowedAjaxEvents)){
+
+            Warning(`
+            
+            "${evName}" is an unrecognised backend.request() event.
+            `
+            )
+
            }
-           if(isCallable(evValue)){
-               theRequest[evName]=evValue.call(theRequest);
-           }
+
+           
+
+           if(isCallable(evValue) && lowerCase.call(evName) in AllowedAjaxEvents){
+                
+
+           
+
+               if(evName=="onprogress"){
+               theRequest.onprogress=function(ev){
+
+                   const percantage=Math.round(ev.loaded*100/ev.total);
+                      
+                evValue(percantage);
+                
+               }
+               }else{
+
+                theRequest[evName]=evValue;
+
+               }
+            
+           
+            }
        })
     
        theRequest.onload=function(){
           //Parsing the response.
            let response=null;
+     
+         
+
              try{
-               JSON.parse(response);
-               response=JSON.parse(this.responseText)  
+               
+               response=JSON.parse(this.responseText)
+               
+               if(this.status!==200){
+
+                if(isCallable(back_R_OBJ.error)){
+                     
+    
+                    back_R_OBJ.error.call(_request,response)
+    
+               
+                }
+    
+                return false;
+                
+
+               }
+               
                if(isCallable(back_R_OBJ.okay)){
-                back_R_OBJ.okay.call(theRequest,response);
+
+                back_R_OBJ.okay.call(_request,response);
 
                } 
             }catch(e){
                  response=this.responseText;
-                 if(isCallable(back_R_OBJ.okay)){
-                    back_R_OBJ.okay.call(theRequest,response);
+
+                 if(this.status!==200){
+
+                    if(isCallable(back_R_OBJ.error)){
+                         
+        
+                        back_R_OBJ.error.call(_request,response)
+        
+                   
+                    }
+        
+                    return false;
+                    
+    
                    }
-                }
+
+
+                 if(isCallable(back_R_OBJ.okay)){
+
+                    back_R_OBJ.okay.call(_request,response);
+
+                   }
+                
                
         }
+    }
            theRequest.onerror=function(){
             if(isCallable(back_R_OBJ.error)){
-            back_R_OBJ.error.call(theRequest);
-           }
+
+                
+
+            back_R_OBJ.error.call(_request);
+           
+        }
            }
         
            
+           
        if(method=="GET" || method=="DELETE"){
+
            theRequest.send(null);
+
        }else{
            if(isDefined(body)){
+
                theRequest.send(body);
+
            }
        }
     
@@ -2045,16 +1871,13 @@ return this.ref[EvName]=fn;
      }
  }
  const GlobalNativeEventListener=new Proxy(globalNativeEventListener,{
-    set(Target, key, value, proto){
-       
-        const allKeys=Object.keys(GlobRef.ref);
-        
-   for(let i=0; i<allKeys.length; i++){
-       if(key==allKeys[i]){
+    set(Target, key, value, proto){    
+   
+       if(key in GlobRef.ref){
          
-         return  GlobRef.ref[allKeys[i]](value);  
+          GlobRef.ref[key](value);  
        }
-   }
+   
 }})
 
  function EVENT(){
@@ -2062,18 +1885,23 @@ return this.ref[EvName]=fn;
      this.fire=(evName,evValue)=>{
          if(!isDefined(evName)){
              SyntaxErr(`
-             You must define the event's name
+             You must define the event name.
              `)
          }
         if(isDefined(evValue)){ 
      GlobalNativeEventListener[evName]=evValue;      
         }else{
             
-             GlobalNativeEventListener[evName]="fired";
+             GlobalNativeEventListener[evName]=void 0;
             
         }
      };
      this.listen=(evName, callback)=>{
+         if(evName==void 0){
+
+            SyntaxErr("The first argument of event.listen() must be defined(the event name).")
+
+         }
          if(!isCallable(callback)){
              SyntaxErr(`
              The second argument of event.listen() must be a function.
@@ -2085,6 +1913,7 @@ return this.ref[EvName]=fn;
        GlobRef.add(evName, callback);   
          }
  };
+
  this.removeListener=(evName)=>{
 if(!isDefined(evName)){
     SyntaxErr(`
@@ -2105,6 +1934,7 @@ else{
     return delete GlobRef.ref[evName];
 }
  };
+
  this.protectListener=(evName)=>{
 if(!hasOwn.call(GlobRef.protectedListener,evName)){
     GlobRef.protectedListener[evName]=true;
@@ -2112,6 +1942,7 @@ if(!hasOwn.call(GlobRef.protectedListener,evName)){
     consoleWarnig(`The listener of "${evName}" is already protected. `);
 }
  };
+
  this.hasListener=(evName)=>{
      if(hasOwn.call(GlobRef.ref, evName)){
          return true;
@@ -2119,6 +1950,8 @@ if(!hasOwn.call(GlobRef.protectedListener,evName)){
          return false;
      }
  }
+
+
 
 }
  
@@ -2134,12 +1967,16 @@ set(Target, key, value, proto){
 }
 
 })
+
+
+
 function definePro(obj, pro, value){
     return Object.defineProperty(obj,pro,{
        value:value,
        enumerable:!0
     })
 }
+
 const HTMLRegistry={
     handler:{ 
     
@@ -2235,16 +2072,26 @@ const handle_Value_Attr={
 }
 function toHTML(obj){
     
+
+
+    let reactor;
+
 if(!isPlainObject(obj)){
+
     SyntaxErr(`The argument in toHTML() function must be an object.`)
+
 }else{
+
       let{
           in:IN,
           data,
           handleValue,
+          private,
          react,
       }=obj;
+     
       const shared=Object.assign(Object.create(null),data);
+
       Object.getOwnPropertyNames(data).forEach(prop=>{
           Object.defineProperty(data,prop,{
               get(){
@@ -2269,6 +2116,7 @@ Object.destroyAll(StrictRef[private]);
      }
 
       const makeSure=getId(IN).getElementsByTagName("*")
+
       const _hasChild= makeSure.length==0 ? false : true;
    
           
@@ -2298,7 +2146,7 @@ Object.destroyAll(StrictRef[private]);
                    
                        }
                    
-                       let change=new Proxy(globals,{
+                         let change=new Proxy(globals,{
                            get(){
                             return input.value;   
                            },
@@ -2384,10 +2232,10 @@ for(let attr=0; attr<attrs.length; attr++){
 
       }
 
-      if(isDefined(react) && !emptyOBJ(data)){
+      if(!emptyOBJ(data)){
           const handler=Object.create(null);
    
-    Object.defineProperty(handler, [react], {
+    Object.defineProperty(handler, "reactor", {
      
       value:new Proxy(data,{
           set(Target, key,value, pro){
@@ -2490,7 +2338,22 @@ for(let attr=0; attr<attrs.length; attr++){
       writable:!0  
     
     })
-    window[react]=handler[react]
+   
+    
+    
+    if(isFalse(private) || !isDefined(private)){
+        
+        if(isDefined(react)){
+
+       _global[react]=handler["reactor"]
+         
+}
+
+    }else{
+        
+        reactor=handler["reactor"];
+        
+    }
 
 }
     
@@ -2614,6 +2477,8 @@ for(let attr=0; attr<attrs.length; attr++){
     })
     
 }}
+
+return reactor;
   
 }
 
@@ -2678,80 +2543,123 @@ let newREF={
 
     function calculateUpdate(value,parent,ind){
       
-   let father=parent.children[ind];
-       if(containChild(parent.children[ind])){
+       let father=parent.children[ind];
+
+       
            
-        
+       if(notSameTagName(father,value)){
+
+        parent.replaceChild(value, father);
+
+        return false;
+
+       } 
+
         if(father.getElementsByTagName("*").length!=value.getElementsByTagName("*").length){
             
             parent.replaceChild(value,father);
             
            
             return;
-        }   
-   let root=parent.children[ind].children;
-   const target=value.children;
+        }
+      
+   let root=parent.children[ind].getElementsByTagName("*");
+   
+   const target=value.getElementsByTagName("*");
+   
+   
+    if(root.length>0 && target.length>0){
+   for(let el=target.length-1; el>-1; el--){
    
 
+    if(notSameTagName(target[el], root[el])){
+
+        root[el].parentNode.replaceChild(target[el], root[el]);
+
+        continue;
+
+    }
+
+ 
+   if(hasUndeepChild(target[el]) && hasUndeepChild(root[el]) &&
+   
+   target[el].children.length!=root[el].children.length
+   
+   ){
+
+    root[el].parentNode.replaceChild(target[el], root[el]);
+
+    continue;
     
-   for(let el=target.length-1; el>-1; el--){
 
-       if(hasUndeepChild(target[el])){
-        
-       const targetChildren=target[el].children;
-       const rootChildren=root[el].children;
-       if(targetChildren.length!=rootChildren.length){
-           root[el].parentNode.replaceChild(target[el],root[el]);
-       }else{
-           for(let p=rootChildren.length-1; p>-1;p--){
-              
-              
-               if(deeplyNotIqualElements(rootChildren[p],targetChildren[p])){
-                   
-                   rootChildren[p].parentNode.replaceChild(targetChildren[p],rootChildren[p]);
-               }
-            
-           }
-           continue
-       }
-
-       }else{
-           if(deeplyNotIqualElements(root[el],target[el])){
-        
-           }
-       }
+   }
 
 
- if(isDefined(root[el]) && isDefined(target[el]) && !hasUndeepChild(target[el]) &&
- deeplyNotIqualElements(root[el],target[el]) ){
-     
-if(!hasUndeepChild(target[el])){
+ if(isDefined(root[el]) && isDefined(target[el])  &&
+    deeplyNotIqualElements(root[el],target[el]) ){
+ 
 
     root[el].parentNode.replaceChild(target[el],root[el])  
-   
-}
+       
+ 
    
  
 }
 
-}
-   }else{
-    
-       const child=parent.children[ind];
-      if(deeplyNotIqualElements(child,value)){
-        parent.replaceChild(value,child)
-      }
+
+ 
    }
+}else{
+
+    if(oneHasChildAndOtherNot(value, father)){
+
+        parent.replaceChild(value, father);
+
+        return false;
+
+    }
+
+    // There is no parent elements.
+
+    if(deeplyNotIqualElements(value, father)){
+
+        parent.replaceChild(value, father);
+
+    }
+
+}
 
 
 
     }
+
+
+    function notSameTagName(first,second){
+
+     return  !(first.nodeName==second.nodeName);
+
+    }
+
+    function oneHasChildAndOtherNot(el1,el2){
+
+        const children1=el1.getElementsByTagName("*").length;
+        const children2=el2.getElementsByTagName("*").length
+
+        return (children1==0 && children2>0 || 
+            children1>0 && children2==0
+            );
+
+    }
+
     function deeplyNotIqualElements(target,toCompare){
-       
+
+        
+   
        let returnValue=false;
+   
       const ta_attributes=target.attributes;
       const to_attributes=toCompare.attributes;
-    const render=toCompare.rerender;
+      const render=toCompare.render;
     
       if(!notEqual(render, true)){
          
@@ -2788,12 +2696,23 @@ if(!hasUndeepChild(target[el])){
       if(!returnValue){ //Run if returnValue is false;
        
       if(target.textContent && toCompare.textContent){
-          
+        
+        if(hasUndeepChild(target) && hasUndeepChild(toCompare)){
+
+            return false;
+
+        }
+
           target.textContent!==toCompare.textContent ? 
           returnValue=true : returnValue=false;
+
           
         }
     }
+
+  
+
+  
 
     return returnValue;
     
@@ -2825,7 +2744,7 @@ function makeReactive(obj, call){
  const share=Object.assign({},obj)   
 const properties=Object.keys(obj);
 
-properties.reduce(($,key)=>{
+for(let key of properties){
   
 Object.defineProperty(obj,[key],{
 set(value){
@@ -2839,8 +2758,14 @@ get(){
     return share[key];
 }
 })
-    
-},[])
+if(isPlainObject(obj[key])){
+
+    makeReactive(obj[key], call);
+
+}    
+}
+
+
 
 }
 
@@ -2859,6 +2784,7 @@ definePro(Inter, "for", (obj)=>{
 let pro=null;
 
 if(isArray(data)){
+
 
 function proSetup(){
     
@@ -2915,7 +2841,9 @@ proSetup();
 
   Object.defineProperty(pro, "concat",{
    value:(value)=>{
+
        //the proxy does not work for concat() method, reason why I did this polyfill
+
        if(!isArray(value)){
      pro.push(value);
      if(isPlainObject(value)){
@@ -2963,6 +2891,7 @@ Warning("do in Inter.for() must be a function");
     
 
      if(data.length<root.children.length){
+         
      let undeedChilren=root.children;
 
          
@@ -2975,7 +2904,7 @@ Warning("do in Inter.for() must be a function");
     }
     if(!someRef.has(IN)){
      
-        [...data].forEach((item, i)=>{
+        data.forEach((item, i)=>{
             var value=DO.call(pro,item, i);
               
      
@@ -2996,19 +2925,21 @@ Warning("do in Inter.for() must be a function");
     
 
       let _value=DO.call(pro,el,i);
+
+      
   
     if(isDefined(root.children[i])){
 
       for(let _el of _value){
-      
+        
         calculateUpdate(_el,root,i)
       }
     }
     if(!isDefined(root.children[i])){
     
     if(data.length>root.children.length){
-       for(let v of _value){
-
+       for( v of _value){
+    
 
         root.appendChild(v)
            
@@ -3055,35 +2986,8 @@ SyntaxErr(`
 The argument of ROUTER() must be an object.
 `)
 }else{
-    /**
-     * ROUTER({
-     * in:"container",
-     * routes:{
-     * "*":()=>{
-     * 
-     * }
-     * "/Inter/doc":()=>{
-     * backend.get({
-     * path:"/Inter/doc.json",
-     * headers:{}
-     * }).then((resp)=>{
-     * do something
-     * },(error)=>{
-     * //do something
-     * })
-     * },
-     * "/Intro":()=>{
-     * 
-     * },
-     * "/Inter/rules/Bestpractices":()=>{
-     * 
-     * }
-     * }
-     })
-     *
-     *
-     */
-  
+
+   
      const{
         
          routes
@@ -3104,9 +3008,9 @@ The argument of ROUTER() must be an object.
         `)
     }
    
-    if(routeName.includes("/*")){
+    if(routeName!="*" && routeName.includes("*")){
        
-    const sub=routeName.replaceAll("*","(:?[\\s\\S]+)");
+    const sub=routeName.replaceAll("*","(:?[\\\s\\\S]+)");
     const theRoute=sub;
     organizedRoutes[theRoute]=routeAction;
     }else{
@@ -3131,6 +3035,7 @@ if(!isUsingHash()){
     
 Object.keys(organizedRoutes).some(orgRoute=>{
     let reg=new RegExp();
+    
     if(reg.compile(orgRoute).test(atualPath)){
         done=true;
         organizedRoutes[orgRoute]();
@@ -3178,6 +3083,7 @@ if(!done){
         let done=false;
     Object.keys(organizedRoutes).some(orgRoute=>{
         let reg=new RegExp();
+        
         if(reg.compile(orgRoute).test(atualPath)){
             organizedRoutes[orgRoute]();
             done=true;
@@ -3498,6 +3404,8 @@ function hasUndeepChild(container){
 function STORAGE(){
     const store_Symbol=Symbol("store_Symbol");
     this[store_Symbol]=Object.create(null);
+    this[Symbol("protect")]=new Set();
+
     /**
      *storage.set("active",el);
      *storage.get("active", (setted){
@@ -3506,23 +3414,42 @@ function STORAGE(){
      })
      */
 }
-STORAGE.prototype.set=function(key,value){
+
+STORAGE.prototype.set=function(infoName,value){
     const _symbol=Object.getOwnPropertySymbols(this)[0];
     if(arguments.length<2){
         SyntaxErr(`
         storage.set() must have two arguments!
         `)
     }
-    if(key in this[_symbol]){
-         this[_symbol][key]=value;
+
+    const _set=Object.getOwnPropertySymbols(this)[1];
+         
+    if(this[_set].has(infoName)){
+
+       SyntaxErr(`
+       
+       The info named "${infoName}" is protect
+       and you can not overwritten it.
+
+       `)
+
+   }
+
+    if(infoName in this[_symbol]){
+        
+     
+
+        this[_symbol][infoName]=value;
+
         consoleWarnig(`
-        there's already an element called "${key}" in storage, and its value
+        there's already an element named "${infoName}" on the storage, and it's value
         was overwritten.
         `)
     }
     else{
        
-      return this[_symbol][key]=value;  
+      return this[_symbol][infoName]=value;  
     }
 }
 
@@ -3559,19 +3486,72 @@ STORAGE.prototype.has=function(key){
     }
 }
 
-STORAGE.prototype.delete=function(key){
+STORAGE.prototype.delete=function(infoName){
     const _symbol=Object.getOwnPropertySymbols(this)[0];
-    if(!isDefined(key)){
+    if(!isDefined(infoName)){
         SyntaxErr(`You must define the key you want to delete from storage.`)
     }
-    if(!hasOwn.call(this[_symbol],key)){
+    if(!hasOwn.call(this[_symbol],infoName)){
          SyntaxErr(`
          You're trying to delete a key that is not in the storage.
          `)
     }else{
-     return delete this[_symbol][key];
+
+        const _set=Object.getOwnPropertySymbols(this)[1];
+
+        if(this[_set].has(infoName)){
+
+            SyntaxErr(`
+            
+            The info named "${infoName}" is protect
+            and you can not delete it from the storage.
+
+            `)
+
+        }
+
+
+     delete this[_symbol][key];
+
     }
 }
+
+
+
+STORAGE.prototype.protect=function(infoName){
+
+    if(infoName==void 0){
+
+        SyntaxErr(`
+        
+        You must define the info name to protect
+        in storage.protect(infoName)
+
+        `)
+
+    }
+
+    if(!this.has(infoName)){
+
+        SyntaxErr(`
+        
+        The info named ${infoName} is not on the storage yet,
+        so register it first and then protect it.
+        
+        `)
+       
+
+    }else{
+
+        const prot=Object.getOwnPropertySymbols(this)[1];
+
+        this[prot].add(infoName);
+
+
+    }
+
+}
+
 const storage=Object.freeze(new STORAGE());
 
 
@@ -3709,7 +3689,9 @@ Object.entries(original).reduce(($, $attr)=>{
         }
     })
 },{})
+
 const emptyObj=Object.create(null);
+
 Object.defineProperty(emptyObj,[attrManager],{
     value:new Proxy(attrs,{
     set(target,key, propValue,pro){
@@ -3761,9 +3743,17 @@ Object.defineProperty(emptyObj,[attrManager],{
 
     })
 })
-window[attrManager]=emptyObj[attrManager];
+
+if(!isPlainObject(_global.managers)){
+
+    _global.managers=Object.create(null);
 
 }
+
+_global.managers[attrManager]=emptyObj[attrManager];
+
+}
+
 
 function findDynamicAttrs(rootElem, attrManager){
    
@@ -3806,8 +3796,10 @@ function toATTR(obj){
      *     
      })
      *
-     *
      */
+
+    const returnOBJ=Object.create(null);
+
     if(!isPlainObject(obj)){
         SyntaxErr(`
         The argument in "toATTR()" function must be an object.
@@ -3816,6 +3808,7 @@ function toATTR(obj){
   const{
       in:IN,
       data,
+      private
       
   }=obj;
   
@@ -3829,170 +3822,47 @@ data in toATTR() must be an object.
   }else{
       
    findDynamicAttrs(root,data);
+
+
+
+   for(let entries of Object.entries(_global.managers)){
+  
+    const[manager,attrs]=entries;
+
+    if(isTrue(private)){
+
+        returnOBJ[manager]=attrs;
+
+    }else{
+
+        _global[manager]=attrs;
+
+    }    
+
+   }
+
   }      
+
+  delete _global.managers;
+
+  return isTrue(private) ? returnOBJ : void 0;
+
     }
-}
 
 
-
-//A major feature in Inter v1.1
-// REATIVE TEMPLATE BY DEFAULT.
-/**
- * const obj={};
- * 
- * reativeTemplate({
- * react:obj,
- * in:"container",
- * render(){
- * let self=this,
- * return  template({
- * elements:[{
- * tag:"div", children:[{
- * tag:"p", text:this.numero, 
- * 
- * },{
- * tag:"button", text:"Contar", events:{
- * onclick(){
- * self.numero++;
- * }
- * }
- * }]
- * 
- * }]
- * })
- * 
- * }
- * })
- * })
- * 
- * }
- * 
- * })
- * 
- */
- 
-
-function notSameNode(old,brand){
-    
-    /**
-     * O
-     *<div>
-     *<h1></h1>
-     *<input>
-     * <p>...</p>
-     * 
-     *</div>
-     *
-     * N 
-     *<div>
-     *<h1></h1>
-     *<input>
-     * <p>.</p>
-     * 
-     *</div>
-     * 
-     */
-
-    const oldIndex=old.index;
-    const brandIndex=brand.index;
-
-return  notEqual(oldIndex, brandIndex)
 
 
 
 }
+
+
+
 
 
 function reativeTemplate(obj){
-    if(new.target!==void 0){
-        SyntaxErr(`
-        "reativeTemplate" is not a construtor, do not invoke it with "new" keyword.
-        `)
-    }
-    if(!isPlainObject(obj)){
-        SyntaxErr(`
-        The argument in reativeTemplate function must be an object.
-        `)
-    }else{
-        const{
-            react,
-            in:IN,
-            render,
-            
-        }=obj;
-        const root=getId(IN);
-     
-    
-         const pro =new Proxy(react,{
-            set(...args){
-                
-                Reflect.set(...args)
-                const node=render.call(pro)
-                
-                for(let i=0; i<node.length;i++){
-                   
-            RTCOMPARISION(node[i],root,i);
-                }
-            
-            },
-            
-            deleteProperty(...args){
-              Reflect.deleteProperty(...args)
-              const node=render.call(pro)
-                
-              for(let i=0; i<node.length;i++){
-                 
-          RTCOMPARISION(node[i],root,i);
-              }
-            }
-        })
-        const mustBeRemoved=array.create(null);
-        const grandRemoved=array.create(null);
-        for(let o of render.call(pro)){
-            if(!hasUndeepChild(o)){
-                SyntaxErr(`
-                Reative template must be wrapped in a container.
-                `)
-            }
-            for(let child of o.children){
-                const render=child.render;
-                
-             
-                 if(!notEqual(render, false)){
-                 
-                mustBeRemoved.push(child);     
-                
-                 }else{
-                    if(hasUndeepChild(child)){
-                        for(let grandSon of child.children){
-                            const rend=grandSon.render;
-                            if(!notEqual(rend, false)){
-                             grandRemoved.push({
-                                 parent:child,
-                                 el:grandSon
-                             })
-                            }
-                        }
-                    }
-                 }
-                }
-            for(let removeGrand of grandRemoved){
-                const{
-                    el,
-                    parent
-                }=removeGrand;
-                parent.removeChild(el);
-            }
-            for(let removeChild of mustBeRemoved){
-                
-            
-                
-                 o.removeChild(removeChild);
-            }
-            root.appendChild(o);
-            }
-        
-        }
+ 
+Warning(`Unfortunetly reativeTemplate was depracated since version 1.2.0`)
+
 }
 
 
@@ -4003,315 +3873,149 @@ function tagName(tag){
 
 
  function notSameTag(tag1,tag2){
-     return !(Object.is(tag1.nodeName, tag2.nodeName))
+
+     return (tag1!=void 0 && tag2!=void 0) &&   !(Object.is(tag1.nodeName, tag2.nodeName))
 }
 
 
 
-function RTCOMPARISION(_new,root,p){
-    
+
+
+const on={
+    call:void 0,
+    load(call){
+     this.call=call;
+    },
+    fire(){
+        this.call();
+    }
+}
+
+
+ function request(tag){
+
+   if(!hasAttr(tag,"path")){
+
+       SyntaxErr(`
+       
+       There is  an "inter-container" tag that does not have the "path" attribute.
+       
+       `)
+
+   }
+   if(!hasAttr(tag,"tag")){
+
+   SyntaxErr(`
    
+   There is an "inter-container" tag that does not have the "tag" attribute.
+
+   `)
+
+   }
+
+   const valid_Html_extension=getAttr(tag,"path").endsWith(".html") || getAttr(tag,"path").endsWith(".hml");
+
+   if(!valid_Html_extension){
+
+
+    SyntaxErr(`
     
-    const old=root.children[p];
-    if(notSameTag(_new,old)){
-      
-        root.replaceChild(_new, old);
-        return false;
-
-    }
-   
-    let cloneNode=nodeCloner(_new);
-    const newDOmCollection=array.create(_new.children);
+    The path attribute value in all "inter-container" tags must end either with the ".html"
+    or ".htm" extension.
     
-  let $new=nodeCloner(_new); 
-
-  
-    let transformed=false;
-    /**
-     * <div>
-     * <p rende=true ind=0></p>
-     * <p></p>
-     * <p render="false" ind=1></p>
-     * <button></button>
-     * </div>
-     * 
-     * OLD
-     * 
-     * <div>
-     * <p></p>
-     * <p></p>
-     * <button></button>
-     * </div>
-     * 
-     * 
-     */
-
-      
-       function check(){
-       const length=newDOmCollection.length;
-       const theOneRemoved=array.create(null);
-       const theOneAdded=array.create(null);
-       
-       const grandAdded=array.create(null);
-       const oldGrandRemoved=array.create(null);
-       
-      
-       for(let i=0; i<length; i++){
-       
-         const brand=newDOmCollection[i];
-         const oldChild=old.children[i] == void 0 ? old.children[old.children.length-1] : old.children[i] ;
-         const render=brand.render;
-      
-        if(hasUndeepChild(cloneNode.children[i])){
-           
-           
-            for(let u=0; u<brand.children.length; u++){
-                
-                const oldGrand=()=>{
-                if(oldChild===void 0){
-                    return void 0;
-                } 
-                
-                if(oldChild.children[u]==void 0){ 
-                  return  oldChild.children[oldChild.children.length-1]}
-                    else{
-                       return  oldChild.children[u];
-                    }
-            }
-                const brandGrand=brand.children[u];
-                const rend=brandGrand.render;
-                if(!notEqual(rend,true)){
-                   
-                    if(oldGrand() ==void 0 || notSameNode(brandGrand, oldGrand())){
-               
-                   grandAdded.push({
-                       id:u,
-                       el:brandGrand,
-                       parent:oldChild==void 0 ? old.children[old.children.length-1] : oldChild,
-                   })
-                   transformed=true;
-                    }
-                    
-                    
-                } else{
-                    if(!notEqual(rend, false)){
-                       
-                        if(oldGrand()!==void 0  && !notSameNode(brandGrand, oldGrand())){
-                         
-                            oldGrandRemoved.push({
-                                el:oldGrand(),
-                                parent:oldChild==void 0 ? old.children[old.children.length-1] : oldChild,
-                            })
-                          
-                        }
-                    }
-                }
-            }
-        }
-      
-       
-    
-
-        if(!notEqual(render, true)){
-           
-              if(oldChild==void 0 || notSameNode(brand,oldChild)){
-               
-                 theOneAdded.push({
-                     id:i,
-                     el:brand,
-                 })
-                
-              transformed=true;
-
-           
-         }
-        }else{
-        
-            if(!notEqual(render, false)){
-              
-          if(oldChild!==void 0 && !notSameNode(oldChild,brand) ){
-    
-            theOneRemoved.push({
-                  el:oldChild,
-                  id:i,
-              });
-         
-            transformed=true;
-            }
-         }         
-
-        }
-        
-       
-    
-}
-    for(let remove of theOneRemoved){
-        const{
-            el,
-        
-        }=remove;
-    
-        old.removeChild(el);
-        
-    
-        
-
-    }
-
-    for(let re of oldGrandRemoved){
-const{
-    el,
-    parent
-}=re;
-
-parent.removeChild(el);
-    }
-    for(let added of grandAdded){
-        const{
-            el,
-            id,
-            parent,
-        }=added;
-       
-           if(parent.children[id]==void 0){
-               parent.appendChild(el);
-           }else{
-           
-               const reference=parent.children[id];
-               parent.insertBefore(el, reference);
-             
-           }
-         
-    }
+    `)
 
 
-
-     for(let add of theOneAdded){
-         const{
-             id,
-             el,
-         }=add;
-        
-            
-         if(old.children[id]==void 0){
-             old.appendChild(el);
-         }else{
-           
-           
-         
-            old.insertBefore(el, old.children[id]);
-         
-           
-            
-         }
-       
-        
-     }
-      
-     
-  
-   
-    }
-  
-       
-check()  
-
-if(!transformed){
-    
- 
-const length=$new.children.length
-    for(let i=0;  i<length; i++ ){
-  
-const child=$new.children[i];
-if(child==void 0){
-    continue;
-}
-
-const render=child!==void 0 ? child.render : undefined;
-
-//Do not use hasUndeepChild() here, because won't work properly.
-if(child.children.length>0){
-
-    for(let son of child.children){
-       const rend=son.render
-       
-      if(!notEqual(rend, false)){
-        
-          child.removeChild(son);
-      }
-    }
-}
-if(render==void 0){
-    continue;
-}
-
-if(render==false){
-    
-    $new.removeChild(child)
-    i--;
-
-}
-    
-}
-
-    
-  
-}else{
-    let length=cloneNode.children.length;
-   for(let i=0; i<length; i++ ){
-        const child=cloneNode.children[i];
-       const render=child.render;
-       
-       if(!notEqual(render, false)){
-           
-           cloneNode.removeChild(child);
-           i--;
-           length--;
-       }else{
-        if(hasUndeepChild(child)){
-            for(let son of child.children){
-                const rend=son.render;
-                if(!notEqual(rend, false)){
-                    child.removeChild(son);
-                }
-            }
-        }
-       }
    }
    
+
+   
+   backend.request({
+       type:"get",
+       path:tag.getAttribute("path"),
+   }).response((resp)=>{
+      const attrs=tag.attributes;
+      
+    const newTag=CreatEL(tag.getAttribute("tag"));
+    newTag.innerHTML=resp;
+    
+    for(let att of attrs){
+        
+     if(att.name!="path" && att.name!="tag"){
+         
+        setAttr(
+            newTag,
+            att.name,
+            att.value
+        )
+
+    }
 }
+    tag.parentNode.replaceChild(newTag,tag);
+    
+     on.call();
+   },()=>{
+       Warning(`
+       Failed to load: ${tag.getAttribute("path")}, at index: ${i}
+       `)
+   })
 
 
-
-parser.change(transformed ? cloneNode : $new, old)
-
-}
-
-
-/**
- * <div _istrue="mostrarContainer">
- * //Many children here
- * </div>
- * <div _default>
- * //Default container
- * 
- * </div>
- * renderContainer({
- * in:"root",
- * data:{
- *mostrarContainer:false, 
- *},
- * react:"gerenc"
- * })
- * 
- */
+ }
 
  
-function reativeAttributes(root){
+function reativeAttributes(root, load){
+    
  const children=root.children;
  const theEls=array.create(null);
  const removed=array.create(null);
+
+
+ if(isTrue(load)){
+
+    const protocol=window.location.protocol;
+    if(protocol=="file:"){
+        SyntaxErr(`
+        You can not use container rendering with external template in
+        a "file:" protocol. Use "http:" or "https:" protocols instead.
+        `)
+    }else{
+     
+        const inter_container_tags=root.getElementsByTagName("inter-container");
+        
+        const length=inter_container_tags.length;
+        let current=0;
+
+        on.load(()=>{
+            
+            if(current<length){
+                const tag=inter_container_tags[0];
+                 
+             request(tag);
+             current++;
+            }else{
+                
+                selectTheContainers();
+
+
+            }
+        })
+
+       on.fire()
+
+    }
+
+
+ }else{
+
+    selectTheContainers();
+     
+ }
+
+ function selectTheContainers(){
+
  let index=-1;
+ 
  for(let child of  children){
    index++;
    
@@ -4319,7 +4023,7 @@ function reativeAttributes(root){
     if(hasAttr(child, "_istrue")){
         if(hasAttr(child, "_default")){
             SyntaxErr(`
-            A container can not have two reative attributes.
+            A container can not have two reactive attributes.
             `)
         }
       const value=getAttr(child,"_istrue");
@@ -4336,7 +4040,7 @@ function reativeAttributes(root){
          if(hasAttr(sibling, "_default")){
              if(hasAttr(sibling,"_istrue")){
                  SyntaxErr(`
-                 A container can not have two reative attributes.
+                 A container can not have two reactives attributes.
                  `)
              }
              sibling.default=true;
@@ -4353,15 +4057,31 @@ function reativeAttributes(root){
        theEls.push(config);
     }
     }
+
 for(let re of removed){
     root.removeChild(re);
 }
 
- return theEls;
+if(event.hasListener("CONTAINERS_HAVE_FINISHED_LOADING")){
+
+    event.fire("CONTAINERS_HAVE_FINISHED_LOADING");
+    event.removeListener("CONTAINERS_HAVE_FINISHED_LOADING");
+
+}
+
+}
+
+
+
+return theEls;
+ 
 }
 
 
 function renderContainer(obj){
+
+    let returnValue=void 0;
+
     if(new.target!==void 0){
         SyntaxErr(`
         "renderContainer" is not a constructor, do not call it
@@ -4370,15 +4090,25 @@ function renderContainer(obj){
     }
     if(!isPlainObject(obj)){
         SyntaxErr(`
-        The argument in "renderContainer" must be a n object.
+        The argument in "renderContainer" must be an object.
         `)
     }else{
+
 const{
     in:IN,
     data,
     react,
+    private,
+    load,
+    loadState
+   
 }=obj;
-const reatives=reativeAttributes(getId(IN));
+
+if(isCallable(loadState) && load){
+    loadState.call(data,"loading")
+}
+
+const reatives=reativeAttributes(getId(IN),isTrue(load));
 
 const _react=Object.assign({}, data);
 const share=Object.assign({}, data);
@@ -4388,8 +4118,9 @@ for(let key of dataKeys){
 Object.defineProperty(_react, [key],{
     set(v){
     share[key]=v;
-    
+ 
     checkEls();
+
     },
     get(){
        return share[key];
@@ -4442,15 +4173,20 @@ Object.defineProperty(_react, "register",{
                     }else{
                         for(let re of registered){
                             _global[react][re]=v;
+                            
+                      
                         }
                         
                     }
-                }
+                },
+              
             })
             Object.seal(this);
         }
     }
 })
+
+
 
 function checkEls(){
     
@@ -4467,7 +4203,7 @@ function checkEls(){
          const rootChildren=root.children;
         
         if(hasOwn.call(_react, cond)){
-            const own=isCallable(_react[cond]) ? _react[cond]() : _react[cond];
+            const own=isCallable(_react[cond]) ? _react[cond].apply(_react, void 0) : _react[cond];
             if(!isBoolean(own)){
                 consoleWarnig(`
             The values of properties in data object, in renderContainer(), must be
@@ -4537,12 +4273,405 @@ function checkEls(){
     
 
         }
+       
     }
-    _global[react]=_react;
+    
+
+    if(load){
+    event.listen("CONTAINERS_HAVE_FINISHED_LOADING",()=>{
+        checkEls();
+       if(isCallable(loadState) && load){
+           loadState.call(_react,"ready");
+       } 
+    });
 
 }
-checkEls();
+if(!load){
+    checkEls();
+}
+    if(isDefined(react)){
+        _global[react]=_react;
+    }else{
+        
+        if(private){
+            returnValue=_react;
+            
+        }
+    }
+}
 
+
+return returnValue
+
+
+
+    }
+
+    /**
+     *  observe({
+     *  name:"Denis",
+     *  lang:"Javascript"
+     *  }).change((key,value)=>{
+     * 
+     * })
+     * 
+     * 
+     */
+
+    const storeIndex=new Map();
+    
+
+
+    function template(obj){
+
+const{
+    elements
+}=obj;
+
+/**
+ * 
+ * [{
+ * tag:"div", children:[{
+ * 
+ * tag:"p", children:[{
+* tag:"p", children:[{tag:"ul", children:[{tag:"li"}]}] 
+*  
+* }]
+ * 
+ * }]
+ * }]
+ * 
+ */
+
+ let returnELS=array.create(null);
+
+ for(let el of elements){
+
+
+    const{
+        tag,
+        text,
+        attrs={},
+        events={},
+        handlers={},
+        styles={},
+        children=[],
+    }=el;
+
+
+    if(tag==void 0){
+
+        continue;
+
+    }
+
+    let index=-1;
+
+    storeIndex.set("index",index);
+
+    const container=CreatEL(tag);
+     
+
+     Object.entries(attrs).forEach((attr)=>{
+         
+        const[name,value]=attr;
+
+        if(isDefined(name)){
+
+            if(isCallable(value)){
+
+            setAttr(container,name,value());
+            
+        }else{
+       
+            setAttr(container,name,value);
+
+        }
+
+        }
+
+     })
+
+     Object.entries(events).forEach((ev)=>{
+
+        const[name,handler]=ev;
+
+        if(!name.startsWith("on")){
+
+            SyntaxErr(`
+            
+            Every HTML event must start with "on". And
+
+            ${name} does not.
+
+
+            `)
+
+        }
+
+
+        if(isCallable(handler)){
+
+            container[name]=handler;
+            container.render=true;
+
+        }
+
+        
+
+     })
+
+     Object.entries(handlers).forEach((h)=>{
+
+
+        const[name,handler]=h;
+
+        if(!isCallable(handler)){
+
+
+       SyntaxErr(`
+       
+       All handlers properties values must be functions,
+       and the value of handler "${name}" is not.
+
+       `)
+
+
+        }else{
+
+            handler.apply(container, void 0);
+            handler.render=true;
+
+
+        }
+
+     
+
+
+
+
+
+     })
+
+
+     Object.entries(styles).forEach((style)=>{
+
+        const[name,value]=style;
+
+        if(isDefined(value)){
+
+            if(isCallable(value)){
+
+            container.style[name]=value()
+
+            }else{
+
+                container.style[name]=value;
+
+            }
+
+        }
+
+
+     })
+
+     if(isDefined(text) && children.length==0){
+    
+        if(isCallable(text)){
+        container.appendChild(
+
+            TEXT(text)
+
+        )
+        }else{
+
+            container.appendChild(
+
+                TEXT(text)
+
+            )
+
+        }
+     }
+
+     if(children.length>0){
+
+   createChildren(container, children, index);
+
+    }
+
+    returnELS.push(container)
+
+
+ }
+
+ storeIndex.clear();
+
+ return returnELS;
+
+
+
+    }
+
+    function createChildren(father, childrenArray,ind){
+    
+
+        let i=storeIndex.get("index")
+
+        for(let child of childrenArray){
+            i++;
+            storeIndex.set("index",i)
+            const{
+                tag,
+                text,
+                render,
+                attrs={},
+                events={},
+                handlers={},
+                styles={},
+                children=[],
+            }=child;
+        
+        
+            if(tag==void 0){
+        
+                continue;
+        
+            }
+        
+            const _child=CreatEL(tag);
+            _child.index=i;
+        
+
+            if(isFalse(render) || isTrue(render)){
+            
+                _child.render=render;
+
+            }
+
+             Object.entries(attrs).forEach((attr)=>{
+                 
+                const[name,value]=attr;
+        
+                if(isDefined(value)){
+                    
+        
+                    if(isCallable(value)){
+        
+                    setAttr(_child,name,value());
+                    
+                }else{
+               
+                    setAttr(_child,name,value);
+        
+                }
+        
+                }
+        
+             })
+        
+             Object.entries(events).forEach((ev)=>{
+        
+                const[name,handler]=ev;
+        
+                if(!name.startsWith("on")){
+        
+                    SyntaxErr(`
+                    
+                    Every HTML event must start with on. And
+        
+                    ${name} does not.
+        
+        
+                    `)
+        
+                }
+        
+        
+                if(isDefined(handler)){
+        
+                    _child[name]=handler;
+                    _child.render=true;
+        
+                }
+        
+             })
+        
+             Object.entries(handlers).forEach((h)=>{
+        
+        
+                const[name,handler]=h;
+        
+                if(!isCallable(handler)){
+        
+        
+               SyntaxErr(`
+               
+               All handlers properties values must be functions,
+               and the value of handler "${name}" is not.
+        
+               `)
+        
+        
+                }else{
+        
+                    handler.apply(_child, void 0);
+                    handler.render=true;
+        
+        
+                }
+
+
+        })
+
+        Object.entries(styles).forEach((style)=>{
+
+            const[name,value]=style;
+
+            if(isDefined(value)){
+
+                if(isCallable(value)){
+
+                    _child.style[name]=value()
+
+                }else{
+
+                    _child.style[name]=value;
+
+                }
+
+            }
+
+
+        })
+
+        if(isDefined(text) && children.length==0){
+         
+            if(isCallable(text)){
+
+            _child.appendChild(
+
+                TEXT(text())
+            )
+
+        }else{
+
+            _child.appendChild(
+
+                TEXT(text)
+
+            )
+
+        }
+    }
+
+        father.appendChild(_child);
+
+        if(children.length>0){
+
+        createChildren(_child,children);
+        }
+    }
 
     }
 
@@ -4560,7 +4689,6 @@ _global.ROUTER=ROUTER;
 _global.supportInter=supportInter;
 _global.url=url;
 _global.data=data;
-_global.getValue=getValue;
 _global.backend=backend;
 _global.event=event; 
 _global.whileLoading=whileLoading
@@ -4586,13 +4714,11 @@ _global.reativeTemplate=reativeTemplate;
     exports.data=data;
     exports.url=url;
     exports.input=input;
-    exports.getValue=getValue;
     exports.toHTML=toHTML;
     exports.app=app;
     exports.event=event;
     exports.template=template;
     exports.app=app;
-    exports.getValue=getValue;
     exports.ROUTER=ROUTER;
     exports.form=form;
     exports.interface=interface;
