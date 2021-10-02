@@ -7,4 +7,7 @@
   "jsdelivr": "inter.min.js",
   "repository": "github:DenisPower1/inter",
    "homepage": "http://interjs.epizy.com/",
+  "devDependencies":{
+  "nodejs":"^12.0.0"
+  }
   }
