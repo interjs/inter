@@ -29,9 +29,11 @@
     if(re.url.endsWith(".css") || re.url.endsWith(".js")){
      
        // It is either a css or js file.
+      
+      const endsWithJs=re.url.endsWith(".js");
 
         re.setHeaders={
-            "Content-Type":"text/plain"
+            "Content-Type":endsWithJs ? "text/javascript" : "text/plain"
         };
 
         re.sendFile(`./${re.url}`);
