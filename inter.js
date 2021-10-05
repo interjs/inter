@@ -1,13 +1,13 @@
-
 /**
  * Inter.
- * Version: 1.2.0
+ * Version: 1.2.1
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
  * 
  * 
  */
+
 
 
 
@@ -155,7 +155,7 @@ function getId(id){
 const theId=document.getElementById(id);
 if(theId== void 0){
     SyntaxErr(`
-    There is not an element by id ${id} in document.
+    There is not an element by id "${id}" on the document.
     `)
 
 }else{
@@ -397,15 +397,15 @@ var array=new ARRAY();
 //As Inter store a lot of data in memory, it can cause memory lack, so let's manage it.
 
 const memory={
-    handleMemomory:array.create(null),
+    handleMemory:array.create(null),
     refContainer(container){
         //special for reference
-        this.handleMemomory.push(container);
+        this.handleMemory.push(container);
       
     },
     hasRefContainer(container){
-        let returnValue=null;
-    this.handleMemomory.some(cont=>{
+        let returnValue;
+    this.handleMemory.some(cont=>{
     return container==cont ? returnValue=true : returnValue=false;
     })
     return returnValue;
@@ -422,6 +422,12 @@ let _status="development"
 
 
 const app={
+    get version(){
+
+        return "1.2.1"
+
+    },
+
     set status(v){
 
         if(_status=="production"){
@@ -1046,7 +1052,6 @@ definePro(Inter, "renderIf",(obj)=>{
 
                      });
                     
-                     indexes.add(pos)
                  
                        
                       return false;    
@@ -1059,7 +1064,7 @@ definePro(Inter, "renderIf",(obj)=>{
                           index:pos
                       })
                      
-                      indexes.add(pos)
+                     
 
                       return false;
                   }
@@ -1072,7 +1077,7 @@ definePro(Inter, "renderIf",(obj)=>{
 
                      })
 
-                     indexes.add(pos)
+                  
                     
                      
                  }else{
@@ -1792,7 +1797,7 @@ if(pro=="file:"){
         
            
            
-       if(method=="GET" || method=="DELETE"){
+       if(method=="GET"){
 
            theRequest.send(null);
 
@@ -2581,25 +2586,15 @@ let newREF={
     }
 
  
-   if(hasUndeepChild(target[el]) && hasUndeepChild(root[el]) &&
-   
-   target[el].children.length!=root[el].children.length
-   
-   ){
-
-    root[el].parentNode.replaceChild(target[el], root[el]);
-
-    continue;
-    
-
-   }
 
 
  if(isDefined(root[el]) && isDefined(target[el])  &&
     deeplyNotIqualElements(root[el],target[el]) ){
  
-
+        
     root[el].parentNode.replaceChild(target[el],root[el])  
+        
+ 
        
  
    
@@ -2610,6 +2605,9 @@ let newREF={
  
    }
 }else{
+
+  
+    
 
     if(oneHasChildAndOtherNot(value, father)){
 
@@ -2652,6 +2650,7 @@ let newREF={
     }
 
     function deeplyNotIqualElements(target,toCompare){
+
 
         
    
@@ -2708,6 +2707,8 @@ let newREF={
 
           
         }
+
+      
     }
 
   
@@ -3934,8 +3935,26 @@ const on={
        type:"get",
        path:tag.getAttribute("path"),
    }).response((resp)=>{
-      const attrs=tag.attributes;
+    
+    
+    
+    const attrs=tag.attributes;
       
+      const forb=/<style>(:?[\s\S])*<\/style>|<script>(:?[\s\S])*<\/script>/g;
+
+      if(forb.test(resp)){
+
+        SyntaxErr(`
+        
+        In external template must not contain a <style> or <script> tag,
+        and one of the mentioned tag was found at path => "${tag.getAttribute("path")}".
+        
+        `)
+
+      }
+      
+
+
     const newTag=CreatEL(tag.getAttribute("tag"));
     newTag.innerHTML=resp;
     
@@ -3956,7 +3975,7 @@ const on={
      on.call();
    },()=>{
        Warning(`
-       Failed to load: ${tag.getAttribute("path")}, at index: ${i}
+       Failed to load: ${tag.getAttribute("path")}.
        `)
    })
 
@@ -4500,12 +4519,14 @@ const{
 
     }
 
+    
+
     returnELS.push(container)
 
 
  }
 
- storeIndex.clear();
+ 
 
  return returnELS;
 
@@ -4516,15 +4537,15 @@ const{
     function createChildren(father, childrenArray,ind){
     
 
-        let i=storeIndex.get("index")
+        
 
         for(let child of childrenArray){
-            i++;
-            storeIndex.set("index",i)
+            
+            
             const{
                 tag,
                 text,
-                render,
+                
                 attrs={},
                 events={},
                 handlers={},
@@ -4540,14 +4561,10 @@ const{
             }
         
             const _child=CreatEL(tag);
-            _child.index=i;
+            
         
 
-            if(isFalse(render) || isTrue(render)){
-            
-                _child.render=render;
-
-            }
+ 
 
              Object.entries(attrs).forEach((attr)=>{
                  
@@ -4714,11 +4731,13 @@ _global.reativeTemplate=reativeTemplate;
     exports.data=data;
     exports.url=url;
     exports.input=input;
+    exports.getValue=getValue;
     exports.toHTML=toHTML;
     exports.app=app;
     exports.event=event;
     exports.template=template;
     exports.app=app;
+    exports.getValue=getValue;
     exports.ROUTER=ROUTER;
     exports.form=form;
     exports.interface=interface;
