@@ -5,11 +5,11 @@ const inst=new Perf();
 Inter.for({
          in:"list",
          data:["Inter","Laravel","Express","Django"],
-         do(name,i){
+         do(name){
       
             return template({
                 elements:[{
-                    tag:"li", text:nome, 
+                    tag:"li", text:name, 
                     
                 }]
             })
