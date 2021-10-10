@@ -8,7 +8,7 @@
   "repository": "github:DenisPower1/inter",
    "homepage": "http://interjs.epizy.com/",
   "devDependencies":{
-  "nodejs":"^12.0.0",
+  "nodejs":"^14.18.0",
    "interfy":"^1.0.0"
   }
   }
