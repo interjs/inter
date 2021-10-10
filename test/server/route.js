@@ -1,5 +1,6 @@
+/**
  * 
- *  THIS FILE USES the Inter(server)  AND THE (variable) modules.
+ *  THIS FILE USE the Inter(server) module.
  * 
  *  CREATED BY DENIS POWER(https://github.com/DenisPower1).
  * 
@@ -7,12 +8,15 @@
  *  2021.
  * 
  */
-                        
+
  const Inter=require("./server").Inter;
- const _var=require("./variable")._var;
+
+ 
 
 
  Inter.server((re)=>{
+
+  const ext=re.urlExt;
 
       if(re.url=="/"){
         re.setHeaders={
@@ -21,19 +25,27 @@
 
        
       
-          re.sendFile(`./${_var}.html`);
+          re.sendFile(`./inter-test.html`);
         return false;
 
       }
 
-    if(re.url.endsWith(".css") || re.url.endsWith(".js")){
-     
-       // It is either a css or js file.
-      
-      const endsWithJs=re.url.endsWith(".js");
+      if(ext=="txt"){
 
         re.setHeaders={
-            "Content-Type":endsWithJs ? "text/javascript" : "text/plain"
+          "Content-Type":"plain/text"
+        };
+
+        re.sendFile(`./${re.url}`)
+
+      }
+
+    if(ext=="css" || ext=="js"){
+     
+       // It is either a css or js file.
+
+        re.setHeaders={
+            "Content-Type":ext == "js" ? "text/Javascript" : "text/plain"
         };
 
         re.sendFile(`./${re.url}`);
@@ -42,7 +54,8 @@
 
        
        
-        if(re.url.endsWith(".html")){
+        if(ext=="html"){
+
        // It is a html file.
 
             re.setHeaders={
