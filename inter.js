@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.1
+ * Version: 1.2.2
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
@@ -223,6 +223,13 @@ function getAttr(el, attr){
     return el.getAttribute(attr);
 }
 }
+
+function toString(obj){
+
+    return Object.prototype.toString.apply(obj, void 0);
+
+}
+
 /**
  * In some cases, using indirect checking can cause unexpected result, that's why I used 
  * direct checking.
@@ -274,15 +281,27 @@ return lowerCase.call(tag.nodeName)=="a" || lowerCase.call(tag.nodeName)=="butto
 
 function getRoutingTag(){ 
 
+    const tS=toString(this);
+
+    if(tS=="[object Window]"){
+
+        // There was not defined the <body> tag.
+
+        return;
+
+    }
+
     const children=this.getElementsByTagName("*");
 
     for(let child of children){
         if(isButtonOrAnchor(child) && hasAttr(child, "setPath")){
-            child.onclick=(ev)=>{
+            child.setpath=getAttr(child,"setPath");
+            child.removeAttribute("setPath");
+            child.onclick=function(ev){
 
                      ev.preventDefault();
 
-            const routeTo=getAttr(child,"setPath");
+            const routeTo=this.setpath;
             if(validPath.test(routeTo)){
 
             url.setPath(routeTo);  
@@ -296,10 +315,11 @@ function getRoutingTag(){
     }
 
 	if(isButtonOrAnchor(child) && hasAttr(child,"useHash")){
-
-	child.onclick=(ev)=>{
+        child.setpath=getAttr(child,"useHash");
+        child.removeAttribute("useHash");
+	child.onclick=function(ev){
 		ev.preventDefault();
-		const routeTo=getAttr(child, "useHash");
+		const routeTo=this.usehash;
 		if(validPath.test(routeTo)){
 			url.useHash(routeTo);
 			
@@ -424,7 +444,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.1"
+        return "1.2.2"
 
     },
 
@@ -676,8 +696,29 @@ var validate=new Proxy(validator,{
 })
 
 
+
+Object.defineProperties(HTML.prototype, {
+    toString:{
+        value:()=>{
+
+            return "[Object Inter]";
+
+        },
+        toLocaleString:{
+            value:()=>{
+
+                return "[Object Inter]";
+
+            }
+        
+        
+        }
+    }
+})
+
 const INTER=new HTML();
 const Inter=new Proxy(INTER,{
+  
     set(...values){
         SyntaxErr(`You can not set any property in Inter object,
         this is a fatal action.
@@ -909,28 +950,19 @@ const storeRef={
         return Object.destroyAll(this.refHandler)
     }
 }
-function objShareKeys(target,source){
 
-    //I created this because Object.assign() does not resolve the problem in Inter.renderIf();
 
-    const targetKeys=Object.getOwnPropertyNames(target);
 
-    for(let key of targetKeys){
-        source[key]=target[key];
-    }
-}
-
-function hasProperty(obj){
-    return Object.getOwnPropertyNames(obj).length>0;
-}
 function isaNodeElement(supposedElement){
 
-    /**
- *There is already a function that do a work similiar to this, called
-*isElement(), but that function does not work as expected in Inter.renderIf() checking,
-* that's why I'm doing
- * a strong checking with this one.
-     */
+  /**
+   * This function is being used in:
+   * 
+   * Inter.renderif()
+   * Inter.for()
+   * 
+   * 
+   */
 
     const pattern=/^\[object HTML+(:?[A-Z]+)+Element\]$/i;
     return pattern.test(supposedElement);
@@ -1308,16 +1340,19 @@ if(!isDefined(pathname)){
 
 if(pathname=="/"){
     window.history.pushState(null, null,`/#${pathname}`);
-    event.fire("URLCHANGED")
+    event.fire("URLCHANGED");
+    getRoutingTag.call(document.body);
     return false;
 }
 if(pathname!="/" && atualUrl=="/"){
     window.history.pushState(null, null, `/#${pathname}`);
-    event.fire("URLCHANGED")
+    event.fire("URLCHANGED");
+    getRoutingTag.call(document.body);
     return false;
 }else{
     window.history.replaceState(null, null,`/#${pathname}`);
-    event.fire("URLCHANGED")
+    event.fire("URLCHANGED");
+    getRoutingTag.call(document.body);
 
 }
 }
@@ -1338,17 +1373,19 @@ if(!isDefined(pathname)){
 }
 if(pathname=="/"){
     window.history.pushState(null, null, pathname);
-    event.fire("URLCHANGED")
+    event.fire("URLCHANGED");
+    getRoutingTag.call(document.body);
     return false;
 }
 if(pathname!="/" && atualUrl=="/"){
     window.history.pushState(null, null, pathname);
-     event.fire("ULRCHANGED")
+     event.fire("URLCHANGED")
     return false;
 }
 else{
    window.history.replaceState(null, null, pathname);
-   event.fire("URLCHANGED") 
+   event.fire("URLCHANGED");
+   getRoutingTag.call(document.body); 
 }
 
 }
@@ -2737,7 +2774,7 @@ let newREF={
 
 
 
-     // Special for Inter.for()
+  // Special for Inter.for() and Inter.renderIf()
 
 function makeReactive(obj, call){
 
@@ -2907,7 +2944,16 @@ Warning("do in Inter.for() must be a function");
      
         data.forEach((item, i)=>{
             var value=DO.call(pro,item, i);
-              
+          
+            if(!isaNodeElement(value)){
+
+                SyntaxErr(`
+                You are not return the template()
+                function in do() method(Inter.for), it is happening where the target id is "${IN}".
+
+                `)
+
+            }
      
         for(let el of value){
           
@@ -2926,6 +2972,7 @@ Warning("do in Inter.for() must be a function");
     
 
       let _value=DO.call(pro,el,i);
+     
 
       
   
@@ -3079,6 +3126,7 @@ if(!done){
         } 
 
  event.listen("URLCHANGED",()=>{
+     
     if(!isUsingHash()){
         const atualPath=window.location.pathname;
         let done=false;
@@ -4751,5 +4799,6 @@ _global.reativeTemplate=reativeTemplate;
  
 })();
  
+
 
 
