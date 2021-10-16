@@ -11,7 +11,6 @@
  *  2021.
  */
 
-
  if(typeof window!=="undefined"
  && window.onload
  ){
