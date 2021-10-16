@@ -7,4 +7,4 @@ It's was created especially to be used in [apps created with Inter](http://inter
 
 It is easy, simple, small and powerful.
 
-Get more info about by accessing the [offical Interfy's repository](https://github.com/DenisPower1/dymi/)
+Get more info about it by accessing the [offical Interfy's repository](https://github.com/DenisPower1/dymi/)
