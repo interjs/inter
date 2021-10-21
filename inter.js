@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.2
+ * Version: 1.2.3
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
@@ -38,19 +38,34 @@ function isArray(arr){
 
 function isNumber(n){
 
-   return valueType(Number(n))=="number";
+   return typeof (Number(n))=="number";
 
 }
 
  function isCallable(fn){
 
-  return valueType(fn)=="function"
+  return typeof fn=="function"
 
  }
 
 function valueType(v){
 
-return typeof v;
+    if(typeof v=="number" 
+    || typeof v=="boolean" 
+    || typeof v=="string"
+    || typeof v=="symbol"
+    || typeof v=="undefined"
+    ){
+
+        return typeof v;
+
+    }else{
+
+   return Object.type(v);
+  
+
+    }
+
 
 }
 
@@ -79,22 +94,7 @@ function isTag(supposed){
 
 }
 
-function extend(reciever,source){
 
-    // The source properties will be reactives
-    // if i used the Object.assign() method they would'nt
-    // be anymore.
-
-
-    for(let key in source){
-
-        reciever[key]=source[key];
-
-    };
-
-    return void 0;
-
-}
 
 
 function isDefined(v){
@@ -265,7 +265,26 @@ Object.destroyAll=(obj)=>{
 
 
 
+Object.type=(obj)=>{
 
+    if(isPlainObject(obj)){
+
+        return "object"
+
+    }
+    if(Array.isArray(obj)){
+
+        return "array"
+
+    }
+
+    if(obj===void 0){
+
+        return "null";
+
+    }
+
+}
 
 
 
@@ -444,7 +463,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.2"
+        return "1.2.3"
 
     },
 
@@ -1579,10 +1598,10 @@ const pro=window.location.protocol;
 
 if(pro=="file:"){
 
-    SyntaxErr(`
+    Warning(`
     
     You can not use the backend.request() method
-    in an "file:" protocol, use a http: or https: protocol instead.
+    in an "file:" protocol, use a "http:" or "https:" protocol instead.
 
     `)
 
@@ -1610,9 +1629,7 @@ if(pro=="file:"){
        SyntaxErr(`
        
        The argument of backend.request()
-       must be an object and not: ${Array.isArray(obj) ? "Array" :
-      typeof obj
-    }
+       must be an object and not: ${valueType(obj)}
 
        
        `)
@@ -1627,6 +1644,7 @@ if(pro=="file:"){
            headers={},
            body,
            security={},
+           timeout,
            withCridentials,
        }=obj;
       
@@ -1639,11 +1657,6 @@ if(pro=="file:"){
 
            },
 
-           set status(v){
-
-            return false;
-
-           },
 
            get statusText(){
 
@@ -1651,11 +1664,7 @@ if(pro=="file:"){
 
            },
 
-           set statusText(v){
-
-            return false;
-
-           },
+           
 
            isObj(){
 
@@ -1676,11 +1685,7 @@ if(pro=="file:"){
             return theRequest.getAllResponseHeaders();
 
           },
-          set headers(v){
-
-            return false;
-
-          },
+         
 
 
        }
@@ -1695,8 +1700,34 @@ if(pro=="file:"){
        };
  
        let theRequest=new XMLHttpRequest();
+
+       
       
        function REQUEST(){
+        
+        if(isDefined(timeout)){
+      
+            
+            
+
+            if(!isNumber(timeout)){
+    
+                consoleWarnig(`
+                
+    
+                The timeout property value must be a number,
+                and you defined ${valueType(timeout)} as its value.
+    
+                `)
+    
+            }else{
+    
+                theRequest.timeout=timeout;
+                
+    
+            }
+    
+           }
       
        if(isTrue(withCridentials)){
 
@@ -1712,7 +1743,7 @@ if(pro=="file:"){
        theRequest.open(method,path,true);
 
     }else{
-        if(isPlainObject(security)){
+        if(isPlainObject(security) && security.username && security.password){
 
             theRequest.open(method,path,true,security.username,security.password);
         
@@ -1749,9 +1780,9 @@ if(pro=="file:"){
                if(evName=="onprogress"){
                theRequest.onprogress=function(ev){
 
-                   const percantage=Math.round(ev.loaded*100/ev.total);
+                   const percentage=Math.round(ev.loaded*100/ev.total);
                       
-                evValue(percantage);
+                evValue(percentage);
                 
                }
                }else{
@@ -1827,7 +1858,7 @@ if(pro=="file:"){
 
                 
 
-            back_R_OBJ.error.call(_request);
+            back_R_OBJ.error.call(_request, this.statusText);
            
         }
            }
@@ -1858,7 +1889,7 @@ if(pro=="file:"){
     
      if(!isCallable(fn)){
          SyntaxErr(`
-         The argument in okay respons method must be a function.
+         The argument of okay response method must be a function.
          `)
      }else{
          back_R_OBJ._set("okay",fn);
@@ -1868,7 +1899,7 @@ if(pro=="file:"){
     error(fn){
      if(!isCallable(fn)){
          SyntaxErr(`
-         The argument in error response method must be a function.
+         The argument of error response method must be a function.
          `)
      }else{
          back_R_OBJ._set("error",fn);
@@ -1883,7 +1914,7 @@ if(pro=="file:"){
        }
        if(!isCallable(okay) || !isCallable(error)){
          SyntaxErr(`
-         The arguments in backend.request().response() must be functions.
+         The arguments of backend.request().response() must be functions.
          `)
        
     }else{
@@ -2120,11 +2151,11 @@ function toHTML(obj){
 
 if(!isPlainObject(obj)){
 
-    SyntaxErr(`The argument in toHTML() function must be an object.`)
+    SyntaxErr(`The argument of toHTML() function must be an object.`)
 
 }else{
 
-      let{
+      const{
           in:IN,
           data,
           handleValue,
@@ -2132,6 +2163,17 @@ if(!isPlainObject(obj)){
          react,
       }=obj;
      
+      if("setRefs" in data){
+
+        SyntaxErr(`
+        
+        "setRefs" is a reserved property, you can not use it 
+        as a reference name.
+        
+        `)
+
+      }
+
       const shared=Object.assign(Object.create(null),data);
 
       Object.getOwnPropertyNames(data).forEach(prop=>{
@@ -2381,7 +2423,33 @@ for(let attr=0; attr<attrs.length; attr++){
     
     })
    
+      Object.defineProperty(handler["reactor"],"setRefs", {
+
     
+        set(v){
+
+            if(!isPlainObject(v)){
+
+                SyntaxErr(`
+                
+                The value of [ REFERENCE REACTOR ].setRefs must be an object
+                and you defined "${valueType(v)} as its value."
+
+                `)
+
+            }
+
+            for(let[refName,refValue] of Object.entries(v)){
+
+                this[refName]=refValue;
+
+            }
+
+        },
+        configurable:!1
+
+
+      })
     
     if(isFalse(private) || !isDefined(private)){
         
@@ -2776,13 +2844,43 @@ let newREF={
 
   // Special for Inter.for() and Inter.renderIf()
 
-function makeReactive(obj, call){
+function makeReactive(obj, call, defineProps){
 
+  const reactive=Symbol("reactive");
+
+  if(reactive in obj){
+
+    // The properties of "obj" object are already reactive,
+    // so we should ignore any attempt to make them reactive once more.
+
+    return false;
+
+  }
 
  const share=Object.assign({},obj)   
 const properties=Object.keys(obj);
 
 for(let key of properties){
+
+    if(defineProps){
+
+    if(key=="defineProps"){
+
+        obj["_defineProps"]=obj[key];
+        share["_defineProps"]=obj[key]   
+        delete obj[key];
+        delete share[key];
+        key="_defineProps";
+     
+        consoleWarnig(`
+        "defineProps" is a reserved property in the objects that are the values
+        of data array in Inter.for(). So Inter redefined it to "${key}".
+        
+        `)
+
+    }
+
+}
   
 Object.defineProperty(obj,[key],{
 set(value){
@@ -2798,16 +2896,90 @@ get(){
 })
 if(isPlainObject(obj[key])){
 
-    makeReactive(obj[key], call);
+    makeReactive(obj[key], call, true);
 
 }    
 }
 
 
 
+
+if(defineProps){
+Object.defineProperty(obj, "defineProps",{
+
+    set(v){
+
+        if(!isPlainObject(v)){
+
+
+            SyntaxErr(`
+            
+          The value of "defineProps" must be an object, and you defined
+          "${valueType(v)}" as its value.
+
+          Must be:
+
+          [The object].defineProps={
+
+            prop:value
+
+          }
+            
+
+            `)
+
+        }
+
+    for(let[p,vl] of Object.entries(v)){
+
+        if(!(p in this)){
+
+            share[p]=vl;
+
+        Object.defineProperty(obj, [p],{
+            
+            set(value){
+
+            share[p]=value;
+           call();
+
+
+
+            },
+
+            get(){
+
+                return share[p];
+
+            }
+
+        })
+
+        call();
+
+    }
 }
 
 
+    }
+
+})
+
+Object.defineProperty(obj, reactive, {
+
+    value:true,
+    configurable:!1,
+    writable:!1,
+
+})
+
+
+
+
+
+}
+
+}
 
 definePro(Inter, "for", (obj)=>{
     let{
@@ -2833,7 +3005,7 @@ function proSetup(){
            target[key]=value;
            
             if(isPlainObject(value)){
-              makeReactive(value,Work)
+              makeReactive(value,Work,true)
           }
             Work()
             
@@ -2858,7 +3030,7 @@ Work()
 
 for(let v of value){
     if(isPlainObject(v)){
-        makeReactive(v, Work)
+        makeReactive(v, Work,true)
     }
 }
 
@@ -2885,7 +3057,7 @@ proSetup();
        if(!isArray(value)){
      pro.push(value);
      if(isPlainObject(value)){
-        makeReactive(value,Work)
+        makeReactive(value,Work,true)
     }
     
      return [...data];
@@ -2918,7 +3090,7 @@ Warning("do in Inter.for() must be a function");
     for(let _obj of data){
         if(isPlainObject(_obj)){
          
-     makeReactive(_obj, Work);
+     makeReactive(_obj, Work, true);
 
 }
 }
@@ -4181,6 +4353,25 @@ const _react=Object.assign({}, data);
 const share=Object.assign({}, data);
 const dataKeys=Object.getOwnPropertyNames(data);
 for(let key of dataKeys){
+
+    if(key=="register" || key=="setRegistered"){
+
+        SyntaxErr(`
+        
+        "${key}" is a reserved property, you can not
+        use it as rendering property.
+
+        renderContainer({
+            in:"${IN}",
+            data:{
+                ${key}:${data[key]}
+            }
+            ...
+        })
+
+        `)
+
+    }
     
 Object.defineProperty(_react, [key],{
     set(v){
@@ -4799,6 +4990,5 @@ _global.reativeTemplate=reativeTemplate;
  
 })();
  
-
 
 
