@@ -17,7 +17,7 @@
 
       // This script must not run in browser.
 
-      new Error(`
+     throw new Error(`
       
       The server module can not run in browser, only in node.
       
