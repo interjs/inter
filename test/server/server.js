@@ -91,8 +91,9 @@ Object.isObj=function(obj){
                   if(err){
 
                         console.error(`The following error occured while
-                        trying to read the ${fileName} file.
-                        `)
+                        trying to read the ${fileName} file:
+                        ${err}
+                        `);
 
                   }
 
