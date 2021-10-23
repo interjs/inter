@@ -278,7 +278,7 @@ Object.type=(obj)=>{
 
     }
 
-    if(obj===void 0){
+    if(obj==void 0){
 
         return "null";
 
@@ -2175,19 +2175,16 @@ if(!isPlainObject(obj)){
       }
 
       const shared=Object.assign(Object.create(null),data);
-
+     const _data=Object.assign(Object.create(null),data);
       Object.getOwnPropertyNames(data).forEach(prop=>{
-          Object.defineProperty(data,prop,{
-              get(){
-                
-                  return shared[prop];
-              }
-          })
+        
           if(isCallable(data[prop])){
+              
              shared[prop]=data[prop].call(data);
              
           }
       })
+
      if(memory.hasRefContainer(IN)){
 Object.destroyAll(HTMLRegistry.handler);
 Object.destroyAll(handle_Value_Attr.handle);
@@ -2251,7 +2248,7 @@ Object.destroyAll(StrictRef[private]);
                
       const allChildren=getId(IN).getElementsByTagName("*");
    
-      var chaves=Object.keys(data);
+      var chaves=Object.keys(shared);
      if(allChildren.length==0){
          HTMLRegistry.create(IN)
        HTMLRegistry.add(IN,{target:getId(IN), text:getId(IN).textContent}) 
@@ -2321,13 +2318,17 @@ for(let attr=0; attr<attrs.length; attr++){
    
     Object.defineProperty(handler, "reactor", {
      
-      value:new Proxy(data,{
+      value:new Proxy(_data,{
           set(Target, key,value, pro){
             
               if(key in Target){
-                  
-                Reflect.set(Target, key, value, pro);
-                 shared[key]=value;
+
+                
+                
+                 shared[key]=typeof value =="function" ? value.call(pro) : value;
+                 value=shared[key];
+
+                 Reflect.set(Target,key,value,pro)
                   
                  HTMLRegistry.handler[IN].forEach((v, i)=>{
                    
@@ -2388,7 +2389,7 @@ for(let attr=0; attr<attrs.length; attr++){
             const target=handle_Value_Attr.get(key);
                        return target.value    
               }else{
-              return Reflect.get(Target,key,pro)
+              return shared[key];
           }
         },
         deleteProperty(target,key,pro){
@@ -2440,6 +2441,8 @@ for(let attr=0; attr<attrs.length; attr++){
             }
 
             for(let[refName,refValue] of Object.entries(v)){
+
+                
 
                 this[refName]=refValue;
 
@@ -2526,7 +2529,7 @@ for(let attr=0; attr<attrs.length; attr++){
     }
       
 
-    Object.entries(data).forEach((key)=>{
+    Object.entries(shared).forEach((key)=>{
      let[pro,value]=key
       const cache=newREF.get(IN);
       const attrs=refForAttr.get(IN);
@@ -3229,8 +3232,11 @@ The argument of ROUTER() must be an object.
     }
    
     if(routeName!="*" && routeName.includes("*")){
-       
-    const sub=routeName.replaceAll("*","(:?[\\\s\\\S]+)");
+      
+     let sub=routeName.replaceAll("?", "(:?\\?)");   
+     sub=sub.replaceAll("*","(:?[\\\s\\\S]+)");
+    
+    
     const theRoute=sub;
     organizedRoutes[theRoute]=routeAction;
     }else{
@@ -3249,6 +3255,28 @@ if(isCallable(routes["*"])){
     
 	
 } 
+
+const isSearching=_global.location.search;
+const s=isSearching;
+if(isSearching){
+
+    
+
+    Object.keys(organizedRoutes).some(orgRoute=>{
+
+        let reg=new RegExp();
+        let _orgRoute=orgRoute.replace(/\//,"")
+
+        if(reg.compile(_orgRoute).test(s)){
+
+            organizedRoutes[orgRoute]();
+            return false;
+        }
+
+    })
+
+}
+
 if(!isUsingHash()){
     let done=false;
     const atualPath=window.location.pathname;
@@ -3298,13 +3326,31 @@ if(!done){
         } 
 
  event.listen("URLCHANGED",()=>{
+
+ const isSearching=_global.location.search;
+const s=isSearching;
+if(isSearching){
+
+    Object.keys(organizedRoutes).some(orgRoute=>{
+
+        let reg=new RegExp();
+        let _orgRoute=orgRoute.replace(/\//,"")
+        if(reg.compile(_orgRoute).test(s)){
+
+            organizedRoutes[orgRoute]();
+            return false;
+        }
+
+    })
+
+}
      
     if(!isUsingHash()){
         const atualPath=window.location.pathname;
         let done=false;
     Object.keys(organizedRoutes).some(orgRoute=>{
         let reg=new RegExp();
-        
+       
         if(reg.compile(orgRoute).test(atualPath)){
             organizedRoutes[orgRoute]();
             done=true;
@@ -3347,6 +3393,26 @@ if(!done){
 
 
 window.onpopstate=()=>{
+
+const isSearching=_global.location.search;
+const s=isSearching;
+
+if(isSearching){
+
+    Object.keys(organizedRoutes).some(orgRoute=>{
+
+        let reg=new RegExp();
+        let _orgRoute=orgRoute.replace(/\//,"")
+
+        if(reg.compile(_orgRoute).test(s)){
+
+            organizedRoutes[orgRoute]();
+            return false;
+        }
+
+    })
+
+}
     if(!isUsingHash()){
         const atualPath=window.location.pathname;
         let done=false;
@@ -4088,17 +4154,6 @@ Warning(`Unfortunetly reativeTemplate was depracated since version 1.2.0`)
 
 
 
-function tagName(tag){
-    return lowerCase.call(tag.nodeName);
-}
-
-
- function notSameTag(tag1,tag2){
-
-     return (tag1!=void 0 && tag2!=void 0) &&   !(Object.is(tag1.nodeName, tag2.nodeName))
-}
-
-
 
 
 
@@ -4343,11 +4398,25 @@ const{
    
 }=obj;
 
+if(!isPlainObject(data)){
+
+    SyntaxErr(`
+    
+    The data property in renderContainer argument must be an object.
+
+    `)
+
+}
+
+
+
+
 if(isCallable(loadState) && load){
     loadState.call(data,"loading")
 }
 
-const reatives=reativeAttributes(getId(IN),isTrue(load));
+const reactives=reativeAttributes(getId(IN),isTrue(load));
+
 
 const _react=Object.assign({}, data);
 const share=Object.assign({}, data);
@@ -4392,28 +4461,38 @@ Object.defineProperty(_react, "register",{
     set(value){
         if(!isArray(value)){
             SyntaxErr(`
-            The value in ${react}.register must be an array.
+            The value in [ CONTAINER RENDERING REACTOR ].register must be an array.
             `)
         }
         if(just){
-            SyntaxErr(`
+            consoleWarnig(`
             You can only register the properties once.
             `)
+
+            return false;
         }
         if(isEmptyArray(value)){
             SyntaxErr(`
-            The array is empty.
+            The value of register property must not be an empty array.
             `)
         }else{
             
             for(let prop of value){
+
+                if(prop=="register" || prop=="setRegistered"){
+
+                    continue;
+
+                }
+
                 if(!hasOwn.call(data,prop)){
                     consoleWarnig(`
-                    There is not a property called "${prop}"
-                    in ${react}
+                    There is not a rendering property named "${prop}"
+                    in container rendering in the element whose the id attribute is "${IN}"
                     `)
                     
                 }else{
+
                     registered.push(prop);
                     just=true;
                 }
@@ -4430,10 +4509,13 @@ Object.defineProperty(_react, "register",{
                         `)
                     }else{
                         for(let re of registered){
-                            _global[react][re]=v;
+                            
+                        share[re]=v;
+                        
                             
                       
                         }
+                        checkEls();
                         
                     }
                 },
@@ -4448,7 +4530,7 @@ Object.defineProperty(_react, "register",{
 
 function checkEls(){
     
-    for(let re of reatives){
+    for(let re of reactives){
     
         const{
             cond,
@@ -4459,6 +4541,12 @@ function checkEls(){
         
          const root=getId(IN);
          const rootChildren=root.children;
+
+         if(cond=="setRegistered" || cond=="register"){
+
+            continue;
+
+         }
         
         if(hasOwn.call(_react, cond)){
             const own=isCallable(_react[cond]) ? _react[cond].apply(_react, void 0) : _react[cond];
@@ -4466,44 +4554,48 @@ function checkEls(){
                 consoleWarnig(`
             The values of properties in data object, in renderContainer(), must be
             only boolean(true/false), and in property "${cond}" you defined
-            "${own}" as its value.
+            "${valueType(own)}" as its value.
                 `)
             }
         if(!notEqual(own, true) && isDefined(Default)){
+
+            if(Default.parentNode==root){
+
+                root.replaceChild(ifTrue,Default);
+                continue;
+
+            }
          
             if(rootChildren[index]==void 0){
                 root.appendChild(ifTrue);
                 continue;
             }
             if(rootChildren[index].isSameNode(ifTrue)){
-                //DO nothing
+                continue;
             }else{
-                if(rootChildren[index].default){
-                    root.replaceChild(ifTrue,Default);
-                    continue;
-                }else{
+                
                 
                     root.insertBefore(ifTrue, rootChildren[index]);
                 }
-            }
+            
         }else{
        if(!notEqual(own, false) && isDefined(Default)){
-      
+           
+        if(ifTrue.parentNode==root){
+            
+        root.replaceChild(Default, ifTrue);
+        continue;
+        }
+
         if(rootChildren[index]==void 0){
+            
             root.appendChild(Default);
             continue;
         }
         if(rootChildren[index].isSameNode(Default)){
-            //Do nothing
-        }else{
-            if(rootChildren[index].istrue){
-                root.replaceChild(Default, ifTrue);
-                continue;
-            }
-            else{
-                root.insertBefore(Default, rootChildren[index]);
-            }
+        continue
         }
+
        }
        if(!notEqual(own, true) && !isDefined(Default)){
         
@@ -4513,6 +4605,7 @@ function checkEls(){
         }
         if(rootChildren[index].isSameNode(ifTrue)){
             //DO nothing
+            
         }
        
             else{
@@ -4521,7 +4614,9 @@ function checkEls(){
         }
        }
        if(!notEqual(own,false) && !isDefined(Default)){
-    if(ifTrue.parentNode!==null){
+           
+    if(ifTrue.parentNode==root){
+        
         root.removeChild(ifTrue);
     }   
      
