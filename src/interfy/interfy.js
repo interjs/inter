@@ -2,7 +2,7 @@
  *  Interfy - A Javascript library for robust web front-end routing.
  * 
  *  Github's repo - https://github.com/DenisPower1/interfy
- *  version - 1.0.1
+ *  version - 2.0.0
  * 
  *  Created by - Denis Power/ https://github.com/DenisPower1
  * 
@@ -24,6 +24,7 @@
      
      Interfy is a client-side Javascript routing library,
      you can only use it in a browser.
+
      `)
 
     }
@@ -40,6 +41,34 @@
 		
 	}
 
+
+    String.is=function(str){
+
+return (OBJ_PRO.toString.apply(str, void 0)
+== "[object String]" )
+
+
+    }
+
+    String.prototype.has=function(reg){
+
+        if((reg instanceof RegExp)){
+     
+
+            return reg.test(this);
+
+        }
+
+    }
+
+    String.prototype.trimAll=function(){
+
+        let trimed=this.replace(/\s/g,"");
+
+        return trimed;
+
+    }
+
     const OBJ_PRO=Object.prototype;
 
    function isAFunction(target){
@@ -50,12 +79,9 @@
    }
 
      
-   function isTring(str){
+   
 
-    return OBJ_PRO.toString.call(str)=="[object String]";
-        
-        
-   }
+
 
     function hasProp(prop){
 
@@ -173,8 +199,9 @@
     };
     get url(){
        
-        return UrlInfo.get("path");
+        return UrlInfo.get("path").trimAll();
     }
+
 
     static getVar(path){
 
@@ -333,11 +360,15 @@ const call=Symbol.for("callBack");
         return UrlInfo.get("path");
 
     },
-    
-    set url(v){
 
-        return false;
+    has(route){
+
+      
+
+      return route.has(/\((:?[\s\S]+)\)|\*/g);
+
     },
+    
 
      is(pathWithParam){
      
@@ -347,7 +378,7 @@ const call=Symbol.for("callBack");
       
           const urlSetted=this.url;
           const p=pathWithParam.replace(
-              /\(:?([\s\S]+)\)|\*/g, "[\\s\\S]"
+              /\((:?[\s\S]+)\)|\*/g, "[\\s\\S]"
           )
        
           const reg=new RegExp();
@@ -365,7 +396,7 @@ const call=Symbol.for("callBack");
       return UrlParser.getVar(path);
       
 
-     },
+     }
  
     
  }
@@ -381,6 +412,7 @@ const call=Symbol.for("callBack");
        
        Invoke the [INTERFY CONSTRUCTOR] only
        with the new keyword.
+
        
        `)
        
@@ -388,7 +420,257 @@ const call=Symbol.for("callBack");
  
 }
 
+
+// Since v2.0.0
+
+
+function runInterator(inte,obj){
+
+    const arr=inte.next().value;
+
+    Object.defineProperty(obj, arr[0],{
+
+        get(){
+
+            return arr[1];
+
+        }
+
+    })
+
+    if(!inte.next().done){
+
+        runInterator(inte,obj)
+
+    }
+
+
+}
+
+const handler=Object.create(null);
+const notFound=new Map();
+let started=false;
+
+//The Interfy constructor.
+
+function _INTERFY(){
+
+
+
+     this.start=function(hand=()=>{}){
+
+        if(started){
+
+            warn("wrn", `
+            
+            The router was already started.
+
+            `)
+
+            return false;
+
+        }
+
+        const canStart=Object.keys(handler).length>0;
+
+        if(canStart){
+
+            started=true;
+
+            const inst=new INTERFY();
+
+            inst.createRouter((req)=>{
+
+                let found=false;
+
+           if(isAFunction(hand)){         
+             hand(req.url);
+           }
+                
+
+                for(let[route,_handler] of Object.entries(handler)){
+                    
+            
+
+            
+                    if(req.url==route){
+                       
+                        _handler(Object.create(null));
+
+                        found=true;
+
+                        break;
+                    
+                    }else{
+                        if(req.has(route)){
+                        
+                            if(req.is(route)){
+                         const search=window.location.search;
+                          found=true;
+
+                           if(search){
+
+                            const p=new URLSearchParams(search);
+                            const ro=Object.create(null);
+
+                           
+
+                            runInterator(p.entries(), ro);
+
+
+                            _handler(req.getVar(route), ro);
+                           
+
+
+                           }else{
+
+                            _handler(req.getVar(route));
+
+                           }     
+                        
+
+                            }
+
+
+
+
+                    }
+
+                }
+
+
+                }
+
+                if(!found && notFound.has("notfound")){
+                     
+                    const nf=notFound.get("notfound");
+
+                    nf(req.url);
+
+                }
+
+
+            })
+         
+
+            
+
+        }
+
+        if(!canStart){
+
+          warn("sy", `
+          
+          The router can not start, because you did not
+          register any route.
+          
+          `)
+
+        }
+
+
+     }
+    this.route=function(routeName,routeHandler){
+      
+        if(started){
+
+            warn("wrn", `
+            
+            You already started the router, so you
+            can not add more routes to it.
+            
+            `)
+
+            return false;
+
+        }
+        
+
+        const isTring=String.is(routeName)
+
+        if(arguments.length<2){
+
+            warn("sy", `
+            
+            The route method accepts two arguments,
+            and you defined: ${arguments.length}.
+
+
+            `)
+
+        }
+
+        if(!isTring){
+
+            warn("sy", `
+            
+            The first argument of [ INTERFY INSTANCE ].route 
+            must be a string.
+
+            [INTERFY INSTANCE].route("/routename", ()=>{})
+
+            `)
+
+        }
+
+        if(!isAFunction(routeHandler)){
+
+            warn("sy", `
+            
+            
+            The second argument of [ INTERFY INSTANCE ].route
+            must be a function.
+
+            `)
+
+        }
+        if(!routeName.startsWith("/") && routeName!="*"){
+
+
+            warn("sy", `
+            
+            Routes must starts with slash(/).
+            it must be "/${routeName}" instead of "${routeName}".
+
+            `)
+
+        }
+        
+        else{
+
+            if(routeName=="*"){
+
+                if(!notFound.has("notfound")){
+
+                    notFound.set("notfound",routeHandler);
+
+                    return false;
+
+                }
+
+            }
+
+            if(!(routeName in handler)){
+
+                
+                
+
+                handler[routeName]=routeHandler;
+
+            }
+
+
+        }
+
+
+    }
+
+}
+
  let created=false;
+
+
+ // The internal INTERFY INSTANCE method
 
 INTERFY.prototype={
 
@@ -434,82 +716,137 @@ if(!isAFunction(fn)){
         `)
 
     }
-},
-setPath(pathName){
+}
 
-    if(!isTring(pathName)){
+
+}
+
+// The public Interfy instance method.
+
+_INTERFY.prototype={
+
+
+    setPath(pathName){
+
+        if(!started){
+
+            warn("err", `
+            
+            The router was not started yet, start it firt.
+
+            `)
+
+        }
+
+        const isTring=String.is 
+
+        if(!isTring(pathName)){
+        
+            warn("sy", `
+        
+        The pathName in [ INTERFY INSTANCE ].useHash(pathName)
+         must be a string.
+        
+        `)
     
-        warn("sy", `
+        }
     
-    The pathName in [ INTERFY INSTANCE ].useHash(pathName)
-     must be a string.
+     
     
-    `)
-
-    }
-
- 
-
-
-  if(!pathName.startsWith("/")){
-
-    warn("sy",`
-    A pathName must start with a slash(/).
-     You used:
-   
-     [INTERFY INSTANCE ].setPath("${pathName}")    
-   
-     `)
-
-  }
-
-  _setPath(pathName);
-
-  UrlInfo.set("path", pathName);
-   
-  req[call](req);
-
-},
-
-useHash(pathName){
-
- if(!isTring(pathName)){
-
-    warn("sy", `
     
-    The pathName in [ INTERFY INSTANCE ].useHash(pathName)
-     must be a string.
+      if(!pathName.startsWith("/")){
     
-    `)
-
- }
-
-    if(!pathName.startsWith("/")){
-
         warn("sy",`
         A pathName must start with a slash(/).
     
          You used:
        
-          [ INTERFY INSTANCE ].useHash(${pathName})    
+         [INTERFY INSTANCE ].setPath("${pathName}")    
        
          `)
     
       }
-
-      _setPath(pathName,true);
+    
+      _setPath(pathName);
     
       UrlInfo.set("path", pathName);
+      
        
       req[call](req);
+    
+    },
+    
+    useHash(pathName){
 
-}
+        if(!started){
+
+            warn("err", `
+            
+            The router was not started yet, start it firt.
+
+            `)
+
+        }
+    
+        const isTring=String.is(pathname);
+
+     if(!isTring){
+    
+        warn("sy", `
+        
+        The pathName in [ INTERFY INSTANCE ].useHash(pathName)
+         must be a string.
+        
+        `)
+    
+     }
+    
+        if(!pathName.startsWith("/")){
+    
+            warn("sy",`
+            A pathName must start with a slash(/).
+        
+             You used:
+           
+              [ INTERFY INSTANCE ].useHash(${pathName})    
+           
+             `)
+        
+          }
+    
+          _setPath(pathName,true);
+        
+          UrlInfo.set("path", pathName);
+           
+          req[call](req);
+    
+    },
+
+    get version(){
+
+        return "2.0.0";
+
+    }
+
 
 }
 
 window.onpopstate=function(){
 
     const _Hash=this.location.hash;
+    const _search=this.location.search;
+
+    if(_search){
+
+        const thePath=`${this.location.pathname}${_search}`;
+
+        UrlInfo.set("path", thePath);
+
+        req[call](req);
+
+        return false;
+
+    }
 
     if(_Hash){
         const thePath=_Hash.replace(/#/g,"");
@@ -531,9 +868,9 @@ window.onpopstate=function(){
 }
 
 
-    
 
-    globalThis.Interfy=INTERFY;
+
+    globalThis.Interfy=_INTERFY;
     
 
   
