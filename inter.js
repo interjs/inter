@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.3
+ * Version: 1.2.4
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
@@ -463,7 +463,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.3"
+        return "1.2.4"
 
     },
 
@@ -2907,7 +2907,7 @@ if(isPlainObject(obj[key])){
 
 
 
-if(defineProps){
+if(defineProps && !("defineProps" in obj)){
 Object.defineProperty(obj, "defineProps",{
 
     set(v){
@@ -3203,7 +3203,55 @@ function isUsingHash(){
     return window.location.hash ? true : false;
 }
 
+
+// For router.
+let started=false;
+
 function ROUTER(obj){
+
+    if(started){
+
+        consoleWarnig(`
+        
+        You already created the ROUTER.
+
+        `)
+
+        return false;
+
+    }
+
+    if(this instanceof ROUTER){
+
+        SyntaxErr(`
+        
+        ROUTER is not an instance. Just call it like that:
+
+        ROUTER({
+
+            routes:{
+
+                // your app's routes here!
+
+            }
+
+        })
+
+        `)
+
+    }
+
+    if(window.location.protocol=="file:"){
+
+        SyntaxErr(`
+        
+        The ROUTER must be only used in a http: or https:
+        protocol, and you are using it an file: protocol!
+        
+        `)
+
+    }
+
 if(!isPlainObject(obj)){
 SyntaxErr(`
 The argument of ROUTER() must be an object.
@@ -3256,76 +3304,12 @@ if(isCallable(routes["*"])){
 	
 } 
 
-const isSearching=_global.location.search;
-const s=isSearching;
-if(isSearching){
 
-    
-
-    Object.keys(organizedRoutes).some(orgRoute=>{
-
-        let reg=new RegExp();
-        let _orgRoute=orgRoute.replace(/\//,"")
-
-        if(reg.compile(_orgRoute).test(s)){
-
-            organizedRoutes[orgRoute]();
-            return false;
-        }
-
-    })
-
-}
-
-if(!isUsingHash()){
-    let done=false;
-    const atualPath=window.location.pathname;
-    
-Object.keys(organizedRoutes).some(orgRoute=>{
-    let reg=new RegExp();
-    
-    if(reg.compile(orgRoute).test(atualPath)){
-        done=true;
-        organizedRoutes[orgRoute]();
-        
-    }
-})
-if(!done){
-    if(StoreNotFoundRoute.hasNotFound()){
-
-         StoreNotFoundRoute.get();
-
-        }else{
-            consoleWarnig(`
-            You should always create a notfound route with "*" property.
-            `)
-        }
-}
-   
-        }else{
-           const atualPath=window.decodeURI(window.location.hash.replace("#",""));
-           let done=false;
-           Object.keys(organizedRoutes).some(orgRoute=>{
-            let reg=new RegExp();
-            if(reg.compile(orgRoute).test(atualPath)){
-                organizedRoutes[orgRoute]();
-                done=true;
-            }
-        })
-        if(!done){
-            if(StoreNotFoundRoute.hasNotFound()){
-        
-                 StoreNotFoundRoute.get();
-        
-                }else{
-                    consoleWarnig(`
-                    You should always create a notfound route with "*" property.
-                    `)
-                }
-        }
-        } 
+started=true;
 
  event.listen("URLCHANGED",()=>{
+
+
 
  const isSearching=_global.location.search;
 const s=isSearching;
@@ -3338,7 +3322,7 @@ if(isSearching){
         if(reg.compile(_orgRoute).test(s)){
 
             organizedRoutes[orgRoute]();
-            return false;
+            done=true;
         }
 
     })
@@ -3356,20 +3340,10 @@ if(isSearching){
             done=true;
         }
     })
-    if(!done){
-        if(StoreNotFoundRoute.hasNotFound()){
-    
-            return StoreNotFoundRoute.get();
-    
-            }else{
-                consoleWarnig(`
-                You should always create a notfound route with "*" property.
-                `)
-            }
-    }
+
  }else{
     const atualPath=window.decodeURI(window.location.hash.replace("#",""));
-    let done=false;      
+   
     Object.keys(organizedRoutes).some(orgRoute=>{
      let reg=new RegExp();
      if(reg.compile(orgRoute).test(atualPath)){
@@ -3392,70 +3366,12 @@ if(isSearching){
     })
 
 
+    event.fire("URLCHANGED");
+
 window.onpopstate=()=>{
 
-const isSearching=_global.location.search;
-const s=isSearching;
+event.fire("URLCHANGED");
 
-if(isSearching){
-
-    Object.keys(organizedRoutes).some(orgRoute=>{
-
-        let reg=new RegExp();
-        let _orgRoute=orgRoute.replace(/\//,"")
-
-        if(reg.compile(_orgRoute).test(s)){
-
-            organizedRoutes[orgRoute]();
-            return false;
-        }
-
-    })
-
-}
-    if(!isUsingHash()){
-        const atualPath=window.location.pathname;
-        let done=false;
-    Object.keys(organizedRoutes).some(orgRoute=>{
-        let reg=new RegExp();
-        if(reg.compile(orgRoute).test(atualPath)){
-            organizedRoutes[orgRoute]();
-            done=true;
-        }
-    })
-    if(!done){
-        if(StoreNotFoundRoute.hasNotFound()){
-    
-             StoreNotFoundRoute.get();
-    
-            }else{
-                consoleWarnig(`
-                You should always create a notfound route with "*" property.
-                `)
-            }
-    }
- }else{
-    const atualPath=window.decodeURI(window.location.hash.replace("#",""));
-    let done=false; 
-    Object.keys(organizedRoutes).some(orgRoute=>{
-     let reg=new RegExp();
-     if(reg.compile(orgRoute).test(atualPath)){
-         organizedRoutes[orgRoute]();
-         done=true;
-     }
- })
- if(!done){
-     if(StoreNotFoundRoute.hasNotFound()){
- 
-         return StoreNotFoundRoute.get();
- 
-         }else{
-             consoleWarnig(`
-             You should always create a notfound route with "*" property.
-             `)
-         }
- }
-     }    
 }
 
 }
@@ -3517,12 +3433,12 @@ setState(state,IN){
   
     if(state in this[storeValue]){
       consoleWarnig(`
-      Oh no man, the state that you're register already exist "${state}".
+      Oh no! The state that you're register already exist "${state}".
       
       `)
     }
     if(arguments.length<2){
-        consoleWarnig(`
+        SyntaxErr(`
         input.sateSate() must have two arguments, first is the name of the state 
         and second the input state container.
         `)
@@ -3663,7 +3579,7 @@ if(!isCallable(callback)){
      * send.append(el.name,el);
      * }) 
      * 
-     * backend.upload({
+     * backend.request({
      * path:"/users",
      * body:send,
      * }).response(()=>{
