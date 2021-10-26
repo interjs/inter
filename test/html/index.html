@@ -3,29 +3,20 @@
     <head>
         <meta charset="utf-8">
        
-        <script src="inter.js"></script>
-        <script src="interfy.js"></script>
+        <script src="./inter.js"></script>
         
-      <title>...</title>
+        
+      <title>The simplest javascript framework</title>
     </head>
 <style>
 
-
-.cover{
-    position: fixed;
-    width: 100vw;
-    height: 100vh;
-    background-color:black;
-    z-index: 93993;
-}
 </style>
     <body>
-        <div class="cover"></div>
         
+         <button setPath="/friends">Friends</button>
+        <button setPath="/requests">Requests</button>
         
       <div id="app">
-       <inter-container _istrue="login" path="main.html" tag="div"></inter-container>
-       <inter-container _default tag="div" path="default.html"></inter-container>
        
           
 
@@ -34,125 +25,92 @@
         
     </body>
 <script>
-    const agendas=[];
-    const reator=renderContainer({
-        in:"app",
-        data:{
-            login:true,
-        },
-        private:true,
-        load:true,
-        loadState(state){
-            console.log(state)
-         if(state=="ready"){
-             event.fire("router")
-        return   document.querySelector(".cover").removeAttribute("class")
-         }
     
-        }
-    })
+const request=[{
+    name:"João", city:"Luanda"
+},{
+    name:"Paulo", city:"Benguela"
+}]
 
-    const int=new Interfy();
-    
-    event.listen("router",()=>{
-        
-        event.removeListener("router")
-        
-    int.createRouter((re)=>{
-        
-        if(re.url=="/agenda"){
-            if(agendas.length>0){
-            
-                event.fire("list")
-            }else{
-                int.useHash("/login");
-            }
-            return false;
-        }if(re.url=="/login"){
+const friends=[{
+    name:"António", city:"Malange", friend:true
+},{
+    name:"Ana", city:"Luanda", friend:true
+}]
 
-            if(event.hasListener("login")){
-                event.fire("login")
-                }else{
-                    reator.login=true;
-                }
-          
-            return false;
-        }else{
-            int.useHash("/login")
-        }
-    
-    })
+
+let self;
+
+Inter.for({
+    in:"app",
+    data:request,
+    do(user,i){
+
+       self=this;
+
+        return template({
+            elements:[{
+                tag:"div", children:[{
+                    tag:"h3", text:user.name
+                },{
+                    tag:"div", children:!user.friend ? [{
+                        tag:"button", text:"Accept", events:{
+
+                            onclick(){
+
+                               self.splice(i,1);
+                               user.friend=true;
+                               friends.unshift(user);
+                            }
+
+                        }
+                    },{
+                        tag:"button", text:"Delete", events:{
+
+                            onclick(){
+
+                                self.splice(i,1);
+
+                            }
+
+                        }
+                    }] : [{
+                        tag:"button", text:"Unfriend", events:{
+
+                            onclick(){
+
+                                self.splice(i,1);
+                                delete user.amigo;
+                                request.unshift(user);
+
+                            }
+
+                        }
+                    }]
+                }]
+            }]
+        })
+    }
 })
 
-
-    event.listen("login", ()=>{
-        event.removeListener("login")
-        toATTR({
-            in:"login",
-            data:{
-                input:{
-                    value:"",
-                    placeholder:"O nome"
-                },
-                textarea:{
-                    value:"",
-                    placeholder:"Descrição"
-                },
-                g:{
-                    
-                    onclick(){
-                        if(input.value.trim().length>0
-                        && textarea.value.trim().length>0
-                        ){
-                      const agenda={};
-                      agenda.nome=input.value;
-                      agenda.desc=textarea.value;
-                      input.value="";
-                      textarea.value="";
-                      agendas.unshift(agenda);
-                      int.useHash("/agenda")
-                    }
-                }
-                }
-            }
-        })
-      
-        toHTML({
-            in:"login",
-            data:{
-                g:"Guardar",
-
-            },
-            react:"g"
-        })
-     
-    })
-
-      event.listen("list", ()=>{
-         reator.login=false;
-         Inter.for({
-             in:"agenda",
-             data:agendas,
-             do(a){
-                 return template({
-                     elements:[{
-                         tag:"div", children:[{
-                             tag:"h2", text:a.nome
-                         },{
-                             tag:"p", text:a.desc
-                         }]
-                     }]
-                 })
-             }
-         })
-      })
     
+ROUTER({
+
+    routes:{
+
+        "/requests":()=>self.otherArray=request,
+        "/friends":()=>self.otherArray=friends,
+        "/?q=*":()=>{
 
 
+        
+        console.log("Searching!")
 
+        }
 
-function login(){
-    int.useHash("/login")
-}
+    }
+
+})
+
     </script>
     </html>
