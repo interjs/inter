@@ -127,7 +127,7 @@ Almost every dom manipulation in an Inter app are handled by Inter, you  must ju
 
 # Reactivity
 
-*Inter* is super reactive, it means that, when there's a change it just update the necessary part of the interface.
+*Inter* is super reactive, it means that, when there's a change it just updates the necessary part of the interface.
 
 # Compatibility
 
