@@ -1,6 +1,6 @@
 {
 "dependecies":{
-"interfy":"^1.0.0",
-"nodejs":"^12.0.0"
+"interfy":"^2.0.0",
+"nodejs":"^14.8.0"
 }
 }
