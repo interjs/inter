@@ -2,7 +2,7 @@
  *  Interfy - A Javascript library for robust web front-end routing.
  * 
  *  Github's repo - https://github.com/DenisPower1/interfy
- *  version - 2.0.0
+ *  version - 2.0.1
  * 
  *  Created by - Denis Power/ https://github.com/DenisPower1
  * 
@@ -44,8 +44,8 @@
 
     String.is=function(str){
 
-return (OBJ_PRO.toString.apply(str, void 0)
-== "[object String]" )
+     return (OBJ_PRO.toString.apply(str, void 0)
+         == "[object String]" )
 
 
     }
@@ -102,20 +102,6 @@ return (OBJ_PRO.toString.apply(str, void 0)
        return !(Array.isArray(arr))
    }
 
-   function InterDetector(){
-     
-    const ENV_OBJ=globalThis;
-
-    if(ENV_OBJ.Inter){
-     
-      return !(ENV_OBJ.app.status=="development");  
-
-    }else{
-
-        return false;
-    
-    }
-   }
 
  
    // Explicit boolean  value checking.
@@ -164,18 +150,9 @@ return (OBJ_PRO.toString.apply(str, void 0)
 
    function warn(errType, ms){
 
-    // If Interfy is being used 
-    // With Inter we must check if the app is now
-    // in production.
-    
-     let detected;
-
-     if(void 0 == detected){
-
-        detected=InterDetector();
-     }
+    const prod=_INTERFY.prototype.production;
      
-     if(isFalse(detected)){
+     if(isFalse(prod)){
       
         errs[errType](ms);
 
@@ -224,7 +201,7 @@ return (OBJ_PRO.toString.apply(str, void 0)
       
         
 
-        let parsedUrl=this.prototype.url.replace(/-|_/g, (m,_)=>{
+        let parsedUrl=this.prototype.url.replace(/-|_|\./g, (m,_)=>{
        
             if(m=="_"){
                 
@@ -236,13 +213,21 @@ return (OBJ_PRO.toString.apply(str, void 0)
                 return "m".repeat("middle".length);
 
             }
+
+            if(m=="."){
+
+                return "p".repeat("point".length);
+
+            }
             
         });
 
       
       
       for(let par of repl){
+
           parsedUrl=parsedUrl.replace(par,"/");
+
       }
 
       
@@ -259,6 +244,7 @@ return (OBJ_PRO.toString.apply(str, void 0)
              
              if(_path.includes("mmmmmm")){
              _path=_path.replace(
+
                 /mmmmmm/g, "-"
              );
              }
@@ -267,6 +253,14 @@ return (OBJ_PRO.toString.apply(str, void 0)
                 _path=_path.replace(
                     /dddd/g, "_"
                 )
+             }
+
+             if(_path.includes("ppppp")){
+
+                _path=_path.replace(
+                    /ppppp/g, "."
+                )
+
              }
 
              
@@ -370,14 +364,14 @@ const call=Symbol.for("callBack");
     },
     
 
-     is(pathWithParam){
+     is(pathWithVar){
      
       // For example.  
-     // pathWithParam - /profile/(id)/   
+     // pathWithVar - /profile/(id)/   
 
       
           const urlSetted=this.url;
-          const p=pathWithParam.replace(
+          const p=pathWithVar.replace(
               /\((:?[\s\S]+)\)|\*/g, "[\\s\\S]"
           )
        
@@ -426,20 +420,21 @@ const call=Symbol.for("callBack");
 
 function runInterator(inte,obj){
 
-    const arr=inte.next().value;
-
+    const next=inte.next()
+    const arr=next.value;
+    
+    if(!next.done){
     Object.defineProperty(obj, arr[0],{
 
         get(){
 
             return arr[1];
 
-        }
+        },
+        configurable:!0
 
-    })
-
-    if(!inte.next().done){
-
+    }) 
+        
         runInterator(inte,obj)
 
     }
@@ -505,7 +500,8 @@ function _INTERFY(){
                         if(req.has(route)){
                         
                             if(req.is(route)){
-                         const search=window.location.search;
+
+                          const search=window.location.search;
                           found=true;
 
                            if(search){
@@ -721,11 +717,55 @@ if(!isAFunction(fn)){
 
 }
 
-// The public Interfy instance method.
+// The public Interfy instance methods and properties.
+
+let production=false;
 
 _INTERFY.prototype={
 
+     get version (){
 
+        return "2.0.1"
+
+     },
+     get production(){
+
+        return production;
+
+     },
+     set production(v){
+
+        if(!this.production){
+
+            if(isFalse(v)){
+
+                return;
+
+            }
+
+        if(isTrue(v)){
+
+            production=true;
+
+            console.log(`
+            
+            You are now using Interfy in production mode.
+
+            `)
+
+        }else{
+
+            throw new TypeError(`
+            
+            "${v}" is an invalid value for the
+            [INTERFY INSTANCE].production, property.
+            If you want to turn on the production mode set it to true.
+            
+            `)
+
+        }
+    }
+     },
     setPath(pathName){
 
         if(!started){
@@ -822,11 +862,7 @@ _INTERFY.prototype={
     
     },
 
-    get version(){
 
-        return "2.0.0";
-
-    }
 
 
 }
