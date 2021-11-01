@@ -1,12 +1,14 @@
 /**
  * Inter.
- * Version: 1.2.4
+ * Version: 1.2.5
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
  * 
  * 
  */
+
+
 
 
 
@@ -463,7 +465,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.4"
+        return "1.2.5"
 
     },
 
@@ -546,27 +548,27 @@ function supportInter(){
 
  Object.defineProperty(window, "onload", {
      set(key){
-         if(key!="inputHandler"){
-   window.addEventListener("load",(ev)=>{
+
+   this.addEventListener("load",(ev)=>{
   if(app.status=="development"){
-      console.log("You're using Inter in development mode, when you deploy your app turn on production mode.")
-  }
+     
+    console.log("You're using Inter in development mode, when you deploy your app turn on the production mode.")
+  
+}
     InputHandler();
 
     if(isCallable(key)){
+    
         key(ev)
-    }else{
-        key;
+    
     }
+
    })
-     }else{
-         window.addEventListener("load",InputHandler());
-         
-     };},
-     get(){
-        //Never triggers
      }
+    
+    
  })
+ 
 window.onload=()=>{
     InputHandler();
 }
@@ -3052,15 +3054,115 @@ proSetup();
    })
   
 
+   Object.defineProperty(pro, "addValues", {
+
+    value(arr,ind){
+
+
+        if(!isArray(arr)){
+
+            SyntaxErr(`
+            
+            The first argument of [ ARRAY REACTOR ].addValues()
+            must be an array.
+            
+            `)
+
+        }
+
+        if(isEmptyArray(arr)){
+
+            consoleWarnig(`
+            
+            The first argument of [ ARRAY REACTOR ].addValues()
+            is an empty array.
+
+            `)
+
+            return false;
+
+        }
+
+        if(!isDefined(ind) || ind>data.length-1){
+
+            for(let v of arr){
+
+                if(isPlainObject(v)){
+                  
+                    makeReactive(v, Work, true);
+                    
+                
+                }
+
+                data.push(v);
+
+            }
+
+            Work()
+
+        }else if(ind==0 || ind<0 ){
+
+            
+            for(let i=arr.length-1; i>-1 ;i-- ){
+
+                if(isPlainObject(arr[i])){
+                  
+                    makeReactive(arr[i], Work, true);
+                  
+                
+                }
+
+                data.unshift(arr[i]);
+
+            }
+
+            
+            Work();
+
+        }else{
+
+            
+            for(let v of arr){
+
+                if(isPlainObject(v)){
+                  
+                    makeReactive(v, Work, true);
+                    
+                
+                }
+
+                data.splice(ind,0,v);
+
+            }
+
+            Work()
+
+        }
+
+    
+
+
+    },
+
+    
+
+    configurable:!0
+
+   })
+
   Object.defineProperty(pro, "concat",{
    value:(value)=>{
 
        //the proxy does not work for concat() method, reason why I did this polyfill
 
        if(!isArray(value)){
-     pro.push(value);
+
+       pro.push(value);
+
      if(isPlainObject(value)){
+
         makeReactive(value,Work,true)
+
     }
     
      return [...data];
@@ -3069,27 +3171,36 @@ proSetup();
        pro.push(item);
 
        }
-       Work()
+       
        return [...data];
    }},
    configurable:!0,
 
 
   }) 
+
   if(isDefined(react)){
+
   window[react]=pro;
-  }
+ 
 }
+
+}
+
 proSetup()
 }
 
 if(!isArray(data)){
+
     Warning("data in Inter.for() must be an array.")
 }
 if(!isCallable(DO)){
+
 Warning("do in Inter.for() must be a function");
+
 }else{
     const root=getId(IN);
+
     for(let _obj of data){
         if(isPlainObject(_obj)){
          
@@ -3124,7 +3235,7 @@ Warning("do in Inter.for() must be a function");
 
                 SyntaxErr(`
                 You are not return the template()
-                function in do() method(Inter.for), it is happening where the target id is "${IN}".
+                function in do() method(Inter.for). It is happening where the target id is "${IN}".
 
                 `)
 
