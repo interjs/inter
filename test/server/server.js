@@ -17,7 +17,7 @@
 
       // This script must not run in browser.
 
-     throw new Error(`
+      new Error(`
       
       The server module can not run in browser, only in node.
       
@@ -50,6 +50,13 @@ Object.isObj=function(obj){
       return path.extname(this.url).replace(/\./,"");
   }
 
+        },
+        getHeaders:{
+              value(){
+
+                  return RE[0].headers
+
+              }
         },    
        status:{
              get(){
@@ -91,9 +98,9 @@ Object.isObj=function(obj){
                   if(err){
 
                         console.error(`The following error occured while
-                        trying to read the ${fileName} file:
+                        trying to read the ${fileName} file.
                         ${err}
-                        `);
+                        `)
 
                   }
 
@@ -189,7 +196,12 @@ Object.isObj=function(obj){
                        `)
 
                      }
+
+                     
                         http.createServer((req,res)=>{
+                     
+                              
+
                               if(req.method!="GET"){
                                     
                                     throw new Error(`
