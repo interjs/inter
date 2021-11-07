@@ -290,7 +290,7 @@ Object.type=(obj)=>{
 
 
 
-const _global=globalThis;
+const _global=globalThis ? globalThis : window;
 
 //Special for routing.
 const validPath=/^\/(:?[\s\S]+)|\/$/;
@@ -438,19 +438,26 @@ var array=new ARRAY();
 //As Inter store a lot of data in memory, it can cause memory lack, so let's manage it.
 
 const memory={
-    handleMemory:array.create(null),
-    refContainer(container){
-        //special for reference
-        this.handleMemory.push(container);
-      
+    
+    handleMemory:new Set(),
+    
+    addCont(container){
+
+        this.handleMemory.add(container);
+        
     },
-    hasRefContainer(container){
-        let returnValue;
-    this.handleMemory.some(cont=>{
-    return container==cont ? returnValue=true : returnValue=false;
-    })
-    return returnValue;
-    },
+
+    has(container){
+
+
+        return this.handleMemory.has(container);
+
+    }
+
+
+    
+    
+
 }
 
 
@@ -1684,7 +1691,10 @@ if(pro=="file:"){
 
           get headers(){
 
-            return theRequest.getAllResponseHeaders();
+            
+
+            return theRequest.getAllResponseHeaders()
+            
 
           },
          
@@ -1717,7 +1727,7 @@ if(pro=="file:"){
                 consoleWarnig(`
                 
     
-                The timeout property value must be a number,
+                The timeout property's value must be a number,
                 and you defined ${valueType(timeout)} as its value.
     
                 `)
@@ -1779,19 +1789,22 @@ if(pro=="file:"){
 
            
 
-               if(evName=="onprogress"){
-               theRequest.onprogress=function(ev){
+               
+               theRequest[evName]=function(ev){
 
+                if(evName=="onprogress"){
                    const percentage=Math.round(ev.loaded*100/ev.total);
                       
                 evValue(percentage);
                 
-               }
                }else{
 
-                theRequest[evName]=evValue;
+                evValue();
 
                }
+
+            }
+               
             
            
             }
@@ -1896,6 +1909,7 @@ if(pro=="file:"){
      }else{
          back_R_OBJ._set("okay",fn);
          REQUEST();
+         
      }
     },
     error(fn){
@@ -1906,6 +1920,7 @@ if(pro=="file:"){
      }else{
          back_R_OBJ._set("error",fn);
          REQUEST();
+         
      }
     },
     response(okay,error){
@@ -1935,6 +1950,8 @@ if(pro=="file:"){
 }
 const backend=Object.freeze(new BACKEND());
 
+
+
  const globalNativeEventListener={
 
  }
@@ -1942,7 +1959,7 @@ const backend=Object.freeze(new BACKEND());
      protectedListener:Object.create(null),
      ref:Object.create(null),
      add:function(EvName, fn){
-return this.ref[EvName]=fn;
+ this.ref[EvName]=fn;
      }
  }
  const GlobalNativeEventListener=new Proxy(globalNativeEventListener,{
@@ -1957,24 +1974,45 @@ return this.ref[EvName]=fn;
 
  function EVENT(){
      
-     this.fire=(evName,evValue)=>{
+     this.fire=(evName,info)=>{
          if(!isDefined(evName)){
              SyntaxErr(`
              You must define the event name.
              `)
          }
-        if(isDefined(evValue)){ 
-     GlobalNativeEventListener[evName]=evValue;      
+        if(isDefined(info)){ 
+
+            if(this.hasListener(evName)){
+
+        GlobalNativeEventListener[evName]=info;      
+
+        return true;
+
+            }else{
+
+                return false;
+
+            }
+
         }else{
             
+            if(this.hasListener(evName)){
+
              GlobalNativeEventListener[evName]=void 0;
-            
+     
+             return true;
+             
+        }else{
+
+            return false;
+
         }
+    }
      };
      this.listen=(evName, callback)=>{
          if(evName==void 0){
 
-            SyntaxErr("The first argument of event.listen() must be defined(the event name).")
+            SyntaxErr("The first argument of event.listen() must be defined(the event's name).")
 
          }
          if(!isCallable(callback)){
@@ -1983,24 +2021,33 @@ return this.ref[EvName]=fn;
              `)
          }
          if(hasOwn.call(GlobRef.ref,evName)){
-             return;
-         }else{
+       
+            return false;
+       
+            }else{
+
        GlobRef.add(evName, callback);   
+       return true;
+
          }
  };
 
  this.removeListener=(evName)=>{
 if(!isDefined(evName)){
     SyntaxErr(`
-    You must define the event's name you want to remove the listener
+    You must define the event's name that you want to remove its listener.
     `)
 }
-if(!hasOwn.call(GlobRef.ref,evName)){
+else if(!hasOwn.call(GlobRef.ref,evName)){
     consoleWarnig(`
-    Ops, you are trying to delete a listener that  does not exist
+    Ops, you are trying to delete a listener that  does not exist!
+    Listener: [${evName}].
     `)
+
+    return false;
+
 }
-if(hasOwn.call(GlobRef.protectedListener,evName)){
+else if(hasOwn.call(GlobRef.protectedListener,evName)){
     SyntaxErr(`
     The listener of "${evName}" is protected, you can not remove it.
     `)
@@ -2013,8 +2060,13 @@ else{
  this.protectListener=(evName)=>{
 if(!hasOwn.call(GlobRef.protectedListener,evName)){
     GlobRef.protectedListener[evName]=true;
+    return true;
 }else{
+    
     consoleWarnig(`The listener of "${evName}" is already protected. `);
+
+    return false;
+
 }
  };
 
@@ -2164,13 +2216,29 @@ if(!isPlainObject(obj)){
           private,
          react,
       }=obj;
+
+      if(memory.has(IN)){
+
+
+        
+        Warning(`
+        
+        You've already registered the references
+        in the container where the id is "${IN}"
+        
+        `)
+
+        return false;
+
+
+      }
      
       if("setRefs" in data){
 
         SyntaxErr(`
         
         "setRefs" is a reserved property, you can not use it 
-        as a reference name.
+        as a reference's name.
         
         `)
 
@@ -2187,16 +2255,8 @@ if(!isPlainObject(obj)){
           }
       })
 
-     if(memory.hasRefContainer(IN)){
-Object.destroyAll(HTMLRegistry.handler);
-Object.destroyAll(handle_Value_Attr.handle);
-Object.destroyAll(refForAttr.storage);
-Object.destroyAll(newREF.storage);
-Object.destroyAll(StrictRef[private]);
 
-     }else{
-         memory.refContainer(IN)
-     }
+    memory.addCont(IN)
 
       const makeSure=getId(IN).getElementsByTagName("*")
 
@@ -2621,7 +2681,7 @@ let refForAttr={
 }
 let newREF={
     storage:Object.create(null),
-    set(key, value/*must be an array of object*/ ){
+    set(key, value/*must be an array of objects*/ ){
         this.storage[key]=value;
     },
     get(key){
@@ -2634,25 +2694,30 @@ let newREF={
 
 
 
+
  const someRef={
      
-    copy:Object.create(null),
-     set(key, value){
+    store:new Set(),
+     add(key){
        
-             this.copy[key]=value;
+       if(!(this.store.has(key))){     
+     
+        this.store.add(key);
+
+       }
            
               
             
      },
      has(key){
-      return  key in this.copy;
-     },
+
+     return this.store.has(key);
      
 
      }
 
    
-
+    }
     
 
 
@@ -3249,7 +3314,7 @@ Warning("do in Inter.for() must be a function");
       
     
     })
-    someRef.set(IN);
+    someRef.add(IN);
     return false;
 }
     if(someRef.has(IN)){
@@ -5077,36 +5142,6 @@ _global.reativeTemplate=reativeTemplate;
 
 
 
-  //Import just the code needed
-
-  if(typeof module!="undefined" && typeof module.exports=="object"){
-    exports.renderContainer=renderContainer;
-    exports.whileLoading=whileLoading;
-    exports.reativeTemplate=reativeTemplate;
-    exports.toATTR=toATTR;  
-    exports.validate=validate;
-    exports.Inter=Inter;
-    exports.backend=backend
-    exports.simulate=simulate;
-    exports.supportInter=supportInter;
-    exports.data=data;
-    exports.url=url;
-    exports.input=input;
-    exports.getValue=getValue;
-    exports.toHTML=toHTML;
-    exports.app=app;
-    exports.event=event;
-    exports.template=template;
-    exports.app=app;
-    exports.getValue=getValue;
-    exports.ROUTER=ROUTER;
-    exports.form=form;
-    exports.interface=interface;
-    exports.input=input;
-    exports.storage=storage;
-  
-
-  }
 
 
  
