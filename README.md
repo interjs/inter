@@ -60,7 +60,7 @@ Almost every dom manipulation in an Inter app are handled by Inter, you  must ju
 
 * Simpler.
 * Intuitive.
-* Mantainable.
+* Maintainable.
 
 # Reactivity
 
