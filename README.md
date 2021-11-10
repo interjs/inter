@@ -39,26 +39,7 @@
 
 Inter is a Javascript framework designed to build highly interactive front-end web applications.
 It's: **simple**, **intuitive** and **powerful**.
-#
 
-# If you know Javascript, you already know Inter
-
-````html 
-<div id="example">
-  <p>Hey, { message }</p>
-</div> 
-
-````
-
-```javascript
-toHTML({
-in:"example",
-data:{
-message:"I program in Inter!"
-},
-react:"change"
-})
-```
 
 # No complex setup
 
@@ -69,50 +50,6 @@ framework in top of your page in a script tag, and start building even the most 
 <script src="https://cdn.jsdelivr.net/gh/DenisPower1/inter/inter.min.js"><script>
 ```
 
-# There is no directives
-
-Directives are good for simple interactivities, but in complex situations
-it's weaknesses is obvious, rather than use directives,  *Inter* use just the *Javascript*
-that you already Know.
-
-```html
-<div id="conditional-rendering">
-  <p>Hey</p>
-</div>
-```
-```javascript
-// A reactive object.
-const reactive={
-rendered:false
-}
-
-Inter.renderIf({
-in:"conditional-rendering",
-watch:reactive,
-conditions:[{
-index:0,
-render(){
-if(reactive.rendered){
-
-return template({
-elements:[{
-tag:"p", text:"I'm a conditional tag!"
-
-}]
-})
-}
-}
-}]
-})
-```
-Go head in the console and set:
-
-```javascript
-reactive.rendered=true;
-```
-
-And you'll see the magic!
-
 # Small
 
 It does not mean that it is less capable, it means that it is easy to learn and cheaper to parse and download.
@@ -121,9 +58,9 @@ It does not mean that it is less capable, it means that it is easy to learn and 
 
 Almost every dom manipulation in an Inter app are handled by Inter, you  must just focus in your application logic, this way your code base will be:
 
-* Simpler
-* Intuitive
-* Maintanaible
+* Simpler.
+* Intuitive.
+* Mantainable.
 
 # Reactivity
 
