@@ -1,3 +1,5 @@
+import{Perf} from "./perf.js"
+
 const inst=new Perf();
 
 
@@ -23,7 +25,7 @@ inst.test({
    
     run(){
 
-list.splice(2,1,"Yes")
+list.splice(2,1)
         
   
     },
