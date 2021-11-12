@@ -2,7 +2,7 @@
  *  Interfy - A Javascript library for robust web front-end routing.
  * 
  *  Github's repo - https://github.com/DenisPower1/interfy
- *  version - 2.0.1
+ *  version - 2.1.0
  * 
  *  Created by - Denis Power/ https://github.com/DenisPower1
  * 
@@ -10,9 +10,12 @@
 */
 
 
-   (function(){
-
-  
+   
+/**
+ * NOTE: IT MUST BE RELEASED WHEN INTER V2.0.0
+ * WILL BE RELEASED.
+ * 
+ */  
 
     if(typeof window==void 0 && typeof global =="object"
     && typeof process.on=="function"
@@ -274,7 +277,7 @@
     
     
    
-   return returnOBJ;
+   return Object.freeze(returnOBJ);
 
         
     }
@@ -330,7 +333,6 @@ function _setPath(path, hash){
 
 
 }
-
 
 
 
@@ -451,7 +453,12 @@ let started=false;
 function _INTERFY(){
 
 
-
+/**
+ * 
+ * This method is used to 
+ * start the router
+ * 
+ */
      this.start=function(hand=()=>{}){
 
         if(started){
@@ -490,7 +497,12 @@ function _INTERFY(){
             
                     if(req.url==route){
                        
-                        _handler(Object.create(null));
+                        const varAndParam=Object.freeze({
+                            var:Object.create(null),
+                            param:Object.create(null),
+                        })
+
+                        _handler(varAndParam);
 
                         found=true;
 
@@ -508,19 +520,30 @@ function _INTERFY(){
 
                             const p=new URLSearchParams(search);
                             const ro=Object.create(null);
-
+                          
                            
 
                             runInterator(p.entries(), ro);
+                      
+                            const varAndParam=Object.freeze({
+                                var:req.getVar(route),
+                                param:ro,
 
+                            })
 
-                            _handler(req.getVar(route), ro);
+                            _handler(varAndParam);
                            
 
 
                            }else{
 
-                            _handler(req.getVar(route));
+
+                            const varAndParam={
+                                var:req.getVar(route),
+                                param:Object.create(null),
+                            }
+
+                            _handler(varAndParam);
 
                            }     
                         
@@ -566,6 +589,14 @@ function _INTERFY(){
 
 
      }
+
+     /**
+      * 
+      * This method is used to
+      * to register a router.
+      * 
+      */
+
     this.route=function(routeName,routeHandler){
       
         if(started){
@@ -723,11 +754,29 @@ let production=false;
 
 _INTERFY.prototype={
 
+    
+     /**
+      * Read only property.
+      * Get the actual Inter's version
+      * installed. 
+      *
+      */
+
      get version (){
 
-        return "2.0.1"
+        return "2.1.0"
 
      },
+
+     /**
+      * Can be used to read and set
+      * the status of your router.
+      * 
+      * Note: It will be deprecated 
+      * in next minor release.
+      * 
+      */
+
      get production(){
 
         return production;
@@ -766,6 +815,13 @@ _INTERFY.prototype={
         }
     }
      },
+
+     /**
+      * Used to change the url.
+      * 
+      * 
+      */
+
     setPath(pathName){
 
         if(!started){
@@ -816,6 +872,11 @@ _INTERFY.prototype={
     
     },
     
+    /**
+     * Used to change the url.
+     * 
+     */
+
     useHash(pathName){
 
         if(!started){
@@ -905,13 +966,7 @@ window.onpopstate=function(){
 
 
 
-
-    globalThis.Interfy=_INTERFY;
-    
-
-  
+  export const Interfy=_INTERFY;
   
     
 
-
-})()
