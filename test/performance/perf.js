@@ -5,7 +5,7 @@
  * 
  */
 
-(function(){
+
 
     /**
      * 
@@ -60,6 +60,10 @@
 
         }
 
+        /**
+         * The testing method.
+         * 
+         */
      this.test=function(o){
 
         if(!obj.is(o)){
@@ -72,7 +76,7 @@
 
         }
 
-        const{run, log }=o;
+        const{ /** Denis Power */run, log }=o;
 
         if(typeof run !="function"){
 
@@ -88,10 +92,14 @@
    
        run();
 
-    console.timeEnd();
+        console.timeEnd();
       
 
-          log()
+    if(typeof log=="function"){
+        
+            log()
+
+   }
 
        
 
@@ -122,14 +130,5 @@
      }
 
 
-     if(typeof module!="undefined" && module.exports){
 
-        module.exports.Perf=PERF;
-
-     }else{
-
-     globalThis.Perf=PERF;
-
-     }
-
-})()
+     export const Perf=PERF;
