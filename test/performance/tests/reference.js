@@ -1,3 +1,5 @@
+import{Perf} from "./perf.js"
+
 const inst=new Perf();
 
 // Register performance.
