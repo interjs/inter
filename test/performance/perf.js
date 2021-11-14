@@ -52,7 +52,7 @@
 
         if(new.target==void 0){
 
-            new SyntaxError(`
+          throw new SyntaxError(`
             
             "Perf" is a constructor, so you must call it with the "new" keyword. 
 
@@ -68,7 +68,7 @@
 
         if(!obj.is(o)){
 
-            new SyntaxError(`
+            throw new SyntaxError(`
             
             The argument of [ Perf instance ].test() method must be an object.
 
@@ -80,7 +80,7 @@
 
         if(typeof run !="function"){
 
-            new SyntaxError(`
+            throw new SyntaxError(`
             
             The value of run property must be a function.
             
@@ -132,3 +132,4 @@
 
 
      export const Perf=PERF;
+
