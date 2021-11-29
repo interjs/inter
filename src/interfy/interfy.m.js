@@ -11,11 +11,7 @@
 
 
    
-/**
- * NOTE: IT MUST BE RELEASED WHEN INTER V2.0.0
- * WILL BE RELEASED.
- * 
- */  
+  
 
     if(typeof window==void 0 && typeof global =="object"
     && typeof process.on=="function"
