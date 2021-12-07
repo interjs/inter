@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.5
+ * Version: 1.2.6
  * 2021 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
@@ -14,16 +14,12 @@
 
 
 
+
+
 (function(){
 
 
     // Some helpers functions.
-
-function isJson(v){
-
-     return Object.prototype.toString.call(v)=="[object Json]";
-
-}
 
 
 function isPlainObject(v){
@@ -97,6 +93,13 @@ function isTag(supposed){
 }
 
 
+function hasRef(text){
+
+    const pattern=/{\s*.*\s*}/.test(text);
+
+    return pattern;
+
+ }
 
 
 function isDefined(v){
@@ -288,6 +291,59 @@ Object.type=(obj)=>{
 
 }
 
+Para ajudar o analisador a registrar 
+
+/**
+ * Adding the getTextNodes to the Node.prototype.
+ * It will be a read-only property used to get
+ * all textNodes of the target, it is used to help to
+ * register the reference in the main element's textNodes
+ * when the main element has also elementNodes.
+ * 
+ * <div id="test">
+ * { greating }, <strong>Inter!</strong>
+ * 
+ * </div>
+ * 
+ * 
+ * toHTML({
+ * in:"test",
+ * data:{
+ * greating:"Bonjour"
+ * }
+ * })
+ * 
+ * Prior to Inter v1.2.6 the parser could not register the reference in main element's textNode,
+ * when there wer also elementNodes in it.
+ * 
+ */
+
+
+Object.defineProperty(Node.prototype,"getTextNodes",{
+
+    get(){
+
+        const textNodes=new Set();
+
+        if(this.hasChildNodes()){
+
+            for(let child of this.childNodes){
+
+                if(child.nodeType==3 && hasRef(child.textContent)){
+
+                    textNodes.add(child)
+
+                }
+
+            }
+
+        }
+
+        return array.create(textNodes)
+
+    }
+
+} )
 
 
 const _global=globalThis ? globalThis : window;
@@ -299,6 +355,10 @@ function isButtonOrAnchor(tag){
 return lowerCase.call(tag.nodeName)=="a" || lowerCase.call(tag.nodeName)=="button";
 
 }
+
+
+
+
 
 function getRoutingTag(){ 
 
@@ -312,14 +372,21 @@ function getRoutingTag(){
 
     }
 
+
+    
+
+
+
     const children=this.getElementsByTagName("*");
 
     for(let child of children){
         if(isButtonOrAnchor(child) && hasAttr(child, "setPath")){
             child.setpath=getAttr(child,"setPath");
             child.removeAttribute("setPath");
+            
             child.onclick=function(ev){
 
+                
                      ev.preventDefault();
 
             const routeTo=this.setpath;
@@ -333,13 +400,19 @@ function getRoutingTag(){
                 `)
             }
         }
+
+        _dom.observeClickEvent(child);
     }
 
-	if(isButtonOrAnchor(child) && hasAttr(child,"useHash")){
+	else if(isButtonOrAnchor(child) && hasAttr(child,"useHash")){
         child.setpath=getAttr(child,"useHash");
         child.removeAttribute("useHash");
+        
 	child.onclick=function(ev){
-		ev.preventDefault();
+
+        
+        ev.preventDefault();
+        
 		const routeTo=this.usehash;
 		if(validPath.test(routeTo)){
 			url.useHash(routeTo);
@@ -351,12 +424,20 @@ function getRoutingTag(){
 			
 		}
 		
-	}	
+    
+    }
+    
+
 		
 	}
 
 }
-}
+
+    }
+
+
+
+
 
 
 
@@ -404,6 +485,17 @@ reConstroy(key, pro,value){
      for(let r of references){
         const match=new RegExp(`{\(\:?\\s+)\*\(\:?${r})\(\:?\\s+)\*}`,"g");
          plainText=plainText.replace(match, refs[r]);
+
+         if(!hasRef(plainText)){
+
+            //If there's no more reference to parse
+            // We should break the loop to evoid unnecessary
+            //computation.
+
+            break;
+
+         }
+
      }
      target.textContent=plainText;
      }
@@ -472,7 +564,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.5"
+        return "1.2.6"
 
     },
 
@@ -841,14 +933,32 @@ Object.defineProperty(data,"query", {
 
 Object.freeze(data)
 
-Object.defineProperty(INTER, Symbol.hasInstance,{
-    value: function(){
-        return false;
+Object.defineProperties(INTER,{
+
+    [Symbol.hasInstance]:{
+
+
+        get(){
+
+            return false;
+
+        }
+
     },
-    enumerable:false,
-    configurable:false,
-    writable:false,
+
+    [Symbol.toStringTag]:{
+
+        get(){
+
+            return "Inter";
+
+        }
+
+    }
+
 })
+
+
 
 
 
@@ -992,8 +1102,9 @@ function isaNodeElement(supposedElement){
    * 
    */
 
-    const pattern=/^\[object HTML+(:?[A-Z]+)+Element\]$/i;
+ const pattern=/^\[object HTML+(:?[A-Z]+)+Element\]$/i;
     return pattern.test(supposedElement);
+    
 }
 
 function hasOnlyAChild(parent){
@@ -1369,18 +1480,18 @@ if(!isDefined(pathname)){
 if(pathname=="/"){
     window.history.pushState(null, null,`/#${pathname}`);
     event.fire("URLCHANGED");
-    getRoutingTag.call(document.body);
+    
     return false;
 }
 if(pathname!="/" && atualUrl=="/"){
     window.history.pushState(null, null, `/#${pathname}`);
     event.fire("URLCHANGED");
-    getRoutingTag.call(document.body);
+    
     return false;
 }else{
     window.history.replaceState(null, null,`/#${pathname}`);
     event.fire("URLCHANGED");
-    getRoutingTag.call(document.body);
+    
 
 }
 }
@@ -1402,7 +1513,7 @@ if(!isDefined(pathname)){
 if(pathname=="/"){
     window.history.pushState(null, null, pathname);
     event.fire("URLCHANGED");
-    getRoutingTag.call(document.body);
+    
     return false;
 }
 if(pathname!="/" && atualUrl=="/"){
@@ -1413,7 +1524,7 @@ if(pathname!="/" && atualUrl=="/"){
 else{
    window.history.replaceState(null, null, pathname);
    event.fire("URLCHANGED");
-   getRoutingTag.call(document.body); 
+   
 }
 
 }
@@ -1434,23 +1545,48 @@ function InputHandler(){
          let container=null;
         
        var allNodes=document.getElementsByTagName("*");
+
+       
      for(let i=0; i<allNodes.length; i++){
 
     if(hasAttr(allNodes[i], "handleValue")){
         
         if(!isInput(allNodes[i])){
             SyntaxErr(`
-            Really? handleValue must be only setted in value that recieve value.
+            Really? handleValue must be only setted in elements that recieve the value attribute.
+            like <input> and <textarea></textarea>.
             `)
         }else{
             if(!hasAttr(allNodes[i], "in")){
                 SyntaxErr(`
-                in attribute required.
+                in attribute is required.
                 `)
             }
             const attr=allNodes[i].getAttribute("handleValue");
             const storeHandlers=array.create(null);
-            const findTheOne=getId(getAttr(allNodes[i], "in")).getElementsByTagName("*");
+            let findTheOne=getId(getAttr(allNodes[i], "in"));
+
+            if(findTheOne.getTextNodes.length>0){
+
+                for(let textNode of findTheOne.getTextNodes){
+
+                const match=new RegExp(`{\(\:?\\s+)\*\(\:?${attr})\(\:?\\s+)\*}`,"g");
+
+                 if(match.test(textNode.textContent)){
+
+                    const replacer=textNode.textContent.replace(match,"")
+                    storeHandlers.push({target:textNode, text:textNode.textContent, input:allNodes[i]})
+                    textNode.textContent=replacer;
+
+
+                 }
+
+                }
+
+            }
+
+            findTheOne=findTheOne.getElementsByTagName("*")
+
             for(let m=0; m<findTheOne.length; m++){
                 const match=new RegExp(`{\(\:?\\s+)\*\(\:?${attr})\(\:?\\s+)\*}`,"g");
                 if(match.test(findTheOne[m].textContent)){
@@ -1659,6 +1795,14 @@ if(pro=="file:"){
       
 
        const _request={
+
+           get [Symbol.toStringTag](){
+
+            // [obejct Response];
+
+            return "Response";
+
+           },
 
            get status(){
 
@@ -2108,9 +2252,25 @@ const HTMLRegistry={
     handler:{ 
     
     },
+    get(name){
+
+        return this.handler[name];
+
+    },
+    has(name){
+
+        
+
+        return (name in this.handler);
+
+    },
 
     add(key,obj){
+
+        
+
         return this.handler[key].push(obj);
+
     },
     
     create(propName){
@@ -2119,7 +2279,7 @@ const HTMLRegistry={
          return false  //doNothing
        } else{
            
-return this.handler[propName]=array.create(null);
+ this.handler[propName]=array.create(null);
     }
 }
 }
@@ -2157,7 +2317,7 @@ for(let nested=0; nested<element.length; nested++){
         const match=new RegExp(`{\(\:?\\s+)\*\(\:?${key})\(\:?\\s+)\*}`,"g");
         if(match.test(element[nested].textContent)){
         
-   whatToChange.push({text:element[nested].textContent, target:element[nested], parent:parent});
+   whatToChange.push({text:element[nested].textContent, target:element[nested]});
   
 }
 }
@@ -2167,7 +2327,7 @@ for(let nested=0; nested<element.length; nested++){
     const match=new RegExp(`{\(\:?\\s+)\*\(\:?${key})\(\:?\\s+)\*}`,"g");
     if(match.test(el.textContent)){
     
-whatToChange.push({target:el, text:el.textContent, parent:parent})
+whatToChange.push({target:el, text:el.textContent})
 
     }
 }
@@ -2197,6 +2357,7 @@ const handle_Value_Attr={
         return ref in this.handle;
     }
 }
+
 function toHTML(obj){
     
 
@@ -2311,14 +2472,44 @@ if(!isPlainObject(obj)){
       const allChildren=getId(IN).getElementsByTagName("*");
    
       var chaves=Object.keys(shared);
-     if(allChildren.length==0){
-         HTMLRegistry.create(IN)
-       HTMLRegistry.add(IN,{target:getId(IN), text:getId(IN).textContent}) 
      
-       
-     }
+
+if(getId(IN).getTextNodes.length>0){
+         
+        HTMLRegistry.create(IN)
+        
+        for(let textNode of getId(IN).getTextNodes){
+         
+            
+			
+            
+            for(let key of Object.keys(data)){
+            const match=new RegExp(`{\(\:?\\s+)\*\(\:?${key})\(\:?\\s+)\*}`,"g");              
+            if(match.test(textNode.textContent)){
+            
+			
+                
+
+      HTMLRegistry.add(IN,{target:textNode, text:textNode.textContent})
+        
+		
+        
+            }
+
+            
+
+}
+
+        }
+		
+
+     }     
+
       for(let all=0; all<allChildren.length; all++){
-          HTMLRegistry.create(IN)
+          if(!HTMLRegistry.has(IN)){
+            HTMLRegistry.create(IN)
+          }
+          
         for(let key of chaves){
     const el=allChildren[all];
         if(containChild(el)){
@@ -2415,7 +2606,7 @@ for(let attr=0; attr<attrs.length; attr++){
                         
                     const New=attrValue.replace(match, value)
                     if(New==attrValue){
-                        //donNothing
+                        //doNothing
                     }else{
                         if(attrName!="value"){
                             
@@ -2542,20 +2733,44 @@ for(let attr=0; attr<attrs.length; attr++){
       const hasChidNoChild=makeSure.length==0 ? true : false;
       let empty=array.create(null);
       let forAttr=array.create(null);
-      if(hasChidNoChild){
+            
+
+      if(getId(IN).getTextNodes.length>0){
+         
         
-         const text=getId(IN).textContent;
-         const theKeys=Object.getOwnPropertyNames(data);
-         theKeys.forEach(key=>{
-            const match=new RegExp(`{\(\:?\\s+)\*\(\:?${key})\(\:?\\s+)\*}`,"g");
-           
-            if(match.test(text)){
+        
+        for(let textNode of getId(IN).getTextNodes){
+         
+            
+			
+            
+            for(let key of Object.keys(data)){
+            const match=new RegExp(`{\(\:?\\s+)\*\(\:?${key})\(\:?\\s+)\*}`,"g");              
+            if(match.test(textNode.textContent)){
+            
+			
                 
-                empty.push({target:getId(IN), text:text, position:null});
-                newREF.set(IN, empty);
+
+      whatToChange.push({target:textNode, text:textNode.textContent})
+        
+		
+        
             }
-         })
-      }else{
+
+            
+
+}
+
+        }
+		
+		if(getId(IN).children.length==0){
+			
+			newREF.set(IN, whatToChange)
+			
+			
+		}
+
+     }
           
       for(let el=0; el<target.length; el++){
 
@@ -2582,7 +2797,7 @@ for(let attr=0; attr<attrs.length; attr++){
         }
 
     }
-    }
+    
       
       
       refForAttr.set(IN,forAttr);
@@ -2600,12 +2815,16 @@ for(let attr=0; attr<attrs.length; attr++){
        let Strict=StrictRef.get(IN)
        array.shareItens(cache, Strict);
       for(let c=0; c<cache.length; c++){
+		  
+		  
         
           const{
               target,
               text,
               
           }=cache[c];
+
+          
           const{
               computed
           }=Strict[c]
@@ -3301,6 +3520,27 @@ Warning("do in Inter.for() must be a function");
                 SyntaxErr(`
                 You are not return the template()
                 function in do() method(Inter.for). It is happening where the target id is "${IN}".
+				
+				If you are return the template function, this error is being thrown because
+				you are creating more than one element without a container. When you create
+				more than one element with the template function put the created element inside a container.
+				like:
+				
+				template({
+					
+					elements:[{
+						
+						tag:"div", children:[{
+							tag:"h2", text:"user"
+						},{
+							
+							tag:"p", text:"The user's description."
+							
+						}]
+						
+					}]
+					
+				})
 
                 `)
 
@@ -3499,12 +3739,13 @@ if(isSearching){
 
             organizedRoutes[orgRoute]();
             done=true;
+            getRoutingTag.call(document.body)
         }
 
     })
 
 }
-     
+    
     if(!isUsingHash()){
         const atualPath=window.location.pathname;
         let done=false;
@@ -3514,6 +3755,7 @@ if(isSearching){
         if(reg.compile(orgRoute).test(atualPath)){
             organizedRoutes[orgRoute]();
             done=true;
+			getRoutingTag.call(document.body)
         }
     })
 
@@ -3525,6 +3767,7 @@ if(isSearching){
      if(reg.compile(orgRoute).test(atualPath)){
          organizedRoutes[orgRoute]();
          done=true;
+		 getRoutingTag.call(document.body)
      }
  })
  if(!done){
@@ -4960,7 +5203,7 @@ const{
 
     }
 
-    function createChildren(father, childrenArray,ind){
+    function createChildren(father, childrenArray){
     
 
         
@@ -5147,5 +5390,6 @@ _global.reativeTemplate=reativeTemplate;
  
 })();
  
+
 
 
