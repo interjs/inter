@@ -63,7 +63,7 @@
 
  }
 
- function hasNodeChild(p){
+ function hasChildNode(p){
 
     if("noType" in p && p.nodeType==1){
 
@@ -176,7 +176,7 @@ function ARRAY(){
 
     this.isEmpty=function(arr){
 
-        if(this.is(arr)){
+        if(this.is(arr) && arr.length==0){
 
             return true;
 
@@ -316,7 +316,7 @@ get status(){
 function toHTML(obj){
 
     /**
-     *  When this function called
+     *  When this function is called
      * we must warn, in version
      * 2.0.0 we renamed it as toREF(), but
      * we will continue supporting it until
