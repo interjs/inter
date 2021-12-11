@@ -262,46 +262,7 @@ DOMMUTATION.prototype.mutate=function(method){
     }
 
 
-    function order_(arrayofObj){
 
-        let _=0;
-        
-
-
-        for(;_<arrayofObj.length; _++){
-
-            if(isObj(arrayofObj)){
-
-                // If it's an object
-                // makeReactive already
-                // created the ___ property.
-                // But let's insure that
-                // it exist.
-
-                if("___" in arrayofObj[_]){
-
-                    arrayofObj[_]["___"]=_;
-
-                }else{
-
-                    Object.defineProperty(arrayofObj[_],"___",{
-
-                        value:_
-
-                    })
-
-                }
-
-
-
-
-
-            }
-
-        }
-
-
-    }
 
 const array=new ARRAY();
 
@@ -322,7 +283,7 @@ const app={
 
    set status(v) {
 
-    if(this.status.toLowerCase()=="development"){
+    if(this.status=="development"){
 
     
       if(v.toLowerCase()=="production"){
@@ -355,9 +316,9 @@ get status(){
 function toHTML(obj){
 
     /**
-     *  When the user call this function
-     * we must warn it, from version
-     * 2.0.0 we rename it as toREF(), but
+     *  When this function called
+     * we must warn, in version
+     * 2.0.0 we renamed it as toREF(), but
      * we will continue supporting it until
      * v2.1.0
     */ 
