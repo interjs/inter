@@ -291,7 +291,7 @@ Object.type=(obj)=>{
 
 }
 
-Para ajudar o analisador a registrar 
+
 
 /**
  * Adding the getTextNodes to the Node.prototype.
@@ -314,7 +314,7 @@ Para ajudar o analisador a registrar
  * })
  * 
  * Prior to Inter v1.2.6 the parser could not register the reference in main element's textNode,
- * when there wer also elementNodes in it.
+ * when there were also elementNodes in it.
  * 
  */
 
