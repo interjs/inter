@@ -434,7 +434,7 @@ function ATTRMUTATION(target){
 
          
 
-             return array.create(refs); //Empty array;
+             return array.create(refs); 
 
          
 
