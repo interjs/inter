@@ -13,6 +13,8 @@
 
 
 
+
+
  (function(){
 
 // Helper functions.
@@ -34,15 +36,21 @@
 
  }
 
+ /**
+  * Indirect boolean value checking can cause
+  * unexpected result, that's why I am using direct 
+  * checking here.
+  * 
+  */
  function isTrue(v){
 
-    return v==true;
+    return Object.is(v,true);
 
  }
 
  function isFalse(v){
 
-    return v==false;
+    return Object.is(v,false);
 
  }
 
@@ -63,7 +71,7 @@
 
  }
 
- function hasChildNode(p){
+ function hasNodeChild(p){
 
     if("noType" in p && p.nodeType==1){
 
@@ -75,15 +83,7 @@
 
  }
 
- function isHTML(el){
 
-    if(isDefined(el)){
-
-        return /[.*] element/.test(el);
-
-    }
-
- }
 
  function getId(id){
 
@@ -104,6 +104,40 @@
     }
 
  }
+
+ function valueType(val){
+
+     if(
+        typeof val=="undefined" ||
+        typeof val=="symbol" ||
+        typeof val=="bigint" ||
+        typeof val=="boolean" ||
+        typeof val=="function" ||
+        typeof val=="number" ||
+        typeof val=="string"
+    ){
+
+
+        return typeof val;
+
+    }else{
+
+        /**
+         * 
+         * @val may be array, plain object or even
+         * a native Javascript object,
+         * let's check with the Object.type() method.
+         * 
+         */
+
+         return Object.type(val)
+
+
+    }
+
+
+ }
+
 
 // WARNINGS HELPERS
 
@@ -176,7 +210,7 @@ function ARRAY(){
 
     this.isEmpty=function(arr){
 
-        if(this.is(arr) && arr.length==0){
+        if(this.is(arr)){
 
             return true;
 
@@ -223,7 +257,7 @@ DOMMUTATION.prototype.mutate=function(method){
 
     if(this.target && !this.mutated){
     
-        const _self=this.target;
+        
 
         Object.defineProperty(this.target, [method],{
 
@@ -231,7 +265,7 @@ DOMMUTATION.prototype.mutate=function(method){
 
                 consW(`
                 
-                Inter is working on [${_self}], and Inter mutated it,
+                Inter is working on [${this}], and Inter mutated it,
                 so that you can not mudify it. 
 
                 `)
@@ -246,12 +280,12 @@ DOMMUTATION.prototype.mutate=function(method){
 
         if(this.target &&!this.mutated){
 
-               const _self=this.target
+               
             Object.defineProperty(this.target, obj._new, {
 
                 value(){
 
-                  Node.prototype[obj.native].call(_self,...arguments);        
+                  Node.prototype[obj.native].call(this,...arguments);        
 
                 }
 
@@ -262,7 +296,149 @@ DOMMUTATION.prototype.mutate=function(method){
     }
 
 
+function ATTRMUTATION(target){
 
+    /**
+     * Attribute manager.
+     * 
+     * @setAttribute and @removeAttribute methods.
+     * 
+     * 
+     */
+
+
+    if(new.target==void 0){
+
+
+    }else if(!target.attrMutated){
+
+    
+
+        for(let attr of [
+         {
+            native:"setAttribute", _new:Symbol.for("set")
+        },{
+            native:"removeAttribute", _new:Symbol.for("remove")
+         }
+    ]){
+
+        Object.defineProperty(target, attr.native,{
+            
+            value(){
+
+                err(`
+                
+                Inter is work on [${this}]'s attributes, so Inter mutated
+                it so that you can not mudify it.
+                
+                `)
+
+            }
+        })
+
+    }
+
+    Object.defineProperty(target, attr._new, {
+
+        value(){
+
+            HTMLElement.prototype.removeAttribute.call(this,...arguments);
+
+        }
+
+    })
+
+    // Let's now
+    // indicate that the element is mutated, 
+    // by setting the attrMutated property to true.
+
+    Object.defineProperty(target,"attrMutated", {
+        
+        value:true,
+        writable:!1,
+        configurable:!1
+    })
+    
+
+}
+
+
+}
+
+
+
+
+    Object.type=(val)=>{
+
+    // All Javascript objects.
+
+     const isAnobject=(
+        
+        isDefined(val) &&
+        
+        Object.prototype.toString.call(val).startsWith("[object")
+         
+         );
+
+
+         if(isAnobject){
+
+          return ( Object.prototype.toString.call(val).replace("[object","")
+          .replace("]","").replace(/\S/g,"").toLowerCase()
+          
+          );
+
+
+         }else{
+
+            /**
+             * @val is null.
+             * 
+             */
+
+             return "null";
+
+
+         }
+
+
+    }
+
+
+    function getRefs(text){
+
+        /**
+         *
+         * @text must be a string containing refs.
+         * 
+         * This function is used in reference computation,
+         * it helps Inter making an eficient reference computation.
+         * 
+         */
+
+         const ref=/{\s*(:?[\w-\s]+)\s*}/g;
+         
+         
+         const refs=new Set();
+            
+
+            text.replace(ref, (plainRef)=>{
+                
+                const refName=plainRef.replace("{","").replace("}","").trim();
+                
+                refs.add(refName);
+
+
+            })
+
+
+         
+
+             return array.create(refs); //Empty array;
+
+         
+
+    }
 
 const array=new ARRAY();
 
@@ -283,7 +459,7 @@ const app={
 
    set status(v) {
 
-    if(this.status=="development"){
+    if(this.status.toLowerCase()=="development"){
 
     
       if(v.toLowerCase()=="production"){
@@ -316,8 +492,8 @@ get status(){
 function toHTML(obj){
 
     /**
-     *  When this function is called
-     * we must warn, in version
+     *  When the developer calls this function
+     * we must warn it, from version
      * 2.0.0 we renamed it as toREF(), but
      * we will continue supporting it until
      * v2.1.0
@@ -378,8 +554,7 @@ function toREF(obj){
             
   
             const source=isObj(refs) ? refs : isObj(data) ? data : null;
-            const current=new Map();
-            current.set("initial",true)
+            
             for(r in source){
 
                 if(isCallable(source[r])){
@@ -499,27 +674,25 @@ function toREF(obj){
             
                         for(let[name,v] of Object.entries(attrs)){
             
+                            const refNames=getRefs(v);
+
+                            
+                            for(let refName of refNames){
             
-                            for(let[ref,value] of Object.entries(this.refs)){
-            
+                                if(refName in this.refs){
                                 
 
                              
-                                const pattern=new RegExp(`{\\\s\*\(\:\?${ref}\)\\\s\*}`,"g")
+                                const pattern=new RegExp(`{\\\s\*\(\:\?${refName}\)\\\s\*}`,"g")
                 
                                  v=v.replace(pattern,value);
                             
                                   
                                  
-                                 if(this.noMoreRefs(v)){
-            
-            
-                                    break;
-            
-                                 }
 
 
                                 }
+                            }
                             
                             
                             
@@ -556,27 +729,30 @@ function toREF(obj){
                             
                         }=t_r;
 
+                        // Returns the ref's Names
+                         // in the string "text".                  
+                        const refNames=getRefs(text);
                         
 
-                    for(let[ref,value] of Object.entries(this.refs)){
+                    for(let refName of refNames){
             
+                        
+                        
+                        if(refName in this.refs){
                       
-                        const pattern=new RegExp(`{\\\s\*\(\:\?${ref}\)\\\s\*}`,"g")
+                        const pattern=new RegExp(`{\\\s\*\(\:\?${refName}\)\\\s\*}`,"g")
                         
-                        if(this.noMoreRefs(text)){
-            
-                            
-                            break;
-            
-                        }
-                       else if(isDefined(text)){     
+                       if(isDefined(text)){     
                         
-                        text=text.replace(pattern, value);
-                       }
+                        text=text.replace(pattern, this.refs[refName]);
+                      
+                    
                      
                     
                         }
-            
+                    }
+
+                    }
                         if(isDefined(text)){
                             
                       if(target.textContent!==text){
@@ -685,7 +861,7 @@ function toREF(obj){
                    store.update();
                    }
 
-                   current.clear();
+                   
 
                 },
 
@@ -737,7 +913,7 @@ function toREF(obj){
 
             })
 
-            current.delete("initial")
+            
 
             Object.defineProperty(reactor, "setRefs",{
 
@@ -1559,6 +1735,7 @@ return reactor;
 
 }
 
+const list=renderList
 
 function template(obj){
 
@@ -1886,6 +2063,8 @@ function template(obj){
             }
 
           
+            
+          
           
            const share=Object.assign({},obj)   
           const properties=Object.keys(obj);
@@ -1999,15 +2178,6 @@ function template(obj){
           
           })
           
-          Object.defineProperty(obj, "___", {
-          
-              value:true,
-              configurable:!1,
-              writable:!1,
-              enumerable:false,
-
-          
-          })
           
  
           
@@ -2073,7 +2243,22 @@ function template(obj){
    // Some Array.prototype method
    // mutated for better performance.
 
- 
+ if(!("$$$" in pro)){
+
+    Object.defineProperty(pro, "$$$",{
+        enumerable:!1,
+        get(){
+            
+            return true;
+
+        },
+        set(v){
+
+            return false;
+
+        }
+
+    })
 
    Object.defineProperty(pro, "shift", {
 
@@ -2212,7 +2397,7 @@ function template(obj){
    })
    
 
-
+ }
    //
 
 
@@ -2456,7 +2641,7 @@ Work();
         
         let el=-1;
 
-    for(let _ of value.children){
+    for(let _ of root){
    
             el++;
         
@@ -2566,7 +2751,7 @@ Work();
            }
            else if(_new.hasAttribute(name)){
 
-             const theAttribute=getAttr(target,name);
+             const theAttribute=_new.getAttribute(name);
             
              if(theAttribute!==value){
                  returnValue=true;
@@ -2699,6 +2884,15 @@ data in toATTR() must be an object.
 
               const copy=Object.assign({},attrManagers[key])
               child.removeAttribute(theAttr);
+
+              /**
+               * Mutating the @setAttribute and @removeAttribute
+               * method on the child element.
+               * 
+               */
+
+               new ATTRMUTATION(child);
+
               const reactor=spread(child,copy,key,attrManagers[key]);
 
               if(!react){
@@ -2730,6 +2924,12 @@ data in toATTR() must be an object.
 
     
 
+        //Internal methods
+        
+        const setAttribute=Symbol.for("set");
+        const removeAttribute=Symbol.for("remove");
+
+
         //<>//
 
          // Spreading the attributes.
@@ -2739,7 +2939,7 @@ data in toATTR() must be an object.
             
                  if(attrValue!=void 0 && !attrName.startsWith("on")){
                 
-                 el.setAttribute(attrName,attrValue);
+                 el[setAttribute](attrName,attrValue);
 
                  }else{
                      
@@ -2768,7 +2968,7 @@ data in toATTR() must be an object.
 
                         if(!attrName.startsWith("on")){
 
-                            el.removeAttribute(attrName);
+                            el[removeAttribute](attrName);
 
                         }else{
 
@@ -2779,7 +2979,7 @@ data in toATTR() must be an object.
 
                         if(!attrName.startsWith("on") && attrName!=="value"){
 
-                          el.setAttribute(attrName,v);
+                          el[setAttribute](attrName,v);
 
                         }else if(attrName=="value"){
 
@@ -2835,9 +3035,3 @@ globalThis.renderList=renderList;
 globalThis.template=template;
 globalThis.toATTR=toATTR;
  })();
-
-
-
-
-
-
