@@ -210,7 +210,7 @@ function ARRAY(){
 
     this.isEmpty=function(arr){
 
-        if(this.is(arr)){
+        if(this.is(arr) && arr.length==0){
 
             return true;
 
@@ -296,74 +296,6 @@ DOMMUTATION.prototype.mutate=function(method){
     }
 
 
-function ATTRMUTATION(target){
-
-    /**
-     * Attribute manager.
-     * 
-     * @setAttribute and @removeAttribute methods.
-     * 
-     * 
-     */
-
-
-    if(new.target==void 0){
-
-
-    }else if(!target.attrMutated){
-
-    
-
-        for(let attr of [
-         {
-            native:"setAttribute", _new:Symbol.for("set")
-        },{
-            native:"removeAttribute", _new:Symbol.for("remove")
-         }
-    ]){
-
-        Object.defineProperty(target, attr.native,{
-            
-            value(){
-
-                err(`
-                
-                Inter is work on [${this}]'s attributes, so Inter mutated
-                it so that you can not mudify it.
-                
-                `)
-
-            }
-        })
-
-    }
-
-    Object.defineProperty(target, attr._new, {
-
-        value(){
-
-            HTMLElement.prototype.removeAttribute.call(this,...arguments);
-
-        }
-
-    })
-
-    // Let's now
-    // indicate that the element is mutated, 
-    // by setting the attrMutated property to true.
-
-    Object.defineProperty(target,"attrMutated", {
-        
-        value:true,
-        writable:!1,
-        configurable:!1
-    })
-    
-
-}
-
-
-}
 
 
 
@@ -434,11 +366,64 @@ function ATTRMUTATION(target){
 
          
 
-             return array.create(refs); 
+             return array.create(refs); //Empty array;
 
          
 
     }
+
+
+
+    function reorderIndex(arr, updateFn){
+
+
+        /**
+         * This function must be called
+         * everytime the data array
+         * is mutated.
+         */
+        
+         
+
+        if(array.is(arr)){
+
+            arr.forEach((obj,i)=>{
+
+                if(isObj(obj)){
+
+                if(("__i__" in obj) ){
+
+                    
+                   obj["__i__"]=i;
+
+                }else{
+
+                    
+
+                     Object.defineProperty(obj, "__i__",{
+
+                        value:i,
+                        writable:!0,
+                        enumerable:!1
+
+                     })
+
+                     makeReactive(obj, updateFn);
+
+                }
+
+            
+            }
+        
+
+        })
+
+        updateFn();
+
+
+    }
+
+}
 
 const array=new ARRAY();
 
@@ -2071,7 +2056,11 @@ function template(obj){
           
           for(let key of properties){
           
-              
+              if(key=="__i__"){
+
+                continue;
+
+              }
           
               if(key=="defineProps"){
                     
@@ -2094,7 +2083,7 @@ function template(obj){
 
             share[key]=value;
            
-           call()
+           call(this["__i__"]);
            
             
           },
@@ -2270,7 +2259,9 @@ function template(obj){
      if(firstNodeElement){
 
         _root[remove](firstNodeElement);
-     runUpdate();
+
+     
+        reorderIndex(data, runUpdate);
 
      }
 
@@ -2288,7 +2279,7 @@ function template(obj){
     value(){
 
         
-    const added=Array.prototype.shift.apply(data, arguments);
+    const added=Array.prototype.unshift.apply(data, arguments);
     const _this=this;
     if(arguments.length>1){
 
@@ -2316,7 +2307,7 @@ function template(obj){
     }else if(arguments.length==1){
 
         const el=DO.call(_this, arguments[0], 0);
-
+            
         
         if(_root.children[0]){
             
@@ -2328,10 +2319,19 @@ function template(obj){
 
         }
 
+
+
     }
     
     
-    runUpdate();
+    
+    
+    
+    reorderIndex(data, runUpdate);
+
+    
+
+    return added;
 
     }
 
@@ -2387,8 +2387,9 @@ function template(obj){
 
         }
 
-  runUpdate()
-  
+
+        reorderIndex(data, runUpdate);
+
         return spliced;
         
 
@@ -2463,25 +2464,56 @@ if(!isCallable(DO)){
     _root=root;
     new DOMMUTATION(root);
 
+    let i=-1;
+
     for(let _obj of data){
-        
+    i++;    
         if(isObj(_obj)){
          
+            Object.defineProperty(_obj,"__i__",{
+
+                value:i,
+                enumerable:!1,
+                writable:!0
+
+            })
      makeReactive(_obj, runUpdate);
 
 }
 }
 
-function runUpdate(){
+function runUpdate(_i){
 
+    
 
+    if(typeof _i=="number"){
+
+        
+        const el=DO.call(pro,data[_i],_i);
+
+        calculateUpdate(el,_root,_i);
+
+    }
+
+    setTimeout(()=>{
+
+        
     data.forEach((item,i)=>{
 
+        if(i!==_i){
+    
         const el=DO.call(pro,item,i);
 
         calculateUpdate(el,_root,i);
 
+        }
+
     })
+
+    },2)
+
+
+
 
 
 }
@@ -2875,13 +2907,14 @@ data in toATTR() must be an object.
         if(child.attributes.length==1){
           
             const theAttr=child.attributes[0].name;
-             
+          
             for(let key of keys){
         
             const pattern=new RegExp(`{...${key}}`);
 
             if(pattern.test(theAttr)){
 
+                
               const copy=Object.assign({},attrManagers[key])
               child.removeAttribute(theAttr);
 
@@ -2891,7 +2924,7 @@ data in toATTR() must be an object.
                * 
                */
 
-               new ATTRMUTATION(child);
+               
 
               const reactor=spread(child,copy,key,attrManagers[key]);
 
@@ -2924,10 +2957,6 @@ data in toATTR() must be an object.
 
     
 
-        //Internal methods
-        
-        const setAttribute=Symbol.for("set");
-        const removeAttribute=Symbol.for("remove");
 
 
         //<>//
@@ -2939,7 +2968,7 @@ data in toATTR() must be an object.
             
                  if(attrValue!=void 0 && !attrName.startsWith("on")){
                 
-                 el[setAttribute](attrName,attrValue);
+                 el.setAttribute(attrName,attrValue);
 
                  }else{
                      
@@ -2968,7 +2997,7 @@ data in toATTR() must be an object.
 
                         if(!attrName.startsWith("on")){
 
-                            el[removeAttribute](attrName);
+                            el.removeAttribute(attrName);
 
                         }else{
 
@@ -2979,7 +3008,7 @@ data in toATTR() must be an object.
 
                         if(!attrName.startsWith("on") && attrName!=="value"){
 
-                          el[setAttribute](attrName,v);
+                          el.setAttribute(attrName,v);
 
                         }else if(attrName=="value"){
 
@@ -3028,6 +3057,381 @@ data in toATTR() must be an object.
         }
 
 
+        //renderContainer;
+
+        const handler=Symbol.for("event registery");
+        const protected=Symbol.for("protected events");
+
+        function costumEvent(){
+
+
+            if(new.target!==void 0){
+
+            }
+
+
+            //Private fields.
+
+            this[handler]=new Map();
+            this[protected]=new Map();
+
+        }
+
+
+        costumEvent.prototype={
+
+            get [Symbol.toStringTag](){
+
+                return "costumEvent";
+
+            },
+
+            /**
+             * This method is used to listen to an costum
+             * event.
+             * 
+             * Arguments:
+             * 
+             * @evName => This argument indicates the name of the event.
+             * @handler => This arguments indicates the function that will be
+             * invoked as soon as the event is fired.
+             * 
+             * returns true if the event was succefully registered, otherwise returns false.
+             * 
+             */
+
+            listen(evName, evHandler){
+
+                if(arguments.length<2){
+
+                    err(`
+                    
+                    costumEvent.prototype.listen(evName:any, evHandler:object),
+                    expects two arguments. And it recieved only ${arguments.length}.
+                    
+                    `)
+
+                }
+
+             if(!this[handler].has(evName)){
+
+            
+                if(isCallable(evHandler)){
+
+                    this[handler].set(evName, evHandler);
+
+                    return true;
+
+                }else{
+
+                    syErr(`
+                    
+                    the second argument of costumEvent.prototype.listen()
+                    must be a function and it recieved: ${valueType(evHandler)}
+                    
+                    `)
+
+                }
+           
+
+             }else{
+
+
+                return false;
+
+             }
+
+
+            },
+
+            /**
+             * This method is used to fire a costum Event.
+             * 
+             *  Arguments:
+             * 
+             * @evName => This argument indicates the name of the event to fire.
+             * @evInfo (optional) => This argument indicates an info related to the event being fired.
+             * 
+             * returns true if the event was succefully fired, otherwise returns false.
+             * 
+             */
+
+            fire(evName, evInfo){
+
+            if(this[handler].has(evName)){
+
+                this[handler].get(evName)(evInfo!==void 0 ? evName : void 0);
+
+                return true;
+
+            }else{
+
+                return false;
+
+            }
+
+
+            }
+
+        }
+
+
+     Object.freeze(costumEvent.prototype);
+     
+
+     function Backend(){
+
+
+
+     }
+
+
+     Backend.prototype={
+
+        get [Symbol.toStringTag](){
+
+            return "Backend";
+
+        },
+
+        request(obj){
+
+            if(!isObj(obj)){
+
+
+            }
+
+            const{
+                type,
+                path,
+                events,
+                timeout,
+                withCridentials,
+                body,
+                headers={},
+              security
+            }=obj;
+
+            function call(){
+
+            const req=new XMLHttpRequest();
+            const method=type.toUpperCase();
+            const allowedEvents=new Set([
+                "onprogress",
+                "ontimeout",
+                "onabort"
+            ])
+
+            
+            
+
+            
+          
+            if(method=="GET"){
+
+                if(isObj(security) && Object.keys(security)>=2){
+
+                    if(security.username && security.password){
+
+                req.open(method,path,!0,security.username,security.password);
+
+                }else{
+
+                    req.open(method,path,!0);
+
+                    consW(`
+                    
+                    Invalid "security" object, security object must have the username and passoword 
+                    properties.
+                    
+                    `)
+
+                }
+
+            }else{
+
+
+                req.open(method, path, !0);
+
+            }
+                    
+
+
+                
+
+            }else{
+
+
+                
+                if(isObj(security) && Object.keys(security)>=2){
+
+                    if(security.username && security.password){
+
+                req.open(method,path,!0,security.username,security.password);
+
+                }else{
+
+                    req.open(method,path,!0);
+
+                    consW(`
+                    
+                    Invalid "security" object, security object must have the username and passoword 
+                    properties.
+                    
+                    `)
+
+                }
+
+
+            }
+           
+
+            }
+
+            
+            if(!isObj(headers)){
+
+
+                syErr(`
+                
+                the headers property must be an object, and
+                you defined it as : ${valueType(headers)}.
+                
+                `)
+
+
+            }
+
+
+            Object.entries(headers).forEach(([header,value])=>{
+
+               req.setRequestHeader(header,value);
+
+
+            })
+
+            Object.entries(events).forEach(([name,handler])=>{
+
+                if(allowedEvents.has(name)){
+
+                    if(name!=="onprogress"){
+
+                        req[name]=()=>{
+
+                            handler();
+                        }
+
+                    }else{
+
+                        req.onprogress=(ev)=>{
+
+                            handler.call(
+                                {
+                                  abort(){
+
+                                    req.abort();
+
+                                  }  
+                                }
+                                ,ev.loaded*100/ev.total);
+
+                        }
+
+                    }
+
+                }
+
+            })
+
+
+        }
+
+
+
+            const reactors={
+
+                /**
+                 * This method is used to react when the
+                 * ajax request is made succefully. 
+                 * 
+                 *  Arguments.
+                 * 
+                 * @fn => This argument indicates a function that will be invoked when the ajax request
+                 * is made succefully, it will be invoked with an argument that will indicates a response sent
+                 * by the server.
+                 * 
+                 * The this operator in the @fn function, points to an object with the following properties:
+                 * {
+                 *  status: Retuns the statusCode sent by the server.
+                 * 
+                 *  headers: Returns te headers sent by the server.
+                 * 
+                 *  statusText: Returns the statusText sent by the server.
+                 * 
+                 *  isObj(): Returns true if the request response was an object, otherwise returns false.
+                 *
+                 * }
+                 *
+                 */
+
+                okay(fn){
+
+
+                },
+
+                
+                /**
+                 * This method is used to react when the
+                 * ajax request was not made succefully. 
+                 * 
+                 *  Arguments.
+                 * 
+                 * @fn => This argument indicates a function that will be invoked when the ajax request
+                 * was not made succefully, it will be invoked with an argument that will indicates a response sent
+                 * by the server.
+                 * 
+                 * The this operator in the @fn function, points to an object with the following properties:
+                 * {
+                 * 
+                 *  status: Retuns the statusCode sent by the server.
+                 * 
+                 *  headers: Returns te headers sent by the server.
+                 * 
+                 *  statusText: Returns the statusText sent by the server.
+                 * 
+                 *  isObj(): Returns true if the request response was an object, otherwise returns false.
+                 *
+                 * }
+                 *
+                 */
+
+                error(fn){},
+
+                /**
+                 * This function allows to react both for error and okay results.
+                 * 
+                 * Arguments:
+                 * 
+                 * @okay => The okay handler.
+                 * 
+                 * @error => The error handler.
+                 * 
+                 */
+                response(okay,error){
+
+                }
+
+            }
+
+            return reactors;
+            
+
+        }
+
+     }
+
+     
+     
 
 globalThis.toHTML=toHTML;
 globalThis.renderIf=renderIf;
