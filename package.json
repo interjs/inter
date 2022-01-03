@@ -5,11 +5,11 @@
   "author": "Denis Power",
   "license": "MIT",
   "jsdelivr": "inter.min.js",
-  "repository": "github:DenisPower1/inter",
-   "homepage": "http://interjs.epizy.com/",
+  "repository": "github:interjs/inter",
+  "homepage": "http://interjs.epizy.com/",
   "devDependencies":{
   "nodejs":">=14.18.0",
-   "interfy":"=>2.1.0"
+   "interfy":">=2.1.0"
     
   }
   }
