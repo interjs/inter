@@ -101,7 +101,7 @@ function isBoolean(v){
 
 function isInput(target){
 
-    return target instanceof (HTMLInputElement || HTMLTextAreaElement);
+    return (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement);
 
 
 }
@@ -392,7 +392,7 @@ function getRoutingTag(){
             }
         }
 
-        _dom.observeClickEvent(child);
+
     }
 
 	else if(isButtonOrAnchor(child) && hasAttr(child,"useHash")){
@@ -1785,9 +1785,9 @@ if(pro=="file:"){
 
            get [Symbol.toStringTag](){
 
-            // [obejct Response];
+            // [obejct Ajaxresponse];
 
-            return "Response";
+            return "Ajaxresponse";
 
            },
 
@@ -4465,20 +4465,6 @@ data in toATTR() must be an object.
 }
 
 
-
-
-
-function reativeTemplate(obj){
- 
-Warning(`Unfortunetly reativeTemplate was depracated since version 1.2.0`)
-
-}
-
-
-
-
-
-
 const on={
     call:void 0,
     load(call){
@@ -4982,18 +4968,6 @@ return returnValue
 
     }
 
-    /**
-     *  observe({
-     *  name:"Denis",
-     *  lang:"Javascript"
-     *  }).change((key,value)=>{
-     * 
-     * })
-     * 
-     * 
-     */
-
-    const storeIndex=new Map();
     
 
 
@@ -5086,9 +5060,9 @@ const{
 
             SyntaxErr(`
             
-            Every HTML event must start with "on". And
+            Every HTML events must start with "on". And
 
-            ${name} does not.
+            "${name}" does not.
 
 
             `)
@@ -5381,7 +5355,7 @@ _global.whileLoading=whileLoading
 _global.app=app;
 _global.template=template;
 _global.toATTR=toATTR;
-_global.reativeTemplate=reativeTemplate;
+
 
 
 
