@@ -9,7 +9,8 @@
   "homepage": "http://interjs.epizy.com/",
   "devDependencies":{
   "nodejs":">=14.18.0",
-   "interfy":">=2.1.0"
+   "interfy":">=2.1.0",
+    "inter-complete":"^1.0.0"
     
   }
   }
