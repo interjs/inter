@@ -1,17 +1,12 @@
 /**
  * Inter.
- * Version: 1.2.6
- * 2021 -  by Denis Power.
+ * Version: 1.2.7
+ * 2021 - 2022 -  by Denis Power.
  * https://github.com/DenisPower1/inter
  * A Javascript framework to build interactive frontend applications.
  * 
  * 
  */
-
-
-
-
-
 
 
 
@@ -74,21 +69,10 @@ function hasOwn(key){
 
 }
 
-function isTag(supposed){
+function isTag(tag){
 
-    if(supposed==void 0){
+    return tag instanceof HTMLElement;
 
-        return false;
-
-    }else{
-
-        if(supposed.nodeType==1){
-
-            return true;
-
-        }
-
-    }
 
 }
 
@@ -117,8 +101,8 @@ function isBoolean(v){
 
 function isInput(target){
 
-    const tag=target.tagName;
-    return lowerCase.call(tag)=="input" || lowerCase.call(tag)=="textarea";
+    return target instanceof (HTMLInputElement || HTMLTextAreaElement);
+
 
 }
 
@@ -213,20 +197,29 @@ function CreatEL(EL){
 function setAttr(el,attr, value){
 
     
-    if(el==void 0){
-      return undefined;
+    if(!isTag(el)){
+
+      return void 0;
+
     }else{
  
         return el.setAttribute(attr, value)
 }
+
 }
 
 function getAttr(el, attr){
-   if(el==void 0){
-         return undefined;
+
+    if(!isTag(el)){
+
+         return void 0;
+
    }else{
+
     return el.getAttribute(attr);
+
 }
+
 }
 
 function toString(obj){
@@ -292,12 +285,11 @@ Object.type=(obj)=>{
 }
 
 
-
 /**
  * Adding the getTextNodes to the Node.prototype.
  * It will be a read-only property used to get
- * all textNodes of the target, it is used to help to
- * register the reference in the main element's textNodes
+ * all textNodes of the target, it is used to help
+ * the parser to parse the reference in the main element textNodes
  * when the main element has also elementNodes.
  * 
  * <div id="test">
@@ -313,8 +305,7 @@ Object.type=(obj)=>{
  * }
  * })
  * 
- * Prior to Inter v1.2.6 the parser could not register the reference in main element's textNode,
- * when there were also elementNodes in it.
+ * Prior to Inter v1.2.6 the parse could not parse the reference in textNode.
  * 
  */
 
@@ -489,7 +480,7 @@ reConstroy(key, pro,value){
          if(!hasRef(plainText)){
 
             //If there's no more reference to parse
-            // We should break the loop to evoid unnecessary
+            // We should break the loop to avoid unnecessary
             //computation.
 
             break;
@@ -506,24 +497,40 @@ function ARRAY(){
 
 }
 
-ARRAY.prototype.create=(arr)=>{
+ARRAY.prototype={
+
+    create(arr){
 if(arr==null){
-    return [];
+    
+    return new Array();
+
 }else{
-    return [...arr];
-}
+
+    return Array.from(arr);
 
 }
-ARRAY.prototype.shareItens=(root,reciever)=>{
+
+    },
+
+
+shareItens(root,reciever){
+
 for(let share of root){
     reciever.push(share);
 }
-}
-ARRAY.prototype.destroy=(_array)=>{
+
+},
+destroy(_array){
+
    let length=_array.length; 
  while(length--){
+
      _array.pop();
+
  }
+
+}
+
 }
 var array=new ARRAY();
 
@@ -564,7 +571,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.6"
+        return "1.2.7"
 
     },
 
@@ -769,7 +776,7 @@ var validator={
     url:function(u){
    if(!isDefined(u)){
 
-    SyntaxErr("The argument in validate.url() method must not be null or undefined.")
+    SyntaxErr("The argument of validate.url() method must not be null or undefined.")
 
    }
 
@@ -780,7 +787,7 @@ var validator={
         if(!isDefined(em)){
 
 
-            SyntaxErr("The argument in validate.email() method must not be null or undefined.")
+            SyntaxErr("The argument of validate.email() method must not be null or undefined.")
 
         }
      return   /^(?:[A-Z]+)+(:?[0-9]+)*@+(:?[A-Z]+)\.[A-Z]+$/i.test(em)
@@ -794,7 +801,7 @@ var validate=new Proxy(validator,{
     set(Target, key, value, pro){
         if(key=="url" || key=="email"){
         Warning(`
-        You must not overwrite built-in methods
+        You can not overwrite built-in methods
         `);
         return false;    
         }else{
@@ -805,7 +812,7 @@ var validate=new Proxy(validator,{
         if(key=="url" || key=="email"){
             Warning(
                 `
-                You must not delete built-in methods
+                You can not delete built-in methods
                 `
             );
             return false;
@@ -817,24 +824,6 @@ var validate=new Proxy(validator,{
 
 
 
-Object.defineProperties(HTML.prototype, {
-    toString:{
-        value:()=>{
-
-            return "[Object Inter]";
-
-        },
-        toLocaleString:{
-            value:()=>{
-
-                return "[Object Inter]";
-
-            }
-        
-        
-        }
-    }
-})
 
 const INTER=new HTML();
 const Inter=new Proxy(INTER,{
@@ -860,10 +849,33 @@ const Inter=new Proxy(INTER,{
 
 const lowerCase=String.prototype.toLowerCase;
 
-function Match(root,valueToCompare){
-    let lower=lowerCase.call(root);
-   return lower.indexOf(lowerCase.call(valueToCompare))>-1
-}
+
+
+Object.defineProperties(INTER,{
+
+    [Symbol.hasInstance]:{
+
+
+        get(){
+
+            return false;
+
+        }
+
+    },
+
+    [Symbol.toStringTag]:{
+
+        get(){
+
+            return "Inter";
+
+        }
+
+    }
+
+})
+
 
 function $DATA(){
     this.query=function(obj){
@@ -924,6 +936,7 @@ let lower=lowerCase.call(keyword);
 }
 }
 }
+
 const data=new $DATA();
 
 Object.defineProperty(data,"query", {
@@ -932,31 +945,6 @@ Object.defineProperty(data,"query", {
 })
 
 Object.freeze(data)
-
-Object.defineProperties(INTER,{
-
-    [Symbol.hasInstance]:{
-
-
-        get(){
-
-            return false;
-
-        }
-
-    },
-
-    [Symbol.toStringTag]:{
-
-        get(){
-
-            return "Inter";
-
-        }
-
-    }
-
-})
 
 
 
@@ -971,8 +959,7 @@ function whileLoading(obj){
    }
    if(!isPlainObject(obj)){
        SyntaxErr(`
-         The value passed as argument in the method 
-         whileLoading() must be any object.
+         The argument of whileLoading() function must be an object.
        
        `)
    }else{
@@ -1141,7 +1128,7 @@ definePro(Inter, "renderIf",(obj)=>{
 
         SyntaxErr(`
         
-        The argument of Inter.renderIf() method must be a function must be
+        The argument of Inter.renderIf() method must be
         an object.
 
         `)
@@ -1553,7 +1540,7 @@ function InputHandler(){
         
         if(!isInput(allNodes[i])){
             SyntaxErr(`
-            Really? handleValue must be only setted in elements that recieve the value attribute.
+            Really? handleValue must be only setted in elements that recieves the value attribute.
             like <input> and <textarea></textarea>.
             `)
         }else{
@@ -2121,7 +2108,7 @@ const backend=Object.freeze(new BACKEND());
      this.fire=(evName,info)=>{
          if(!isDefined(evName)){
              SyntaxErr(`
-             You must define the event name.
+             You must define the event's name.
              `)
          }
         if(isDefined(info)){ 
@@ -2614,7 +2601,7 @@ for(let attr=0; attr<attrs.length; attr++){
                     }else{
                         /**
                          *Special case for value attribute: if I use the settAttr()
-                         * to reset the target value, will not work, so the best way
+                         * to reset the target value, it will not work, so the best way
                          * is to set it like this.
                          */
                         target.value=New;
@@ -3518,10 +3505,10 @@ Warning("do in Inter.for() must be a function");
             if(!isaNodeElement(value)){
 
                 SyntaxErr(`
-                You are not return the template()
+                You are not returning the template()
                 function in do() method(Inter.for). It is happening where the target id is "${IN}".
 				
-				If you are return the template function, this error is being thrown because
+				If you are returning the template function, this error is being thrown because
 				you are creating more than one element without a container. When you create
 				more than one element with the template function put the created element inside a container.
 				like:
@@ -3641,7 +3628,7 @@ function ROUTER(obj){
 
         SyntaxErr(`
         
-        ROUTER is not an instance. Just call it like that:
+        ROUTER is not an constructor. Just call it like that:
 
         ROUTER({
 
@@ -3691,7 +3678,7 @@ The argument of ROUTER() must be an object.
 
     if(!isCallable(routeAction)){
         SyntaxErr(`
-        Route action must be a function.
+        Route action/handler must be a function.
         `)
     }
    
@@ -3852,7 +3839,7 @@ setState(state,IN){
   
     if(state in this[storeValue]){
       consoleWarnig(`
-      Oh no! The state that you're register already exist "${state}".
+      Oh no! The state that you're registering already exist "${state}".
       
       `)
     }
@@ -5031,12 +5018,24 @@ const{
  * 
  */
 
+
+ if(!Array.isArray(elements)){
+
+
+    SyntaxErr(`
+    
+    elements in Inter.for() must be an array of object.
+    
+    `)
+
+ }
+
  let returnELS=array.create(null);
 
- for(let el of elements){
+ 
 
 
-    const{
+    let{
         tag,
         text,
         attrs={},
@@ -5044,18 +5043,17 @@ const{
         handlers={},
         styles={},
         children=[],
-    }=el;
+    }=elements[0];
 
+    tag=isCallable(tag) ? tag() : tag;
 
     if(tag==void 0){
 
-        continue;
+        return;
 
     }
 
-    let index=-1;
-
-    storeIndex.set("index",index);
+    
 
     const container=CreatEL(tag);
      
@@ -5184,7 +5182,7 @@ const{
 
      if(children.length>0){
 
-   createChildren(container, children, index);
+   createChildren(container, children);
 
     }
 
@@ -5193,7 +5191,7 @@ const{
     returnELS.push(container)
 
 
- }
+ 
 
  
 
@@ -5211,10 +5209,9 @@ const{
         for(let child of childrenArray){
             
             
-            const{
+            let{
                 tag,
-                text,
-                
+                text, 
                 attrs={},
                 events={},
                 handlers={},
@@ -5222,10 +5219,11 @@ const{
                 children=[],
             }=child;
         
+            tag=isCallable(tag) ? tag() : tag;
         
             if(tag==void 0){
         
-                continue;
+                return;
         
             }
         
@@ -5264,14 +5262,16 @@ const{
         
                     SyntaxErr(`
                     
-                    Every HTML event must start with on. And
+                    Every HTML events must start with on. And
         
-                    ${name} does not.
+                    "${name}" does not.
         
         
                     `)
         
                 }
+
+
         
         
                 if(isDefined(handler)){
@@ -5294,7 +5294,7 @@ const{
                SyntaxErr(`
                
                All handlers properties values must be functions,
-               and the value of handler "${name}" is not.
+               and the value of "${name}"  handler is not.
         
                `)
         
@@ -5390,6 +5390,5 @@ _global.reativeTemplate=reativeTemplate;
  
 })();
  
-
 
 
