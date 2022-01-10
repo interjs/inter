@@ -5,14 +5,17 @@ import{
     isCallable,
     isDefined,
     isObj,
-    array
+    array,
+    hasProp,
+    ParserWarning
+    
 
-} from "./helpers"
+} from "./helpers.js"
 
 
 import{
     renderList as list
-} from "list"
+} from "./renderlist.js"
 
 
 
@@ -112,7 +115,7 @@ export function template(obj){
         
                     syErr(`
                     
-                    Every HTML event must start with on. And
+                    Every HTML events must start with on. And
         
                     "${name}" does not.
         
@@ -120,6 +123,25 @@ export function template(obj){
                     `)
         
                 }
+
+                if(!(name in HTMLElement.prototype)){
+
+                    /**
+                     *
+                     * @name - is not a recognised HTML event.
+                     * 
+                     *
+                     */
+    
+                     ParserWarning(`
+                     
+                     "${name}" is not a recognised HTML event.
+                     
+    
+                     `)
+    
+                }
+        
         
         
                 if(isDefined(handler)){
@@ -182,7 +204,7 @@ export function template(obj){
 
         createChildren(_child,children);
         new DOMMUTATION(_child);
-        }else if(hasProp(renderList)){
+        }else if(hasProp(renderList) ){
 
             
             const{
@@ -227,6 +249,7 @@ export function template(obj){
         
     
         const container=document.createElement(tag);
+         container._events=Object.create(null);
          
     
          Object.entries(attrs).forEach((attr)=>{
@@ -257,7 +280,7 @@ export function template(obj){
     
                 syErr(`
                 
-                Every HTML event must start with "on". And
+                Every HTML events must start with "on". And
     
                 ${name} does not.
     
@@ -265,9 +288,26 @@ export function template(obj){
                 `)
     
             }
+            if(!(name in HTMLElement.prototype)){
+
+                /**
+                 *
+                 * @name - is not a recognised HTML event.
+                 * 
+                 *
+                 */
+
+                 ParserWarning(`
+                 
+                 "${name}" is not a recognised HTML event.
+
+
+                 `)
+
+            }
     
             container[name]=(ev)=>{handler(ev)};
-            container.render=true;
+            container._events[name]=handler;
             
     
          })
@@ -322,7 +362,7 @@ export function template(obj){
 
        new DOMMUTATION(container);
     
-        }else  if(isDefined(renderList)){
+        }else  if(hasProp(renderList)){
 
             const{
                 each,
@@ -338,12 +378,7 @@ export function template(obj){
         }
     
         
-    
-        
-    
-    
-     
-    
+
      
     
      return  container;

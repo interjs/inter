@@ -1,15 +1,79 @@
 
-import{
+import {
 
     consW,
     isObj,
     syErr,
     array,
+    isDefined,
+    isCallable,
+    getId,
+    hasProp,
+    ParserWarning,
+    
+     
 
 
-} from "./helpers"
+}  from "./helpers.js"
 
 
+
+function hasRefs(text){
+
+
+    return /{\s*.*\s*}/.test(text);
+
+}
+ 
+
+ function getRefs(text){
+
+    /**
+     *
+     * @text must be a string containing refs.
+     * 
+     * This function is used in reference computation,
+     * it helps Inter making an eficient reference computation.
+     * 
+     */
+
+     const ref=/{\s*(:?[\w-\s]+)\s*}/g;
+     
+     
+     const refs=new Map();
+        
+
+        text.replace(ref, (plainRef)=>{
+            
+            const refName=plainRef.replace("{","").replace("}","").trim();
+            
+            refs.add(refName);
+
+
+        })
+
+
+     
+
+         return array.create(refs); 
+
+     
+
+}
+
+
+
+/**
+ * 
+ * We are considering them as special attributes
+ * because we must not use the settAttribute method
+ * to set them.
+ * 
+ */
+
+const specialAttrs=new Set([
+        "currentTime", "value",
+    ]);
 
 
 
@@ -37,19 +101,18 @@ function refParser(p,refs,name,rparse){
      * 
      */
     
-      Object.defineProperty(Node.prototype, "getTextNodes", {
+     function getTextNodes(el){
+
     
-        // Read only node property.
-    
-     get(){
-    
+        
+
         let _childNodes=new Set();
     
-        if(this.hasChildNodes())
+        if(el.hasChildNodes())
         
-        for(let child of this.childNodes){
+        for(let child of el.childNodes){
     
-            if(child.nodeType==3 && child.textContent.trim().length>0){
+            if(child.nodeType==3 && child.textContent.trim().length>0 && hasRefs(child.textContent)){
                
                 _childNodes.add(child)
     
@@ -61,10 +124,8 @@ function refParser(p,refs,name,rparse){
     
         return array.create(_childNodes);
     
-        }
-    
-      })
-    
+        
+     }
     
         const children=p.getElementsByTagName("*");
         const notUsed=new Set();
@@ -135,9 +196,9 @@ function refParser(p,refs,name,rparse){
         }
     }
     
-    if(p.getTextNodes.length>0){
+    if(getTextNodes(p).length>0){
     
-        for(let text of p.getTextNodes){
+        for(let text of getTextNodes(p)){
     
         rChild(text);
         
@@ -161,8 +222,9 @@ function refParser(p,refs,name,rparse){
                      const pattern=new RegExp(`{\\s*${r}\\s*}`)
                   if(pattern.test(attr.value)){
                     
-                    if(attr.name!=="value"){
+                    if(!specialAttrs.has(attr.name)){
     
+                        
                     _register.attrs[attr.name]=attr.value;
                     
                     }else{
@@ -173,7 +235,7 @@ function refParser(p,refs,name,rparse){
                                 [attr.name]:attr.value
                           }
                       })
-                        rparse.special.add(r);
+                        
                     }
                     if(notUsed.has(r)){
                         notUsed.delete(r)
@@ -344,7 +406,7 @@ function refParser(p,refs,name,rparse){
     
 
 
-export function toREF(obj){
+export function toRef(obj){
 
     if(new.target!=void 0){
 
@@ -370,7 +432,6 @@ export function toREF(obj){
                 in:IN,
                 refs,
                 data,
-                private,
                 react
             }=obj;
             
@@ -388,7 +449,7 @@ export function toREF(obj){
   
             const source=isObj(refs) ? refs : isObj(data) ? data : null;
             
-            for(r in source){
+            for(let r in source){
 
                 if(isCallable(source[r])){
 
@@ -401,13 +462,12 @@ export function toREF(obj){
             const store={
                 attrs: new Set(), // Attribute reference.
                 text:new Set(), // Text reference.
-                specialAttrs: new Set(),
-                special: new Set(),
+                specialAttrs: new Set(),               
                 refs:void 0,
                 add(setting,attr){
  
                     // if attr, the parser must register the reference 
-                    // as an attribute reference!
+                    // as an attribute reference.
 
                     if(attr){
 
@@ -432,63 +492,51 @@ export function toREF(obj){
             
                      
                   },
-                noMoreRefs(text){
-            
-            
-                    return !/{\s*.*\s*}/.test(text);
-            
-                },
-
-                attrValueGetter(refName){
-
-                     let value=Symbol.for("_not_found");
-
-                     for(let a_r of array.create(this.attrs)){
+                
+                updateSpecialAttrs(){
 
 
-                           let{
-                               target,
-                               attrs
-                           }=a_r;
-                           
-                           const pattern=new RegExp(`{\\\s\*\(\:\?${refName}\)\\\s\*}`);
+                    for(let special of array.create(this.specialAttrs)){
 
-                           if(("value" in attrs || "currentTime" in attrs) &&
-                           
-                           (pattern.test(attrs.value) || pattern.test(attrs.currentTime))
-                           
-                           ){
-                                
-                            
-                            
-                                 
-                            if(target.nodeName=="INPUT"){
+                        if(special.target.hasAttribute("value")){
 
-                                value=target.value;
+                            special.target.removeAttribute("value");
 
-                            } else if(target.nodeName=="VIDEO"){
+                        }else{
 
-                               value=target.currentTime;
+                            if(special.target.hasAttribute("currentTime")){
+
+                                special.target.removeAttribute("currentTime");
 
                             }
-                              
-                            /**
-                             * We must break the loop
-                             *  as soon as we find an attribute reference.
-                             * 
-                             */
 
-                            break;
+                        }
+                     
+                        const  sp=Object.entries(special.attr)[0];
 
-                           }
-                           
-                           
+                
+                        
+                        
+
+                        const refs=getRefs(sp[1]);
+
+                        
+
+                        for(let ref of refs){
+
+                            
+                            const pattern=new RegExp(`{\s*${ref}\s*}`, "g");
+                             
+                            special.target[sp[0]]=sp[1].replace(pattern, this.refs[ref]);
 
 
-                     }
+                        }
+                        
+                        
 
-                     return value;
 
+
+                    }
 
                 },
                 update2(){
@@ -518,7 +566,7 @@ export function toREF(obj){
                              
                                 const pattern=new RegExp(`{\\\s\*\(\:\?${refName}\)\\\s\*}`,"g")
                 
-                                 v=v.replace(pattern,value);
+                                 v=v.replace(pattern,this.refs[refName]);
                             
                                   
                                  
@@ -598,7 +646,10 @@ export function toREF(obj){
                 
             
             }
-                // After updating the text reference, let's update the
+                
+            }
+
+            // After updating the text reference, let's update the
                 // attribute reference.
             
                 if(this.attrs.size>0){
@@ -607,51 +658,11 @@ export function toREF(obj){
             
                 }
 
-                if(this.special.size>0){
-                    this.updateValueAndCurrentTime()
-                }
-            }
-            },
-            updateValueAndCurrentTime(){
-
-                for(let s_a of array.create(this.specialAttrs)){
-
-                    const{
-                        target,
-                        attr
-                    }=s_a;
-
-                    let entries=Object.entries(attr)[0],
+                if(this.specialAttrs.size>0){
                     
-                    attrName=entries[0],
-                    attrValue=entries[1]; 
-                    
-
-                    
-
-                    for(let[ref,value] of Object.entries(this.refs)){
-
-                        const pattern=new RegExp(`{\\\s\*\(\:\?${ref}\)\\\s\*}`,"g")
-
-                        attrValue=attrValue.replace(pattern,value);
-                          
-
-                        if(this.noMoreRefs(attrValue)){
-
-                            break;
-
-                        }
-
-                    }
-
-                    if(target[attrName]!==attrValue){
-
-                    target[attrName]=attrValue;
-                    
-                }
+                    this.updateSpecialAttrs();
 
                 }
-
             }
             }
             
@@ -663,9 +674,9 @@ export function toREF(obj){
 
                 set(t,k,v,p){
 
-               if(store.special.has(k)){
+               if(store.specialAttrs.has(k)){
 
-                store.updateValueAndCurrentTime();
+                store.updateSpecialAttrs();
 
                }
                
@@ -692,6 +703,8 @@ export function toREF(obj){
 
                    }else{
                    store.update();
+                   return true;
+
                    }
 
                    
@@ -702,39 +715,16 @@ export function toREF(obj){
 
                     if(args[1] in source){
 
-                    if(store.attrs.size>0){
-
-                        const returned=store.attrValueGetter(args[1]);
-                         const _no=Symbol.for("_not_found");
-
-                         if(returned==_no){
-
-                            // The reference was not registered 
-                            // as an attribute reference.
-
-                         return   Reflect.get(...args);
-
-                         }else{
-
-                            // The reference was registered
-                            // as an attribute reference.
-
-                            return returned;
-
-                         }
-
-
-                    }else{
 
                    return Reflect.get(...args);
 
-                    }
+                    
 
                 }else{
 
 
                     /**
-                     * The user is trying to get
+                     * There is an attempt to get
                      * a property that was not registered as reference.
                      * We should return undefined.
                      */
@@ -781,7 +771,7 @@ export function toREF(obj){
             })
 
 
-            if(!private && react){
+            if(react){
 
             window[react]=reactor;
             
