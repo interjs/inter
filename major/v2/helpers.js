@@ -1,3 +1,4 @@
+
 // Helpers function.
 
 
@@ -150,19 +151,30 @@ export function isObj(o){
     
     export function syErr(err){
     
-        throw new SyntaxError(err);
+        throw new SyntaxError(`
+        
+        Inter syntaxError : ${err}
+        
+        `);
     
     }
     
     export function err(e){
     
-        throw new Error(e)
+        throw new Error(`
+        
+        Inter error: ${e}
+        
+        `)
     
     }
     
     export function consW(w){
     
-        console.warn(w);
+        console.warn(`
+        Inter warning: ${w}
+        
+        `);
     
     }
     
@@ -170,7 +182,7 @@ export function isObj(o){
     
         console.error(`
     
-        Parser error: ${w}
+       Inter parser error: ${w}
         
         `)
     

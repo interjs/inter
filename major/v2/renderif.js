@@ -4,9 +4,13 @@ import{
     ParserWarning,
     isFalse,
     isObj,
+    getId,
+    consW,
+    array,
+    isAtag
     
 
-} from "./helpers"
+} from "./helpers.js"
 
 
 
@@ -58,17 +62,17 @@ export function renderIf(obj){
 
                 //Nested children.
 
-                const nodes=el.childNodes;
+                const nodes=el.children;
 
                 let _index=-1;
                 for(let node of nodes ){
 
-                    if(node.nodeType==1){
+                    
 
                     _index++;
-                    }
+                    
 
-                    if(node.hasChildNodes()){
+                    if(node.children.length>0){
 
                         deepIfs(node);
 
@@ -78,20 +82,51 @@ export function renderIf(obj){
                         target:node,
                         if:void 0,
                         else:void 0,
+                        ifNot:void 0,
                         i:_index,
                         root:node.parentNode,
                     }
 
                     
 
-                    if(node.nodeType==1){
+                    
 
                     
 
-                        let sibling=node.nextElementSibling;
+            let sibling=node.nextElementSibling;
 
                         
-                        if(node.hasAttribute("_else") && !node.hasAttribute("_if")){
+            if(node.hasAttribute("_ifNot")){
+                 
+                setting.ifNot=node.getAttribute("_ifNot");
+
+                if(setting.ifNot in cond){
+
+                    node.removeAttribute("_ifNot");
+
+                    els.add(setting);
+
+                }else{
+
+                    ParserWarning(`
+                    
+                    The conditional rendering parser found
+                    an element with the _notIf attribute and the value
+                    of this attribute is not a conditional property in cond object.
+
+                    {
+                        element: ${node.nodeName.toLowerCase()},
+                        _ifNot:${setting.ifNot},
+                        cond:${Object.keys(cond)}
+                    }
+                    
+                    `)
+                }
+
+
+            }
+                        
+                  else    if(node.hasAttribute("_else") && !node.hasAttribute("_if")){
 
 
                 ParserWarning(`
@@ -119,7 +154,7 @@ export function renderIf(obj){
             
                             }
                             setting.if=node.getAttribute("_if");
-                            node.removeAttribute("_else");
+                            node.removeAttribute("_if");
 
                             
                      
@@ -161,7 +196,7 @@ export function renderIf(obj){
 
 
 
-                    }
+                    
 
             
 
@@ -178,6 +213,7 @@ export function renderIf(obj){
                 target:child,
                 if:void 0,
                 else:void 0,
+                ifNot:void 0,
                 i:index,
                 root:theContainer
             }
@@ -185,14 +221,45 @@ export function renderIf(obj){
 
            const sibling=child.nextElementSibling;
             
-            if(child.hasChildNodes()){
+            if(child.children.length>0){
 
                 deepIfs(child)
                 
 
             }
 
-            if(child.hasAttribute("_else") && !child.hasAttribute("_if")){
+            if(child.hasAttribute("_ifNot")){
+                 
+                setting.ifNot=child.getAttribute("_ifNot");
+
+                if(setting.ifNot in cond){
+
+                    child.removeAttribute("_ifNot");
+
+                    els.add(setting);
+
+                }else{
+
+                    
+                    ParserWarning(`
+                    
+                    The conditional rendering parser found
+                    an element with the _notIf attribute and the value
+                    of this attribute is not a conditional property in cond object.
+
+                    {
+                        element: ${child.nodeName.toLowerCase()},
+                        _ifNot:${setting.ifNot},
+                        cond:${Object.keys(cond)}
+                    }
+                    
+                    `)
+                }
+
+
+            }
+
+        else    if(child.hasAttribute("_else") && !child.hasAttribute("_if")){
 
 
                 ParserWarning(`
@@ -287,13 +354,46 @@ function parseConditionalRendering(cond,els){
                 target,
                 if:IF,
                 else:ELSE,
+                ifNot,
                 i,
                 root
             }=el;
 
+
+            if(ifNot){
+
+                const current=root.children[i];
+
+                if(isFalse(cond[ifNot]) && !target.isSameNode(current)){
+
+
+                    if(isAtag(current)){
+
+                        root.replaceChild(current, target)
+
+
+                    }else{
+
+                        root.appendChild(target);
+
+                    }
+
+
+
+                }else{
+
+                    if(target.parentNode==root){
+
+                        root.removeChild(target);
+
+                    }
+
+                }
+
+            }
             
 
-            if(isFalse(cond[IF])){
+            else if(isFalse(cond[IF])){
 
                 
                 
@@ -332,7 +432,12 @@ function parseConditionalRendering(cond,els){
                     
                      if(el.isSameNode(target)){
                        
-                        // No need to update the interface.
+                        if(ELSE && ELSE.parentNode!=null){
+
+
+                            root.removeChild(ELSE)
+
+                        }
                         
                     }
                     else if(ELSE && ELSE.parentNode!=null){
@@ -378,7 +483,11 @@ const reactor=new Proxy(cond,{
 
         if(!(args[1] in cond)){
  
+            consW(`
+            ${args[1]} was not defined 
+            as a conditional property.
             
+            `)
 
             return false;
 
@@ -408,7 +517,7 @@ const reactor=new Proxy(cond,{
 
     deleteProperty(...args){
 
-        
+        return false;
 
     }
 
@@ -445,6 +554,8 @@ Object.defineProperty(reactor, "observe",{
         }else{
 
                 observer.set(prop, fn);
+
+                return true;
 
         }
 

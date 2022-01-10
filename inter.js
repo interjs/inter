@@ -305,7 +305,7 @@ Object.type=(obj)=>{
  * }
  * })
  * 
- * Prior to Inter v1.2.6 the parse could not parse the reference in textNode.
+ * Prior to Inter v1.2.6 the parser could not parse the reference in textNode.
  * 
  */
 
@@ -357,7 +357,7 @@ function getRoutingTag(){
 
     if(tS=="[object Window]"){
 
-        // There was not defined the <body> tag.
+        // The <body> tag was not defined.
 
         return;
 
