@@ -1,8 +1,8 @@
 /**
  * Inter.
- * Version: 1.2.7
+ * Version: 1.2.8
  * 2021 - 2022 -  by Denis Power.
- * https://github.com/DenisPower1/inter
+ * https://github.com/interjs/inter
  * A Javascript framework to build interactive frontend applications.
  * 
  * 
@@ -305,7 +305,7 @@ Object.type=(obj)=>{
  * }
  * })
  * 
- * Prior to Inter v1.2.6 the parser could not parse the reference in textNode.
+ * Prior to Inter v1.2.6 the parse could not parse the reference in textNode.
  * 
  */
 
@@ -357,7 +357,7 @@ function getRoutingTag(){
 
     if(tS=="[object Window]"){
 
-        // The <body> tag was not defined.
+        // No <body> tag.
 
         return;
 
@@ -571,7 +571,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.7"
+        return "1.2.8"
 
     },
 
@@ -5193,11 +5193,12 @@ const{
                 children=[],
             }=child;
         
+            
             tag=isCallable(tag) ? tag() : tag;
         
             if(tag==void 0){
         
-                return;
+            continue;
         
             }
         
