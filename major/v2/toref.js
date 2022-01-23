@@ -40,7 +40,7 @@ function hasRefs(text){
      const ref=/{\s*(:?[\w-\s]+)\s*}/g;
      
      
-     const refs=new Map();
+     const refs=new Set();
         
 
         text.replace(ref, (plainRef)=>{
