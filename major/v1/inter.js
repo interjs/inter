@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.8
+ * Version: 1.2.9
  * 2021 - 2022 -  by Denis Power.
  * https://github.com/interjs/inter
  * A Javascript framework to build interactive frontend applications.
@@ -105,6 +105,7 @@ function isInput(target){
 
 
 }
+
 
 const Dev={
 
@@ -571,7 +572,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.8"
+        return "1.2.9"
 
     },
 
@@ -2955,12 +2956,12 @@ let newREF={
    
    
     if(root.length>0 && target.length>0){
-   for(let el=target.length-1; el>-1; el--){
+   for(let index=0; index<target.length-1; index++){
    
 
-    if(notSameTagName(target[el], root[el])){
+    if(notSameTagName(target[index], root[index])){
 
-        root[el].parentNode.replaceChild(target[el], root[el]);
+        root[index].parentNode.replaceChild(target[index], root[index]);
 
         continue;
 
@@ -2969,13 +2970,11 @@ let newREF={
  
 
 
- if(isDefined(root[el]) && isDefined(target[el])  &&
-    deeplyNotIqualElements(root[el],target[el]) ){
+ if(isDefined(root[index]) && isDefined(target[index])  &&
+    deeplyNotEqualElements(root[index],target[index]) ){
  
-        
-    root[el].parentNode.replaceChild(target[el],root[el])  
-        
- 
+    root[index].parentNode.replaceChild(target[index],root[index])  
+    
        
  
    
@@ -3000,7 +2999,7 @@ let newREF={
 
     // There is no parent elements.
 
-    if(deeplyNotIqualElements(value, father)){
+    if(deeplyNotEqualElements(value, father)){
 
         parent.replaceChild(value, father);
 
@@ -3030,7 +3029,7 @@ let newREF={
 
     }
 
-    function deeplyNotIqualElements(target,toCompare){
+    function deeplyNotEqualElements(target,toCompare){
 
 
         
@@ -3268,6 +3267,7 @@ definePro(Inter, "for", (obj)=>{
 
 
 let pro=null;
+const cond=new Set();
 
 if(isArray(data)){
 
@@ -3501,44 +3501,28 @@ Warning("do in Inter.for() must be a function");
      
         data.forEach((item, i)=>{
             var value=DO.call(pro,item, i);
-          
-            if(!isaNodeElement(value)){
+
+             if(!isaNodeElement(value) ){
+
+                
 
                 SyntaxErr(`
                 You are not returning the template()
                 function in do() method(Inter.for). It is happening where the target id is "${IN}".
 				
-				If you are returning the template function, this error is being thrown because
-				you are creating more than one element without a container. When you create
-				more than one element with the template function put the created element inside a container.
-				like:
-				
-				template({
-					
-					elements:[{
-						
-						tag:"div", children:[{
-							tag:"h2", text:"user"
-						},{
-							
-							tag:"p", text:"The user's description."
-							
-						}]
-						
-					}]
-					
-				})
 
                 `)
 
             }
-     
+        
+
         for(let el of value){
           
             
             root.appendChild(el);
         }
       
+    
     
     })
     someRef.add(IN);
@@ -3551,28 +3535,41 @@ Warning("do in Inter.for() must be a function");
 
       let _value=DO.call(pro,el,i);
      
+     
 
+    if(!isaNodeElement(_value)){
+
+        SyntaxErr(`
+                You are not returning the template()
+                function in do() method(Inter.for). It is happening where the target id is "${IN}".
+				
+
+                `)
+
+    }
       
   
-    if(isDefined(root.children[i])){
+    else if(isDefined(root.children[i])){
 
       for(let _el of _value){
         
-        calculateUpdate(_el,root,i)
+        calculateUpdate(_el,root, i)
       }
-    }
-    if(!isDefined(root.children[i])){
+    }else{
+     if(!isDefined(root.children[i])){
     
-    if(data.length>root.children.length){
+    if(data.length-cond.size>root.children.length){
        for( v of _value){
     
 
         root.appendChild(v)
-           
+        return;           
        }
+
+       
     }
     }
- 
+}
     })
 
    
@@ -5004,6 +5001,28 @@ const{
 
  }
 
+ if(elements.length>1){
+
+    consoleWarnig(`
+    
+    You are creating more than one element without a container in template function, 
+    put the created element inside a container like:
+
+    template({
+        elements:[{
+            //container.
+            tag:"div", children:[{
+
+                //The elements here!
+
+            }]
+        }]
+    })
+    
+    `)
+
+ }
+
  let returnELS=array.create(null);
 
  
@@ -5023,7 +5042,11 @@ const{
 
     if(tag==void 0){
 
-        return;
+        SyntaxErr(`
+        
+        You can not render a container conditionally, in template function.
+        
+        `)
 
     }
 
@@ -5160,13 +5183,13 @@ const{
 
     }
 
-    
+
 
     returnELS.push(container)
 
 
  
-
+ 
  
 
  return returnELS;
