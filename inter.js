@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.9
+ * Version: 1.2.10
  * 2021 - 2022 -  by Denis Power.
  * https://github.com/interjs/inter
  * A Javascript framework to build interactive frontend applications.
@@ -572,7 +572,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.9"
+        return "1.2.10"
 
     },
 
@@ -1122,7 +1122,7 @@ definePro(Inter, "renderIf",(obj)=>{
 
 
     const insertedElements=array.create(null);
-    const indexes=new Set();
+    
 
     if(!isPlainObject(obj)){
         
@@ -1308,7 +1308,12 @@ class SIMULATE{
    
   typing(obj){
     if(!isPlainObject(obj)){
-        // error
+        
+        SyntaxErr(`
+        
+        The argument of simulate.typing(arg:Object) must be a plain object.
+        
+        `)
     }else{
        /**
         * semulate.typing({
@@ -2675,7 +2680,7 @@ for(let attr=0; attr<attrs.length; attr++){
                 SyntaxErr(`
                 
                 The value of [ REFERENCE REACTOR ].setRefs must be an object
-                and you defined "${valueType(v)} as its value."
+                and you defined "${valueType(v)}" as its value.
 
                 `)
 
@@ -3116,10 +3121,78 @@ let newREF={
      */
 
 
+    
 
   // Special for Inter.for() and Inter.renderIf()
 
-function makeReactive(obj, call, defineProps){
+  function defineReactiveArray(arr, call, makeReactive){
+
+    const reactive=Symbol("reactive");
+
+  if(reactive in arr){
+
+    // This array is  already reactive,
+    // so we should ignore any attempt to make it reactive once more.
+
+    return false;
+
+  }
+
+  // Mutating methods
+  const methods=["push", "unshift", "pop", "shift", "splice", "sort","fill", "reverse"];
+
+  for(let method of methods){
+
+    Object.defineProperty(arr,[method],{
+        value(){
+
+            Array.prototype[method].call(this,...arguments);
+            //Run the reactive system.
+            call();
+
+        }
+    })
+
+  }
+
+  if(makeReactive){
+
+    for(let item of arr){
+
+        if(isPlainObject(item)){
+
+            makeReactive(item, call, true)
+
+        }else{
+
+            
+       if(isArray(item)){
+
+        defineReactiveArray(item, call,/*make reactive props if it's an array of object */ true )
+
+      }
+
+        }
+
+    }
+
+
+  }
+
+
+  }
+
+function makeReactive(obj, call,defineProps){
+
+    /**
+     * defineProps => The object must have the reactive property 
+     * defineProps ? 
+     *  
+     *  Yes: true.
+     *  otherwise : undefined.
+     * 
+     *
+     */
 
   const reactive=Symbol("reactive");
 
@@ -3148,14 +3221,14 @@ for(let key of properties){
         key="_defineProps";
      
         consoleWarnig(`
-        "defineProps" is a reserved property in the objects that are the values
+        "defineProps" is a reserved property in the objects which are the values
         of data array in Inter.for(). So Inter redefined it to "${key}".
         
         `)
 
     }
+    }
 
-}
   
 Object.defineProperty(obj,[key],{
 set(value){
@@ -3169,9 +3242,29 @@ get(){
     return share[key];
 }
 })
+
+
 if(isPlainObject(obj[key])){
 
-    makeReactive(obj[key], call, true);
+    makeReactive(obj[key], call);
+
+}else{
+
+    if(isArray(obj[key])){
+
+        defineReactiveArray(obj[key], call);
+
+        for(let k of obj[key]){
+
+            if(isPlainObject(k)){
+
+                makeReactive(k, call);
+
+            }
+
+        }
+
+    }
 
 }    
 }
@@ -3282,6 +3375,15 @@ function proSetup(){
            
             if(isPlainObject(value)){
               makeReactive(value,Work,true)
+          }else{
+
+            
+    if(isArray(value)){
+
+        defineReactiveArray(value, Work,/*make reactive props if it's an array of object */ true )
+
+    }
+
           }
             Work()
             
@@ -3306,7 +3408,16 @@ Work()
 
 for(let v of value){
     if(isPlainObject(v)){
-        makeReactive(v, Work,true)
+        makeReactive(v, Work, true)
+    }else{
+
+        
+    if(isArray(v)){
+
+        defineReactiveArray(v, Work,/*make reactive props if it's an array of object */ true )
+
+    }
+
     }
 }
 
@@ -3363,6 +3474,15 @@ proSetup();
                     makeReactive(v, Work, true);
                     
                 
+                }else{
+
+                    
+         if(isArray(v)){
+
+           defineReactiveArray(v, Work,/*make reactive props if it's an array of object */ true )
+
+         }
+
                 }
 
                 data.push(v);
@@ -3381,6 +3501,15 @@ proSetup();
                     makeReactive(arr[i], Work, true);
                   
                 
+                }else{
+
+                    
+             if(isArray(arr[i])){
+
+            defineReactiveArray(arr[i], Work,/*make reactive props if it's an array of object */ true )
+
+                       }
+
                 }
 
                 data.unshift(arr[i]);
@@ -3400,6 +3529,15 @@ proSetup();
                     makeReactive(v, Work, true);
                     
                 
+                }else{
+
+                    
+             if(isArray(v)){
+
+           defineReactiveArray(v, Work,/*make reactive props if it's an array of object */ true )
+
+            }
+
                 }
 
                 data.splice(ind,0,v);
@@ -3432,19 +3570,33 @@ proSetup();
 
      if(isPlainObject(value)){
 
-        makeReactive(value,Work,true)
+        makeReactive(value,Work, true)
+
+    }else{
+
+        
+    if(isArray(value)){
+
+        defineReactiveArray(value, Work,/*make reactive props if it's an array of object */ true )
+
+    }
 
     }
     
-     return [...data];
+     return array.create(data);
+
    }else{
-       for(let item of value){
+     
+    for(let item of value){
+
        pro.push(item);
+
 
        }
        
-       return [...data];
-   }},
+       return array.create(data);
+   }
+},
    configurable:!0,
 
 
@@ -3477,6 +3629,12 @@ Warning("do in Inter.for() must be a function");
          
      makeReactive(_obj, Work, true);
 
+}else{
+    if(isArray(_obj)){
+
+        defineReactiveArray(_obj, Work,/*make reactive props if it's an array of object */ true )
+
+    }
 }
 }
    function Work(){
@@ -5388,5 +5546,6 @@ _global.toATTR=toATTR;
  
 })();
  
+
 
 
