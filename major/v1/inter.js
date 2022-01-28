@@ -306,7 +306,7 @@ Object.type=(obj)=>{
  * }
  * })
  * 
- * Prior to Inter v1.2.6 the parse could not parse the reference in textNode.
+ * Prior to Inter v1.2.6 the parser could not parse the reference in textNode.
  * 
  */
 
@@ -2961,26 +2961,74 @@ let newREF={
    
    
     if(root.length>0 && target.length>0){
-   for(let index=0; index<target.length-1; index++){
+
+        
+       /**
+         * 
+         * If the replaced element has children, we must skip
+         * the check for its children.
+         * 
+         */
+
+         
+        /**
+         * 
+         * WARNING:
+         * 
+         *  We must not render the target[index]
+         *  element directly, this way we avoid
+         *  virtual dom problems.
+         * 
+         */
+        
+    let nodes=Array.from(target);
+
+   for(let index=0; index<nodes.length; index++ ){
    
 
-    if(notSameTagName(target[index], root[index])){
 
-        root[index].parentNode.replaceChild(target[index], root[index]);
+    
 
-        continue;
+    if(notSameTagName(nodes[index], root[index])){
+
+        
+        let oldChild=root[index];
+        
+
+        oldChild.parentNode.replaceChild(nodes[index], oldChild);
+ 
+        
+        
+        if(oldChild.children.length>0){
+
+            index+=oldChild.getElementsByTagName("*").length;
+
+        }
+
+
+        
 
     }
 
  
 
 
- if(isDefined(root[index]) && isDefined(target[index])  &&
-    deeplyNotEqualElements(root[index],target[index]) ){
+ if(isDefined(root[index]) && isDefined(nodes[index])  &&
+    deeplyNotEqualElements(root[index],nodes[index]) ){
+
+        
+        const oldChild=root[index];    
+
+        oldChild.parentNode.replaceChild(nodes[index], oldChild);
  
-    root[index].parentNode.replaceChild(target[index],root[index])  
+        if(oldChild.children.length>0){
+
+            index+=oldChild.getElementsByTagName("*").length;
+
+        }
+
     
-       
+    
  
    
  
@@ -2989,6 +3037,9 @@ let newREF={
 
  
    }
+
+   nodes=new Array();
+
 }else{
 
   
@@ -3007,6 +3058,7 @@ let newREF={
     if(deeplyNotEqualElements(value, father)){
 
         parent.replaceChild(value, father);
+        
 
     }
 
