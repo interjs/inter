@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.10
+ * Version: 1.2.11
  * 2021 - 2022 -  by Denis Power.
  * https://github.com/interjs/inter
  * A Javascript framework to build interactive frontend applications.
@@ -533,6 +533,7 @@ destroy(_array){
 }
 
 }
+
 var array=new ARRAY();
 
 //As Inter store a lot of data in memory, it can cause memory lack, so let's manage it.
@@ -572,7 +573,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.10"
+        return "1.2.11"
 
     },
 
@@ -695,10 +696,23 @@ window.onload=()=>{
          `);  
        }else{
        const{in:IN,
-    elements
+        elements
     }=obj;
-    const root=getId(IN);
-       elements.forEach((el)=>{
+    
+    if(!isArray(elements)){
+
+        SyntaxErr(`
+        
+        "elements" must be an array in Inter.addHTML()
+        
+        `)
+
+    }
+    
+         const root=getId(IN);
+
+       for(let el of elements){
+
        const{
            tag,
            text,
@@ -709,7 +723,7 @@ window.onload=()=>{
 
        if(tag==void 0){
 
-        return false;
+        continue;
 
        }
       
@@ -762,7 +776,7 @@ window.onload=()=>{
 
     root.appendChild(_el)
 
-})
+}
 
 
 
@@ -894,7 +908,7 @@ function $DATA(){
          */
 if(!isPlainObject(obj)){
 SyntaxErr(`
-The argument in data.query() must be an object.
+The argument of data.query() must be an object.
 `)
 }else{
     const{
@@ -1376,7 +1390,7 @@ cleaning(obj){
  
     if(!isPlainObject(obj)){
        SyntaxErr(`
-       The value passed as argument in the method cleaning must be an object.
+       The value passed as the argument in the method cleaning must be an object.
        `)
 
     }else{
@@ -2958,6 +2972,14 @@ let newREF={
    let root=parent.children[ind].getElementsByTagName("*");
    
    const target=value.getElementsByTagName("*");
+
+   if(deeplyNotEqualElements(father, value/*target*/)){
+
+    father.parentNode.replaceChild(value, father);
+
+    return;
+
+   }
    
    
     if(root.length>0 && target.length>0){
@@ -3002,6 +3024,10 @@ let newREF={
         if(oldChild.children.length>0){
 
             index+=oldChild.getElementsByTagName("*").length;
+
+        }else{
+
+            continue;
 
         }
 
@@ -3177,9 +3203,11 @@ let newREF={
 
   // Special for Inter.for() and Inter.renderIf()
 
-  function defineReactiveArray(arr, call, makeReactive){
+  const reactive=Symbol("reactive")
 
-    const reactive=Symbol("reactive");
+  function defineReactiveArray(arr, call, defineProps){
+
+  
 
   if(reactive in arr){
 
@@ -3202,25 +3230,92 @@ let newREF={
             //Run the reactive system.
             call();
 
+            
+            
+
+            if(method=="push" || method=="unshift"){
+
+                for(let item of arguments){
+
+                if(isPlainObject(item)){
+
+                    makeReactive(item, call, defineProps);
+
+                }else{
+
+                    if(isArray(item)){
+
+                        defineReactiveArray(item, call, defineProps);
+
+                    }
+
+                }
+
+            }
+
+            }else{
+
+                if(method=="splice"){
+
+                    // arr.splice(start, end, ...item);
+
+                    
+                    (function(start, end, ...items){ 
+
+                        
+
+                    
+                    if(isDefined(items)){
+
+
+                        for(let item of items){
+
+                        if(isPlainObject(item)){
+
+                            makeReactive(item, call, defineProps)
+
+                        }else{
+
+                            if(isArray(item)){
+
+
+                                defineReactiveArray(item, call, defineProps)
+
+                            }
+
+                        }
+
+
+                    }
+
+                }
+
+            
+
+            })(...arguments);
+
+            }
+        }
+
         }
     })
 
   }
 
-  if(makeReactive){
+  
 
     for(let item of arr){
 
         if(isPlainObject(item)){
 
-            makeReactive(item, call, true)
+            makeReactive(item, call, defineProps)
 
         }else{
 
             
        if(isArray(item)){
 
-        defineReactiveArray(item, call,/*make reactive props if it's an array of object */ true )
+        defineReactiveArray(item, call,/*make reactive props if it's an array of object */ defineProps )
 
       }
 
@@ -3229,8 +3324,14 @@ let newREF={
     }
 
 
-  }
+  
 
+
+  Object.defineProperty(arr,reactive,{
+      value:true,
+      configurable:!1
+      
+  })
 
   }
 
@@ -3246,7 +3347,7 @@ function makeReactive(obj, call,defineProps){
      *
      */
 
-  const reactive=Symbol("reactive");
+  
 
   if(reactive in obj){
 
@@ -3298,23 +3399,14 @@ get(){
 
 if(isPlainObject(obj[key])){
 
-    makeReactive(obj[key], call);
+    makeReactive(obj[key], call, defineProps);
 
 }else{
 
     if(isArray(obj[key])){
 
-        defineReactiveArray(obj[key], call);
+        defineReactiveArray(obj[key], call, defineProps);
 
-        for(let k of obj[key]){
-
-            if(isPlainObject(k)){
-
-                makeReactive(k, call);
-
-            }
-
-        }
 
     }
 
