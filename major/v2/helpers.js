@@ -12,7 +12,19 @@ export function isObj(o){
     
      }
      
-     export function isDefined(t){
+ export function isSet(o){
+
+    return o instanceof Set;
+
+ }
+
+ export function isMap(o){
+
+    return o instanceof Map;
+
+ }
+
+ export function isDefined(t){
     
         return t!=void 0;
     
@@ -26,37 +38,42 @@ export function isObj(o){
       * 
       */
 
-     export function isTrue(v){
+ export function isTrue(v){
     
         return Object.is(v,true);
     
      }
     
-     export function isFalse(v){
+ export function isFalse(v){
     
         return Object.is(v,false);
     
      }
     
-    
-     export function isCallable(fn){
+ /*</>*/   
+
+ export function isCallable(fn){
     
         return typeof fn=="function";
     
      }
     
-     export function hasProp(obj){
+ export function hasProp(obj){
     
         if(isObj(obj)){
     
             return Object.keys(obj).length>0;
     
+        }else{
+
+            return false;
+
         }
     
      }
 
 
-     export function isAtag(tag){
+ export function isAtag(tag){
 
 
         return tag instanceof HTMLElement;
@@ -64,7 +81,7 @@ export function isObj(o){
 
      }
     
-     export function hasNodeChild(tag){
+ export function hasNodeChild(tag){
     
         if(isAtag(tag)){
     
@@ -83,7 +100,7 @@ export function isObj(o){
     
     
     
-     export function getId(id){
+export function getId(id){
     
         if(typeof id!=="string"){
 
@@ -113,7 +130,7 @@ export function isObj(o){
     
      }
     
-     export function valueType(val){
+ export function valueType(val){
     
          if(
             typeof val=="undefined" ||
@@ -134,11 +151,11 @@ export function isObj(o){
              * 
              * @val may be an array, a plain object or even
              * a native Javascript object,
-             * let's check with the Object.type() method.
+             * let's check with the type() function.
              * 
              */
     
-             return Object.type(val)
+             return type(val)
     
     
         }
@@ -149,7 +166,7 @@ export function isObj(o){
     
     // WARNINGS HELPERS
     
-    export function syErr(err){
+export function syErr(err){
     
         throw new SyntaxError(`
         
@@ -159,7 +176,7 @@ export function isObj(o){
     
     }
     
-    export function err(e){
+export function err(e){
     
         throw new Error(`
         
@@ -169,7 +186,7 @@ export function isObj(o){
     
     }
     
-    export function consW(w){
+export function consW(w){
     
         console.warn(`
         Inter warning: ${w}
@@ -178,7 +195,7 @@ export function isObj(o){
     
     }
     
-    export function ParserWarning(w){
+export function ParserWarning(w){
     
         console.error(`
     
@@ -321,7 +338,7 @@ export function isObj(o){
     
     
     
-        Object.type=(val)=>{
+ function  type(val){
     
         // All Javascript objects.
     
@@ -358,41 +375,6 @@ export function isObj(o){
         }
     
     
-       export function getRefs(text){
-    
-            /**
-             *
-             * @text must be a string containing refs.
-             * 
-             * This function is used in reference computation,
-             * it helps Inter making an eficient reference computation.
-             * 
-             */
-    
-             const ref=/{\s*(:?[\w-\s]+)\s*}/g;
-             
-             
-             const refs=new Set();
-                
-    
-                text.replace(ref, (plainRef)=>{
-                    
-                    const refName=plainRef.replace("{","").replace("}","").trim();
-                    
-                    refs.add(refName);
-    
-    
-                })
-    
-    
-             
-    
-                 return array.create(refs); 
-    
-             
-    
-        }
-    
 
       export  function hasChildren(el){
 
@@ -412,4 +394,5 @@ export function isObj(o){
 
 
         }
+
     
