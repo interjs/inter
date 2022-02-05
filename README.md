@@ -43,7 +43,7 @@ It's: **simple**, **intuitive** and **powerful**.
 
 # No complex setup
 
-You will not need to do any complex configuration to be up and running in Inter, just import the
+You will not need to do any complex configuration to get up and running with Inter, just import the
 framework in top of your page in a script tag, and start building even the most complex web apps.
 
 ```html
