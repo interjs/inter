@@ -395,4 +395,20 @@ export function ParserWarning(w){
 
         }
 
-    
+    export function equal(val1,val2){
+
+        return Object.is(val1,val2);
+
+    }
+
+    export function isBool(val){
+
+        /**
+         * 
+         * Not use typeof val==="boolean"; due to 1 and 0.
+         * 
+         */
+
+        return val==true || val==false;
+
+    }
