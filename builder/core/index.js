@@ -35,8 +35,8 @@ const {
          * 
          * {
          * 
-         * files:Array<Object>,
-         * vars:Array<String>,
+         * files:Array<string>,
+         * vars:Array<Object>,
          * version:string
          * 
          * }
