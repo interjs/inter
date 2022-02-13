@@ -74,6 +74,7 @@ const {
             let fileStringfied=`
             `;
 
+          
             for(let file of options.files){
 
 
