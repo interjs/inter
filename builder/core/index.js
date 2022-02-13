@@ -95,12 +95,12 @@ const {
           
          
 
-            createGlobalVars(options.vars, fileStringfied)
+          fileStringfied+=createGlobalVars(options.vars, fileStringfied);
 
 
          }
 
-         createIIFE(fileStringfied, options.version);
+         fileStringfied+=createIIFE(fileStringfied, options.version);
          const {then, catch:_catch}=createFileNamed("Inter.js", fileStringfied);
 
          then((ms)=>{
