@@ -39,8 +39,9 @@ function removeImportsAndExport(fileName,fileStringfied){
 
      if(fileStringfied instanceof String){ 
          
-         fileStringfied.replace(importStatement, "");
-        fileStringfied.replace(exportStatement, "");
+        fileStringfied=fileStringfied.replace(importStatement, "").replace(exportStatement, "");
+         
+         return fileStringfied;
          
          
      }else{ 
