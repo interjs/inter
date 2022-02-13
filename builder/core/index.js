@@ -90,12 +90,14 @@ const {
 
          
 
-         options.vars instanceof Array && (()=>{
+         if(options.vars instanceof Array){ 
+          
+         
 
             createGlobalVars(options.vars, fileStringfied)
 
 
-         })()
+         }
 
          createIIFE(fileStringfied, options.version);
          const {then, catch:_catch}=createFileNamed("Inter.js", fileStringfied);
