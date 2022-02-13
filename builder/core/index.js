@@ -77,7 +77,7 @@ const {
             for(let file of options.files){
 
 
-               require("fs").readFileSync(file, (e,d)=>{
+               require("fs").readFile(file, (e,d)=>{
 
                 if(e) throw new Error(`The task could not be completed because of : ${e}  `);
 
