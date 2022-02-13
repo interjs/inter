@@ -37,15 +37,22 @@ function removeImportsAndExport(fileName,fileStringfied){
     const importStatement=/import(:?\s*){.*}(:?\s*)from(:?\s*)(:? ".*"|'.*'|`.*`)(:?\s*);*/g;
     const exportStatement=/export/g;
 
-    return ((fileStringfied instanceof String && fileStringfied.replace(importStatement, "") &&
-       
-      fileStringfied.replace(exportStatement, "")) || (function(){  throw new Error(`
+     if(fileStringfied instanceof String){ 
+         
+         fileStringfied.replace(importStatement, "");
+        fileStringfied.replace(exportStatement, "");
+         
+         
+     }else{ 
+         throw new Error(`
          
          Ensure that the ${fileName} contains both import and export statements.
+         
+         `)
       
-      `)  })()
+      }
     
-    )
+    
 
 
 
