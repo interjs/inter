@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.11
+ * Version: 1.2.12
  * 2021 - 2022 -  by Denis Power.
  * https://github.com/interjs/inter
  * A Javascript framework to build interactive frontend applications.
@@ -338,6 +338,62 @@ Object.defineProperty(Node.prototype,"getTextNodes",{
 } )
 
 
+function registerEvents(newNode,oldNode){
+
+    /**
+     * All elements nodes created by the template function will have the _events 
+     * object. All the properties of that object will
+     * be the names of the events, and the values will be
+     * the handlers. 
+     * 
+     *
+     */
+
+     if(("_events" in oldNode)){
+
+    for(let eventName in oldNode._events){
+
+        oldNode[eventName]=void 0;
+
+    }
+    
+};
+
+    for(let [eventName, eventHandler] of Object.entries(newNode._events)){
+
+        oldNode[eventName]=eventHandler;
+
+    }
+
+
+}
+
+function isValidSTyle(styleName){
+
+    
+    
+    return styleName in document.body.style;
+    
+
+
+}
+
+function isValidDOmEvent(eventName){
+
+    /**
+     * Where this function will be called, there's
+     * a check to verify if the @eventName starts with on(the prefix for dom events).
+     * 
+     */
+
+     return eventName in HTMLElement.prototype;
+
+     
+
+}
+
+
+
 const _global=globalThis ? globalThis : window;
 
 //Special for routing.
@@ -573,7 +629,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.11"
+        return "1.2.12"
 
     },
 
@@ -3058,6 +3114,14 @@ let newREF={
  
    
  
+}else{
+
+    if(("_events" in  nodes[index])){
+
+        registerEvents(nodes[index], root[index]);
+
+    }
+
 }
 
 
@@ -3075,16 +3139,24 @@ let newREF={
 
         parent.replaceChild(value, father);
 
-        return false;
+        
 
     }
 
     // There is no parent elements.
 
-    if(deeplyNotEqualElements(value, father)){
+    else if(deeplyNotEqualElements(value, father)){
 
         parent.replaceChild(value, father);
         
+
+    }else{
+
+        if(("_events" in value)){
+
+            registerEvents(value, father);
+
+        }
 
     }
 
@@ -3121,20 +3193,15 @@ let newREF={
    
       const ta_attributes=target.attributes;
       const to_attributes=toCompare.attributes;
-      const render=toCompare.render;
-    
-      if(!notEqual(render, true)){
-         
-          returnValue=true;
-          
-         
-      }
-      if(!returnValue){
+      
+      
         
           if(ta_attributes.length!==to_attributes.length){
             
            returnValue=true;
+
           }else{
+
       for(let attr of to_attributes){
         
           const name=attr.name;
@@ -3154,7 +3221,7 @@ let newREF={
 
       }
     }
-}
+
       if(!returnValue){ //Run if returnValue is false;
        
       if(target.textContent && toCompare.textContent){
@@ -4540,10 +4607,18 @@ function InterpretAttrs(el,attrs, attrManager, original){
 Object.entries(attrs).reduce(($,attr)=>{
      const[attrName, attrValue]=attr;
     
-         if(attrValue!=void 0 && !attrName.startsWith("on")){
+         if(attrValue!=void 0 && attrName!=="value" && attrName!=="currentTime" && !attrName.startsWith("on")){
         
          setAttr(el,attrName,attrValue);
-         }else{
+
+         }else if(attrName=="value" || attrName=="currentTime"){
+
+            el[attrName]=attrValue
+
+         }
+         
+         
+         else{
              
              if(attrName.startsWith("on") && isCallable(attrValue))
             
@@ -4614,12 +4689,12 @@ Object.defineProperty(emptyObj,[attrManager],{
 
                 return false;
             }
-            if(key!="value" && !key.startsWith("on")){
+            if(key!=="value" && key!=="currenTime" && !key.startsWith("on")){
                 setAttr(el,key,propValue)
                 Reflect.set(target, key, propValue, pro)
-                return false;
-            }if(key=="value"){
-                el.value=propValue;
+                
+            }else if(key=="value" || key==="currentTime"){
+                el[key]=propValue;
                 Reflect.set(target, key, propValue, pro)
             }else{
                 if(key.startsWith("on")){
@@ -4692,25 +4767,13 @@ for(let child of children){
 }
 
 function toATTR(obj){
-    /**
-     *toATTR({
-     * in:"container",
-     * data:{
-     * inputsAttr:{
-     * placeholder:"Hey",
-     * type:"text"
-     * }
-     * }
-     *     
-     })
-     *
-     */
+    
 
     const returnOBJ=Object.create(null);
 
     if(!isPlainObject(obj)){
         SyntaxErr(`
-        The argument in "toATTR()" function must be an object.
+        The argument of "toATTR()" function must be an object.
         `)
     }else{
   const{
@@ -4720,6 +4783,17 @@ function toATTR(obj){
       
   }=obj;
   
+  if(!(typeof IN=="string")){
+
+    syntaxErr(`
+    
+    The "in" property in toATTR() function
+    must be defined and must be a type of string.
+    
+    `)
+
+  }
+
   const root= getId(IN)
                
 
@@ -5272,24 +5346,34 @@ return returnValue
 
     function template(obj){
 
+
+        if(new.target!==void 0){
+
+            SyntaxErr(`
+            
+            The template function is not a constructor,
+            do not call it with the new keyword.
+            
+            `)
+
+        }
+
+        if(!isPlainObject(obj)){
+
+            SyntaxErr(`
+            
+            The argument of the template function must be
+            a plain object, but you defined ${valueType(obj)} as
+            its argument.
+            
+            `)
+
+        }
+
+
 const{
     elements
 }=obj;
-
-/**
- * 
- * [{
- * tag:"div", children:[{
- * 
- * tag:"p", children:[{
-* tag:"p", children:[{tag:"ul", children:[{tag:"li"}]}] 
-*  
-* }]
- * 
- * }]
- * }]
- * 
- */
 
 
  if(!Array.isArray(elements)){
@@ -5297,7 +5381,7 @@ const{
 
     SyntaxErr(`
     
-    elements in Inter.for() must be an array of object.
+    elements in template must be an array of object.
     
     `)
 
@@ -5308,7 +5392,7 @@ const{
     consoleWarnig(`
     
     You are creating more than one element without a container in template function, 
-    put the created element inside a container like:
+    put the created elements inside a container like:
 
     template({
         elements:[{
@@ -5327,7 +5411,17 @@ const{
 
  let returnELS=array.create(null);
 
- 
+ if(!isPlainObject(elements[0])){
+
+    SyntaxErr(`
+    
+    The items of the elements array in template,
+    must be only objects, but you defined "${valueType(elements[0])}"
+    as the first value of the elements array.
+    
+    `)
+
+ }
 
 
     let{
@@ -5355,6 +5449,7 @@ const{
     
 
     const container=CreatEL(tag);
+    container._events=Object.create(null);
      
 
      Object.entries(attrs).forEach((attr)=>{
@@ -5383,7 +5478,7 @@ const{
 
         if(!name.startsWith("on")){
 
-            SyntaxErr(`
+            consoleWarnig(`
             
             Every HTML events must start with "on". And
 
@@ -5395,12 +5490,25 @@ const{
         }
 
 
-        if(isCallable(handler)){
+       else if(isCallable(handler) && isValidDOmEvent(name)){
 
             container[name]=handler;
-            container.render=true;
+            container._events[name]=handler;
+
+        }else{
+
+            if(!isValidDOmEvent(name)){
+
+            consoleWarnig(`
+            
+            "${name}" doesn't seem to be a valid
+            dom event.
+            
+            `)
 
         }
+
+    }
 
         
 
@@ -5441,9 +5549,21 @@ const{
 
      Object.entries(styles).forEach((style)=>{
 
+        
+
         const[name,value]=style;
 
-        if(isDefined(value)){
+        if(isDefined(name) && !isValidSTyle(name)){
+
+            consoleWarnig(`
+            
+            "${name}" doesn't seem to be a valid css style.
+            
+            `)
+
+        }
+
+     else   if(isDefined(value)){
 
             if(isCallable(value)){
 
@@ -5454,6 +5574,12 @@ const{
                 container.style[name]=value;
 
             }
+
+        }else{
+
+            // The style was not created.
+            // Because its name is null or undefined.
+
 
         }
 
@@ -5506,6 +5632,17 @@ const{
         
 
         for(let child of childrenArray){
+
+            if(!isPlainObject(child)){
+
+                SyntaxErr(`
+                
+                The items of children array in template must be
+                only an object, and you defined it as "${valueType(child)}."
+                
+                `)
+
+            }
             
             
             let{
@@ -5528,9 +5665,7 @@ const{
             }
         
             const _child=CreatEL(tag);
-            
-        
-
+            _child._events=Object.create(null);
  
 
              Object.entries(attrs).forEach((attr)=>{
@@ -5560,7 +5695,7 @@ const{
         
                 if(!name.startsWith("on")){
         
-                    SyntaxErr(`
+                    consoleWarnig(`
                     
                     Every HTML events must start with on. And
         
@@ -5574,11 +5709,23 @@ const{
 
         
         
-                if(isDefined(handler)){
+                else if(isCallable(handler) && isValidDOmEvent(name)){
         
                     _child[name]=handler;
-                    _child.render=true;
+                    _child._events[name]=handler;
         
+                }else{
+
+                    if(!isValidDOmEvent(name)){
+
+                        consoleWarnig(`
+                        
+                        "${name}" doesn't seem to be a valid dom event.
+                        
+                        `)
+
+                    }
+
                 }
         
              })
@@ -5614,7 +5761,17 @@ const{
 
             const[name,value]=style;
 
-            if(isDefined(value)){
+            if(isDefined(value) && !isValidSTyle(name)){
+
+                consoleWarnig(`
+                
+                "${name}" doesn't seem to be a valid css style.
+                
+                `)
+
+            }
+
+            else if(isDefined(value)){
 
                 if(isCallable(value)){
 
@@ -5625,6 +5782,10 @@ const{
                     _child.style[name]=value;
 
                 }
+
+            }else{
+
+                //Style was not created.
 
             }
 
