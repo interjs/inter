@@ -6,7 +6,7 @@ const inst=new Perf();
 
 Inter.for({
          in:"list",
-         data:["Inter","Laravel","Express","Django"],
+         data:["Inter","Mithril","Ember"],
          do(name){
       
             return template({
