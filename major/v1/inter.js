@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.12
+ * Version: 1.2.13
  * 2021 - 2022 -  by Denis Power.
  * https://github.com/interjs/inter
  * A Javascript framework to build interactive frontend applications.
@@ -629,7 +629,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.12"
+        return "1.2.13"
 
     },
 
@@ -3002,12 +3002,32 @@ let newREF={
     }
     
 
+    function getChildrenLength(container){
 
-    function calculateUpdate(value,parent,ind){
+        return {length: isTag(container) ? container.getElementsByTagName("*").length : 0};
+
+    }
+
+    function getAllEls(container){
+
+        if(isTag(container)){
+
+            return container.getElementsByTagName("*");
+
+        }else{
+
+            return array.create(null);
+
+        }
+
+    }
+
+
+    function calculateUpdate(value,parent,ind, _template){
       
        let father=parent.children[ind];
-
        
+
            
        if(notSameTagName(father,value)){
 
@@ -3017,7 +3037,7 @@ let newREF={
 
        } 
 
-        if(father.getElementsByTagName("*").length!=value.getElementsByTagName("*").length){
+        if(getChildrenLength(father).length!==getChildrenLength(value).length){
             
             parent.replaceChild(value,father);
             
@@ -3025,17 +3045,19 @@ let newREF={
             return;
         }
       
-   let root=parent.children[ind].getElementsByTagName("*");
+   let root=getAllEls(parent.children[ind]);
    
-   const target=value.getElementsByTagName("*");
+   const target=getAllEls(value);
 
    if(deeplyNotEqualElements(father, value/*target*/)){
 
-    father.parentNode.replaceChild(value, father);
+    parent.replaceChild(value, father);
 
     return;
 
    }
+
+   
    
    
     if(root.length>0 && target.length>0){
@@ -3064,13 +3086,56 @@ let newREF={
    for(let index=0; index<nodes.length; index++ ){
    
 
-
+/**
+ * 
+ * <div>
+ * <h2></h2> 0
+ * <p></p> 1
+ * .....(1)
+ * <div> 2
+ * <button></button> 3
+ * <button></button> 4
+ * </div>
+ * </div>
+ * 
+ * 
+ * <div>
+ * <h2></h2> 0
+ * <h5></h5> 1
+ * <p></p> 2
+ * <div> 3
+ * <button></button> 4
+ * </div>
+ * </div>
+ *
+ * 
+ */
     
 
     if(notSameTagName(nodes[index], root[index])){
 
         
         let oldChild=root[index];
+
+        
+
+        if(hasUndeepChild(root[index]) && (index+1)+getChildrenLength(root[index]).length==nodes.length){
+
+
+            /**
+             * 
+             * If this block runs, there are a lot of conditional rendering, if we try to compute
+             * them one by one can cause many bugs, the best way right now is to rerender the main
+             * container and skip all the computation.
+             *  
+             */
+
+            parent.replaceChild(_template()[0], father);
+            
+            
+           break
+
+        }
         
 
         oldChild.parentNode.replaceChild(nodes[index], oldChild);
@@ -3105,7 +3170,7 @@ let newREF={
  
         if(oldChild.children.length>0){
 
-            index+=oldChild.getElementsByTagName("*").length;
+            index+=getChildrenLength(oldChild).length;
 
         }
 
@@ -3159,6 +3224,8 @@ let newREF={
         }
 
     }
+
+    
 
 }
 
@@ -3922,7 +3989,7 @@ Warning("do in Inter.for() must be a function");
 
       for(let _el of _value){
         
-        calculateUpdate(_el,root, i)
+        calculateUpdate(_el,root, i, ()=>DO.call(pro, el, i));
       }
     }else{
      if(!isDefined(root.children[i])){
@@ -5502,7 +5569,7 @@ const{
             consoleWarnig(`
             
             "${name}" doesn't seem to be a valid
-            dom event.
+            dom's event.
             
             `)
 
@@ -5720,7 +5787,7 @@ const{
 
                         consoleWarnig(`
                         
-                        "${name}" doesn't seem to be a valid dom event.
+                        "${name}" doesn't seem to be a valid dom's event.
                         
                         `)
 
@@ -5749,7 +5816,7 @@ const{
                 }else{
         
                     handler.apply(_child, void 0);
-                    handler.render=true;
+                    
         
         
                 }
