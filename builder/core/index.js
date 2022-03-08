@@ -101,15 +101,11 @@ const {
          }
 
          fileStringfied+=createIIFE(fileStringfied, options.version);
-         const {then, catch:_catch}=createFileNamed("Inter.js", fileStringfied);
-
-         then((ms)=>{
+         createFileNamed("Inter.js", fileStringfied).then((ms)=>{
 
             console.log(ms);
 
-         });
-
-         _catch((err)=>{
+         }).catch((err)=>{
 
 
             throw new Error(`
