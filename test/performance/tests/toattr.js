@@ -16,7 +16,7 @@ inst.test({
       title:null,
       onclick(){
       
-        this.class="Button clicked!"
+        this.class="clicked"
         
       }  
       }
