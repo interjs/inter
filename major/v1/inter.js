@@ -1,6 +1,6 @@
 /**
  * Inter.
- * Version: 1.2.13
+ * Version: 1.2.14
  * 2021 - 2022 -  by Denis Power.
  * https://github.com/interjs/inter
  * A Javascript framework to build interactive frontend applications.
@@ -370,9 +370,9 @@ function registerEvents(newNode,oldNode){
 
 function isValidSTyle(styleName){
 
+    const el=document.createElement("div");
     
-    
-    return styleName in document.body.style;
+    return styleName in el.style;
     
 
 
@@ -629,7 +629,7 @@ let _status="development"
 const app={
     get version(){
 
-        return "1.2.13"
+        return "1.2.14"
 
     },
 
@@ -1809,7 +1809,7 @@ if(pro=="file:"){
     Warning(`
     
     You can not use the backend.request() method
-    in an "file:" protocol, use a "http:" or "https:" protocol instead.
+    in a "file:" protocol, use a "http:" or "https:" protocol instead.
 
     `)
 
@@ -1948,9 +1948,9 @@ if(pro=="file:"){
     
            }
       
-       if(isTrue(withCridentials)){
+       if(isBoolean(withCridentials)){
 
-           theRequest.withCredentials=true;
+           theRequest.withCredentials=withCridentials;
 
        }
        
@@ -2092,11 +2092,9 @@ if(pro=="file:"){
            theRequest.send(null);
 
        }else{
-           if(isDefined(body)){
 
-               theRequest.send(body);
+        theRequest.send(isDefined(body) ? body : null);
 
-           }
        }
     
 
@@ -5483,7 +5481,7 @@ const{
     SyntaxErr(`
     
     The items of the elements array in template,
-    must be only objects, but you defined "${valueType(elements[0])}"
+    must be only plain Javascript objects objects , but you defined "${valueType(elements[0])}"
     as the first value of the elements array.
     
     `)
@@ -5513,6 +5511,21 @@ const{
 
     }
 
+    if(!isPlainObject(events) || !isPlainObject(attrs) || !isPlainObject(handlers)){
+
+        SyntaxErr(`
+        
+        "events", "attrs" and "handlers" in template function must be plain Javascript objects.
+        
+        `)
+
+    }
+
+    if(!isArray(children)){
+
+        SyntaxErr(`"children" must be an array in template function.`)
+
+    }
     
 
     const container=CreatEL(tag);
@@ -5523,7 +5536,25 @@ const{
          
         const[name,value]=attr;
 
-        if(isDefined(name)){
+        if(name=="style"){
+
+            consoleWarnig(`
+            
+            "style" is a forbidden attribute name in template function,
+            if you want to create some styles for an element, do it in the "styles" option.
+            
+            `)
+
+        } else if(name.startsWith("on") && isValidDOmEvent(name)){
+
+            consoleWarnig(`
+            
+            You can not declare any event in the "attrs" option, do it in the "events"
+            option.
+            
+            `)
+
+        } else  if(isDefined(name)){
 
             if(isCallable(value)){
 
@@ -5600,7 +5631,7 @@ const{
         }else{
 
             handler.apply(container, void 0);
-            handler.render=true;
+            
 
 
         }
@@ -5705,7 +5736,7 @@ const{
                 SyntaxErr(`
                 
                 The items of children array in template must be
-                only an object, and you defined it as "${valueType(child)}."
+                only plain Javascript objects, and you defined it as "${valueType(child)}."
                 
                 `)
 
@@ -5739,7 +5770,25 @@ const{
                  
                 const[name,value]=attr;
         
-                if(isDefined(value)){
+                if(name=="style"){
+
+                    consoleWarnig(`
+                    
+                    "style" is a forbidden attribute name in template function,
+                    if you want to create some styles for an element, do it in the "styles" option.
+                    
+                    `)
+        
+                } else if(name.startsWith("on") && isValidDOmEvent(name)){
+        
+                    consoleWarnig(`
+                    
+                    You can not declare any event in the "attrs" option, do it in the "events"
+                    option.
+                    
+                    `)
+        
+                } else if(isDefined(value)){
                     
         
                     if(isCallable(value)){
