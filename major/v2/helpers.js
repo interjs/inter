@@ -98,8 +98,40 @@ export function isObj(o){
     
      }
     
-    
-    
+ export  function validDomEvent(eventName){
+
+    return eventName in HTMLElement.prototype;
+
+
+ }
+
+ export function validStyleName(styeName){
+
+    return styeName in HTMLElement.prototype.style;
+
+ }   
+
+ export function createText(text){
+
+
+    return document.createTextNode(text);
+
+
+ }
+
+ export function validTagOption(option){
+
+    return typeof option=="string";
+
+
+ }
+
+ export function validStylesOrEventsOptions(option){
+
+    return isObj(option);
+
+ }
+ 
 export function getId(id){
     
         if(typeof id!=="string"){
@@ -263,78 +295,6 @@ export function ParserWarning(w){
 
     export const array=new ARRAY();
     
-     export function DOMMUTATION(el){
-    
-        this.target=el;
-        this.mutated=false;
-        
-        for(let method of ["appendChild","replaceChild","removeChild"]){
-    
-            this.mutate(method);
-    
-        };
-    
-        for(let method of [
-            {native:"appendChild", _new:Symbol.for("_add")},
-            {native:"replaceChild", _new:Symbol.for("_replace")},
-            {native:"removeChild", _new:Symbol.for("_remove")}
-        ]){
-            this.intermethods(method);
-        }
-    
-        //let's now say to the Observer that the actual
-        // element is mutated.
-    
-        this.mutated=true;
-    
-    }
-    
-    
-    
-    DOMMUTATION.prototype.mutate=function(method){
-    
-        if(this.target && !this.mutated){
-        
-            
-    
-            Object.defineProperty(this.target, [method],{
-    
-                value(){
-    
-                    consW(`
-                    
-                    Inter is working on [${this}], and Inter mutated it,
-                    so that you can not mudify it. 
-    
-                    `)
-    
-                }
-    
-            })
-    
-        }
-    }
-        DOMMUTATION.prototype.intermethods=function(obj){
-    
-            if(this.target &&!this.mutated){
-    
-                   
-                Object.defineProperty(this.target, obj._new, {
-    
-                    value(){
-    
-                      Node.prototype[obj.native].call(this,...arguments);        
-    
-                    }
-    
-                })
-    
-            }
-    
-        }
-    
-    
-    
     
     
     
@@ -410,5 +370,297 @@ export function ParserWarning(w){
          */
 
         return val==true || val==false;
+
+    }
+
+
+    export function ObserveArrayMethods(){
+
+
+        
+
+Object.defineProperty(pro, "shift", {
+
+    value(){  
+    
+    const removed=Array.prototype.shift.apply(data, void 0);
+    const firstNodeElement=_root.children[0];
+    
+    if(firstNodeElement){
+    
+    _root[remove](firstNodeElement);
+    
+    
+    reorderIndex(each, runUpdate);
+    
+    }
+    
+    
+    return removed;
+    
+    
+    
+    }
+    }
+    )
+    
+
+    Object.defineProperty(pro, "unshift",{
+
+        value(){
+        
+        
+        const added=Array.prototype.unshift.apply(each, arguments);
+        const _this=this;
+        if(arguments.length>1){
+        
+        
+        let i=arguments.length-1;
+        
+        for(; i>-1; i--){
+        
+            
+        
+            const el=DO.call(_this,arguments[i],i);
+        
+            if(_root.children[0]){
+            
+                _root.insertBefore(el, _root.children[0]);
+        
+            }else{
+        
+                _root[add](el);
+        
+            }
+        
+        }
+        
+        }else if(arguments.length==1){
+        
+        const el=DO.call(_this, arguments[0], 0);
+            
+        
+        if(_root.children[0]){
+            
+            _root.insertBefore(el, _root.children[0]);
+        
+        }else{
+        
+            _root[add](el);
+        
+        }
+        
+        
+        
+        }
+        
+        
+        
+        
+        
+        reorderIndex(each, runUpdate);
+        
+        
+        
+        return added;
+        
+        }
+        
+        })
+        
+        Object.defineProperty(pro, "splice",{
+        
+        value(start, deleteCount, ...itens){
+        
+        const spliced=Array.prototype.splice.apply(each,arguments);
+        
+        
+        if(itens.length==0){
+        
+            let from=start;
+            const to=deleteCount;
+        
+        /**
+         * 4
+         * 1
+         * 
+         */
+            for(let i=0; i<to; i++){
+        
+                
+                const node=_root.children[from];
+        
+                if(node){
+        
+                _root[remove](node)
+        
+                }
+        
+            }
+        
+        }else{
+        
+            
+        
+            if(end==0 && itens){
+        
+                for(let l=itens.length-1; l>-1; l--){
+        
+                    const el=DO.call(pro, itens[l], l);
+        
+                    if(_root.children[start]){
+        
+                    _root.insertBefore(el,_root.children[start]);
+        
+                    }else{
+        
+                        _root[add](el);
+        
+                    }
+        
+                }
+        
+            }
+        
+        }
+        
+        
+        reorderIndex(each, runUpdate);
+        
+        return spliced;
+        
+        
+        }
+        
+        })
+        
+        
+
+
+
+    }
+
+    //Just for renderList.
+
+    export function validInProperty(IN){
+
+        
+
+        return (
+
+            typeof IN=="string" || IN instanceof HTMLElement
+
+        );
+
+
+    }
+
+
+    export function validEachProperty(each){
+
+        return (
+
+            each instanceof Array || each instanceof Map || each instanceof Set
+            || each instanceof WeakMap || each instanceof WeakSet || isObj(each)
+
+        )
+
+
+    }
+
+    function toIterable(data){
+
+        let iterable={
+         values:array.create(null),
+         type:void 0,
+         _forEach(callBack){
+
+            this.values.forEach((val)=>{})
+
+         }
+
+        };
+
+        if(array.is(data)){
+
+           iterable.values=data;
+
+        }else if(isObj(data)){
+
+            iterable.values=Object.entries(data);
+            iterable.type=1
+
+        }else if(data instanceof Map){
+
+            data.forEach((value, key)=>{
+
+                iterable.values.push([key, value]);
+
+            });
+
+            
+
+
+        }else if(data instanceof Set){
+
+         iterable.values=Array.from(data);
+         
+
+        }else if(data instanceof Number){
+
+            for(let i=0; i<data; i++){
+                iterable.values.push(i);
+
+            };
+
+
+
+        };
+
+        return iterable;
+
+        
+
+    }
+
+    export function Iterable(data){
+
+
+      this.source=toIterable(data);
+      
+      
+
+    }
+
+    Iterable.prototype.each=function(callBack){
+
+        let index=-1;
+
+        for(const data of this.source.values){
+
+            index++;
+
+            callBack(data, index);
+
+        };
+
+
+
+    }
+
+    //</>
+
+    export function notSameLength(obj1, obj2){
+
+        if(obj1===void 0 || obj2===void 0) return false;
+
+        return !(Object.keys(obj1).length===Object.keys(obj2).length);
+
+
+    }
+
+    export function isReactivable(target){
+
+
 
     }
