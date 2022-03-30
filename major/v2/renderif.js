@@ -7,7 +7,9 @@ import{
     getId,
     consW,
     array,
-    isAtag
+    isAtag,
+    err,
+    isCallable
     
 
 } from "./helpers.js"
@@ -26,13 +28,13 @@ export function renderIf(obj){
 
         syErr(`
         
-        The argument of renderIf must be a plain object.
+        The argument of renderIf must be a  plain Javascript object.
         
         `)
 
     }
 
-    if(new.target!=void 0){
+    if(new.target!==void 0){
 
         syErr(`
         
@@ -45,8 +47,8 @@ export function renderIf(obj){
 
         const{
             in:IN,
-            cond,
-            react,
+            data,
+            
         }=obj;
 
         let index=-1;
@@ -86,11 +88,7 @@ export function renderIf(obj){
                         i:_index,
                         root:node.parentNode,
                     }
-
-                    
-
-                    
-
+             
                     
 
             let sibling=node.nextElementSibling;
@@ -100,7 +98,7 @@ export function renderIf(obj){
                  
                 setting.ifNot=node.getAttribute("_ifNot");
 
-                if(setting.ifNot in cond){
+                if(setting.ifNot in data){
 
                     node.removeAttribute("_ifNot");
 
@@ -112,12 +110,12 @@ export function renderIf(obj){
                     
                     The conditional rendering parser found
                     an element with the _notIf attribute and the value
-                    of this attribute is not a conditional property in cond object.
+                    of this attribute is not a conditional property in data object.
 
                     {
                         element: ${node.nodeName.toLowerCase()},
                         _ifNot:${setting.ifNot},
-                        cond:${Object.keys(cond)}
+                        data:${Object.keys(data)}
                     }
                     
                     `)
@@ -126,7 +124,7 @@ export function renderIf(obj){
 
             }
                         
-                  else    if(node.hasAttribute("_else") && !node.hasAttribute("_if")){
+       else if(node.hasAttribute("_else") && !node.hasAttribute("_if")){
 
 
                 ParserWarning(`
@@ -154,6 +152,28 @@ export function renderIf(obj){
             
                             }
                             setting.if=node.getAttribute("_if");
+
+                            if(!(setting.if in data)){
+
+                                ParserWarning(`
+                    
+                                  The conditional rendering parser found
+                                  an element with the _if attribute and the value
+                                  of this attribute is not a conditional property in data object.
+
+                                 {
+                                 element: ${node.nodeName.toLowerCase()},
+                                 _if:${setting.if},
+                                 data:${Object.keys(data)}
+                                 }
+                    
+                    `)
+
+                      
+                            setting.if=void 0;
+                     
+                 }
+
                             node.removeAttribute("_if");
 
                             
@@ -161,7 +181,7 @@ export function renderIf(obj){
                     
                         }
 
-              if(sibling && sibling.hasAttribute("_else")){
+              if(setting.if && sibling && sibling.hasAttribute("_else")){
 
 
                 
@@ -232,7 +252,7 @@ export function renderIf(obj){
                  
                 setting.ifNot=child.getAttribute("_ifNot");
 
-                if(setting.ifNot in cond){
+                if(setting.ifNot in data){
 
                     child.removeAttribute("_ifNot");
 
@@ -245,12 +265,12 @@ export function renderIf(obj){
                     
                     The conditional rendering parser found
                     an element with the _notIf attribute and the value
-                    of this attribute is not a conditional property in cond object.
+                    of this attribute is not a conditional property in data object.
 
                     {
                         element: ${child.nodeName.toLowerCase()},
                         _ifNot:${setting.ifNot},
-                        cond:${Object.keys(cond)}
+                        data:${Object.keys(data)}
                     }
                     
                     `)
@@ -259,7 +279,7 @@ export function renderIf(obj){
 
             }
 
-        else    if(child.hasAttribute("_else") && !child.hasAttribute("_if")){
+        else if(child.hasAttribute("_else") && !child.hasAttribute("_if")){
 
 
                 ParserWarning(`
@@ -271,7 +291,7 @@ export function renderIf(obj){
 
                 return false;
 
-            }
+            };
             
 
              if(child.hasAttribute("_if")){
@@ -290,6 +310,27 @@ export function renderIf(obj){
                 }
 
                 setting.if=child.getAttribute("_if");
+
+                if(!(setting.if in data)){
+
+                    ParserWarning(`
+                    
+                    The conditional rendering parser found
+                    an element with the _notIf attribute and the value
+                    of this attribute is not a conditional property in data object.
+
+                    {
+                        element: ${node.nodeName.toLowerCase()},
+                        _ifNot:${setting.ifNot},
+                        data:${Object.keys(data)}
+                    }
+                    
+                    `);
+
+                    setting.if=void 0;
+
+                }
+
                 child.removeAttribute("_if");
                 
                 
@@ -328,7 +369,7 @@ export function renderIf(obj){
         }
 
 
-        const reactor=parseConditionalRendering(cond,els);
+        const reactor=parseConditionalRendering(data,els);
 
         
 
@@ -342,7 +383,7 @@ export function renderIf(obj){
 }
 
 
-function parseConditionalRendering(cond,els){
+function parseConditionalRendering(data,els){
 
     const toArray=array.create(els);
 
@@ -364,7 +405,7 @@ function parseConditionalRendering(cond,els){
 
                 const current=root.children[i];
 
-                if(isFalse(cond[ifNot]) && !target.isSameNode(current)){
+                if(isFalse(data[ifNot]) && !target.isSameNode(current)){
 
 
                     if(isAtag(current)){
@@ -393,7 +434,7 @@ function parseConditionalRendering(cond,els){
             }
             
 
-            else if(isFalse(cond[IF])){
+            else if(isFalse(data[IF])){
 
                 
                 
@@ -477,11 +518,11 @@ function parseConditionalRendering(cond,els){
 
 run();
 
-const reactor=new Proxy(cond,{
+const reactor=new Proxy(data,{
 
     set(...args){
 
-        if(!(args[1] in cond)){
+        if(!(args[1] in data)){
  
             consW(`
             ${args[1]} was not defined 
@@ -525,7 +566,8 @@ const reactor=new Proxy(cond,{
 
 const observer=new Map();
 
-Object.defineProperty(reactor, "observe",{
+Object.defineProperties(reactor,{ 
+    "observe":{
 
     value(prop, fn){
 
@@ -562,7 +604,57 @@ Object.defineProperty(reactor, "observe",{
     },
     enumerable:!1,
     configurable:!1
+    },
+    setConds:{
 
+        set(conditions){
+
+            if(!isObj(conditions)){
+
+                syErr(`
+                
+                The value of [renderIf reactor].setConds must be only
+                a Javascript object, and you defined ${valueType(conditions)}
+                as its value.
+
+                `);
+
+            };
+
+
+            for(const [prop, cond] of Object.entries(conditions)){
+
+                if(!(prop in this)){
+
+                    consW(`
+                    
+                    "${prop}" was not defined as conditional property.
+                    
+                    `)
+
+                };
+
+                if(isCallable(cond)){
+
+                data[prop]=cond.call(data);
+
+                }else{
+
+                    data[prop]=cond;
+
+                }
+
+            };
+
+
+
+            run();
+
+        },
+        enumerable:!1,
+        configurable:!1
+
+    }
 })
 
 return reactor;
