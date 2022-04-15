@@ -8,15 +8,20 @@
     validEachProperty,
     valueType,
     Iterable,
-    array,
     isAtag,
     getId,
     consW,
-   notSameLength,
+   isArray,
    isDefined,
    err,
    isMap,
-   isSet
+   isSet,
+   isTrue,
+   isFalse,
+   isNotConfigurable,
+   validStyleName,
+   validDomEvent,
+   ParserWarning
    
    
 
@@ -24,7 +29,7 @@
 
 import{ 
 
-    template,
+    
     toDOM
 
 
@@ -42,7 +47,7 @@ import{
 
         defineReactiveObj(arg, call);
 
-    }else if(array.is(arg)){
+    }else if(isArray(arg)){
 
         defineReactiveArray(arg, call);
 
@@ -78,7 +83,22 @@ import{
 
     }
 
+    if(isNotConfigurable(obj)){
+
+        consW(`
+        
+        Inter fails to define reactivity
+        in a plain Javascript object because it is a no-configurable object.
+        
+        `);
+
+        return false;
+
+    }
+
     if(defineProps in obj){
+
+        console.log(obj)
 
         consW(`
         
@@ -123,7 +143,7 @@ import{
                 return share[prop];
 
             },
-            configurable:!1
+            configurable:!0
 
         })
 
@@ -139,9 +159,9 @@ import{
 
                     syErr(`
                     
-                    The value of [Reactor].defineProps must be
+                    The value of [List reactor => Object.defineProps] must be
                     only a plain Javascript object, and you
-                    defined ${valueType(props)} as its value.
+                    defined "${valueType(props)}" as its value.
                     
                     `);
 
@@ -200,13 +220,49 @@ import{
             enumerable:!1,
             configurable:!1
 
+        },
+        deleteProps:{
+            set(props){
+
+                if(!isArray(props)){
+
+                    syErr(`
+                    
+                    The value of [List reactor => Object.deleteprops] must be 
+                    an array, and you defined "${valueType(props)}" as its value.
+                    
+                    `)
+
+                };
+
+                for(const prop of props){
+                    
+
+                    if(prop in this){
+
+                        delete this[prop];
+
+                    };
+
+                };
+
+                call();
+
+            }
+        },
+        [reactive]:{
+            get(){
+
+                return true;
+
+            }
         }
 
     })
 
  }
 
- function defineReactiveArray(array){
+ function defineReactiveArray(array, call){
 
     const reactive=Symbol.for("reactive");
 
@@ -232,7 +288,7 @@ import{
 
             value(start, deleteCount, ...items){
 
-                Array.prototype[method].apply(this, ...arguments);
+                Array.prototype[method].apply(this, arguments);
 
                 if(method==="push" || method==="unshift"){
 
@@ -274,7 +330,7 @@ import{
 
  };
 
- function defineReactiveMap(map){
+ function defineReactiveMap(map, call){
 
     const reactive=Symbol.for("reactive");
 
@@ -286,7 +342,7 @@ import{
 
     const mutationMethods=[
 
-        "add",
+        "set",
         "delete",
         "clear"
          
@@ -302,7 +358,7 @@ import{
 
             value(){
 
-                Map.prototype[method].apply(this, ...arguments);
+                Map.prototype[method].apply(this, arguments);
                 if(method=="add"){
 
                     const value=arguments[1];
@@ -310,6 +366,8 @@ import{
                     checkType(value);
 
                 }
+
+                call();
 
             }
 
@@ -329,7 +387,7 @@ import{
 
  }
 
- function defineReactiveSet(set){
+ function defineReactiveSet(set, call){
 
     const reactive=Symbol.for("reactive");
 
@@ -352,15 +410,17 @@ import{
 
         Object.defineProperty(set, method, {
 
-            set(){
+            value(){
 
-                Set.prototype[method].apply(this, ...arguments);
+                Set.prototype[method].apply(this,arguments);
 
                 if(method==="add"){
 
                     checkType(arguments[0]);
 
-                }
+                };
+
+                call();
 
             }
 
@@ -417,9 +477,13 @@ import{
 
  }
 
- function costumReactor(array, htmlEl){
+ function costumReactor(array, htmlEl, updateSystem){
 
-    
+    if(isNotConfigurable(array)){
+
+        return false;
+
+    }
         
 
 Object.defineProperties(array, {
@@ -428,7 +492,7 @@ Object.defineProperties(array, {
 
     value(){  
     
-    Array.prototype.shift.apply(data, void 0);
+    Array.prototype.shift.apply(array, void 0);
     const firstNodeElement=htmlEl.children[0];
     
     if(firstNodeElement){
@@ -436,7 +500,7 @@ Object.defineProperties(array, {
     htmlEl.removeChild(firstNodeElement);
     
     
-    
+    updateSystem();
     
     }
     
@@ -497,6 +561,9 @@ Object.defineProperties(array, {
         
         
         }
+
+        updateSystem();
+
         }
         
         
@@ -568,9 +635,11 @@ Object.defineProperties(array, {
     
         
         
-        
+        updateSystem();
         
         }
+
+
     }
         
          })
@@ -582,7 +651,9 @@ Object.defineProperties(array, {
  }
 
 
-export function List(options){
+ let defineNewEach;
+
+export function renderList(options){
 
     if(new.target!==void 0){
 
@@ -606,7 +677,7 @@ export function List(options){
 
     }
 
-    const {
+    let {
         in:IN,
         each,
         do:DO,
@@ -654,33 +725,57 @@ export function List(options){
 
     }
 
-    if(array.is(each)){
+    if(isArray(each)){
 
 
-        costumReactor(each, root);
+        costumReactor(each, root, updateSystem);
 
 
     }
 
-    let pro;
+    let pro, firstRender=true;
+    const costumProps=new Set(["otherArray", "addItems"])
 
     function proSetup(){
 
+        
+
         if(typeof each!=="number"){
+
+            if(isNotConfigurable(each)){
+
+                err(`
+                
+                Inter fails to define the reactivity in the list reactor,
+                because the  value(array or plain object) of the each option is not configurable.
+                
+                `)
+
+            }
 
             pro=new Proxy(each, {
 
                 set(target, prop, value){
                   
+                    if(costumProps.has(prop)){
+
+                        Reflect.set(target, prop, value);
+                        return true;    
+                    }
+
                     Reflect.set(target, prop, value);
 
                     updateSystem();
 
                     if(typeof prop !=="number" && validEachProperty(value)){
 
-                        checkType(value)
+                        
+
+                        checkType(value, updateSystem)
 
                     }
+
+                    return true;
 
 
                 },
@@ -688,9 +783,19 @@ export function List(options){
                 get(){
 
 
-                    Reflect.get(...arguments);
+                    return Reflect.get(...arguments);
 
-                }
+                },
+                defineProperty(){
+
+                    Reflect.deleteProperty(...arguments);
+
+                    updateSystem();
+
+                    return true;
+
+                },
+
                 
 
             })
@@ -700,86 +805,127 @@ export function List(options){
 
     }
 
+    defineNewEach=(newArray)=>{
+
+        each=newArray;
+        proSetup();
+        updateSystem();
+        defineReactorReactiveProps(pro, each, updateSystem);
+        
+
+    }
+
     if(reactive){
 
         proSetup();
 
+        if(isArray(each)){
+
+        defineReactorReactiveProps(pro, each, updateSystem);
+
+        };
+
+        
+
     }
 
 
-    let firstRender=true;
     
+    
+    
+
 
     function updateSystem(){
 
-    const i=new Iterable(each);
+        const i=new Iterable(each);
+        
 
+      syncronizeRootChildrenLengAndSourceLength(root, i);
     
 
+      
+    i.each((data, index, type)=>{
+      
 
-    if(root.children.length>i.source.values.length){
+        let newTemp;
+            
+        
+        function checkIterationSourceType(){
 
-        let length=root.children.length-i.source.values.length
+       if(type==="array"){
 
-               while(length--){
+        newTemp=DO.call(pro, data, index, pro);
 
-                root.removeChild(root.children[length]);
+       }
 
-               }
+        else if(type==="object"){
+
+      newTemp=DO.call(pro ,data[0]/*prop*/,data[1]/*value*/,pro);
+
+
+        }else if(type==="number"){
+
+            newTemp=DO(data)
+
+        }else{
+
+            //The type is set.
+
+        newTemp=DO.call(pro ,data,pro);
+
+        }
 
     }
 
-    
+    checkIterationSourceType();
 
-    i.each((data, i)=>{
+             // The  function is returning the template.
+        if(isObj(newTemp) && newTemp[Symbol.for("template")] && isObj(newTemp.element)){
 
-        let temp=DO.call(pro , data, i,pro)
+            
 
-        if(isObj(temp) && (Symbol.for("template") in temp) && isObj(temp.element)){
-
-            const actualEl=root.children[i];
-
-            // The  function is returning the template.
+            const actualEl=root.children[index];
 
             if(!isAtag(actualEl)){
 
-                root.appendChild(toDOM(temp.element));
+                
+                root.appendChild(toDOM(newTemp.element));
 
             }else{
 
                 
                 if(!actualEl.template){
                    
-                consW(`
-                
-                Avoid manipulating what Inter manipulates,
-                
-                `)
-
-                /**
-                 * ActualEl was not rendered by Inter, in
-                 * this case we must replace it with an element
-                 * rendered by Inter to avoid diffing problems.
-                 */
-
-                 root.replaceChild(toDOM(temp.element), actualEl);
-
-                }else{
-
+                    consW(`
                     
-
-                    runDiff(temp.element, actualEl.template);
-
+                    Avoid manipulating what Inter manipulates,
+                    
+                    `)
+    
+                    /**
+                     * ActualEl was not rendered by Inter, in
+                     * this case we must replace it with an element
+                     * rendered by Inter to avoid diffing problems.
+                     */
+    
+                     root.replaceChild(toDOM(newTemp.element), actualEl);
+    
+                    }else{
+    
+                        
+    
+                        runDiff(newTemp.element, actualEl.template, actualEl);
+    
+                    }
+    
                 }
-            
-
-            }
 
             if(firstRender && reactive){
-
-            checkType(data, updateSystem);
+            checkType(type!=="object" ? data : data[1] /*obj prop*/, updateSystem);
 
             }
+
+        
 
         }else{
 
@@ -816,7 +962,7 @@ if(!reactive){
 
 
 
-function runDiff(newTemp, oldTemp){
+function runDiff(newTemp, oldTemp, oldRoot){
 
 
     /**
@@ -826,22 +972,145 @@ function runDiff(newTemp, oldTemp){
      */
 
      
+     const diff={
+         children:true
+     }
 
 
 
+     ContainerDeffing(newTemp, oldTemp, diff)
 
-     if(newTemp.children.length===oldTemp.children.length){
+     if(diff.children && newTemp.children && newTemp.children.length>0 ){
 
         
-        diffingChildren(newTemp.children, oldTemp.children)
+        diffingChildren(newTemp.children, oldTemp.children, oldRoot);
 
-     }
+     };
+
+     
+     
 
     
 
 
 }
 
+function isOneAnArrayAndOtherNot(first, second){
+
+    return (
+
+        (isArray(first) && !isArray(second)) || (!isArray(first) && isArray(second))
+
+    );
+
+}
+
+function AreBothArray(first,second){
+
+    return isArray(first)  && isArray(second);
+
+}
+
+function ContainerDeffing(newContainer, oldContainer, diff){
+
+    const {
+        tag:newTag,
+        text:newText,
+        attrs:newAttrs={},
+        events:newEvents={},
+        styles:newStyles={},
+        children:newChildren
+    }=newContainer;
+
+    const {
+        tag:oldTag,
+        text:oldText,
+        attrs:oldAttrs={},
+        events:oldEvents={},
+        events:oldStyles={},
+        children:oldChildren,
+        target
+    }=oldContainer;
+
+    const rootEL=target.parentNode
+
+    
+
+     if(newTag!==oldTag){
+
+        const newElement=toDOM(newContainer);
+
+        rootEl.replaceChild(newElement,target);
+
+        diff.children=false;
+
+        shareProps(oldContainer, newContainer);
+        oldContainer.target=newElement
+
+
+        return true;
+
+     }
+
+     if(isOneAnArrayAndOtherNot(newChildren, oldChildren)){
+
+        const newElement=toDOM(newContainer)
+
+        rootEL.replaceChild(newELement, target);
+
+        diff.children=false;
+        shareProps(oldContainer, newContainer);
+        oldContainer.target=newElement;
+
+        return true;
+
+     }
+
+     if(AreBothArray(newChildren, oldChildren) && newChildren.length!==oldChildren.length){
+
+        const newElement=toDOM(newContainer)
+
+        rootEL.replaceChild(newElement, target);
+
+        diff.children=false;
+        shareProps(oldContainer, newContainer);
+        oldContainer.target=newElement;
+
+        return true;
+
+     }
+
+    if(!isDefined(newChildren) && !isDefined(oldChildren)){
+
+        if(newText!==oldText){
+
+
+            target.textContent=newText;
+            
+            shareProps(oldContainer, newContainer);
+
+        }
+    }
+
+    
+attributeDiffing(target, oldAttrs, newAttrs);
+eventDeffing(target, oldEvents, newEvents);
+styleDiffing(target, oldStyles, newStyles);
+
+shareProps(oldAttrs, newAttrs);
+shareProps(oldEvents, newEvents);
+shareProps(oldStyles, newStyles);
+
+
+
+
+}
+
+function shareProps(target, source){
+
+    Object.assign(target, source);
+
+}
 
 
 
@@ -861,14 +1130,16 @@ function attributeDiffing(target, oldAttributes, newAttributes){
 
         const oldAttr=_old[i],
               newAttr=_new[i];
-          
-         if(isDefined(oldAttr) && !(oldAttr in newAttributes) || !isDefined(newAttributes[oldAttr])){
+         
+         if(!(oldAttr in newAttributes) || !isDefined(newAttributes[oldAttr]) || isFalse(newAttributes[oldAttr])){
 
             target.removeAttribute(oldAttr);
 
+            
+
          }     
 
-        if(isDefined(newAttr)){
+        if(isDefined(newAttributes[newAttr]) && !isFalse(newAttributes[newAttr])){
 
             if(newAttributes[newAttr]!==oldAttributes[newAttr]){
 
@@ -895,7 +1166,7 @@ for(let i=0; _greater.length>i ; i++){
   const oldStyle=_old[i],
         newStyle=_new[i];
     
-   if(isDefined(oldStyle) && !(oldStyle in newStyles) || !isDefined(newStyles[oldStyle])){
+   if(!(oldStyle in newStyles) || !isDefined(newStyles[oldStyle])){
 
         target.style.removeProperty(oldStyle)
         _new.splice(i,1);
@@ -909,13 +1180,24 @@ for(let i=0; _greater.length>i ; i++){
 
    }     
 
-  if(isDefined(newStyle)){
+  if(isDefined(newStyles[newStyle])){
 
       if(newStyles[newStyle]!==oldStyles[newStyle]){
 
+          if(validStyleName[newStyle]){
+
           target.style.setProperty(newStyle, newStyles[newStyle])
 
+      }else{
+
+        ParserWarning(`
+        
+        "${newStyle}" doesn't to seem to be a valid style name.
+        
+        `)
+
       }
+    }
 
 
   }
@@ -932,21 +1214,32 @@ function eventDeffing(target, oldEvents, newEvents){
     _new=Object.keys(newEvents),
     _greater=getGreater(_old, _new);
 
-for(let i=0; _greater.length>i ; i++){
+   for(let i=0; _greater.length>i ; i++){
 
   const oldEvent=_old[i],
         newEvent=_new[i];
     
-   if(isDefined(oldEvent) && !(oldEvent in newEvents) || !isDefined(newEvents[oldEvent])){
+   if(!(oldEvent in newEvents) || !isDefined(newEvents[oldEvent])){
 
       target[oldEvent]=void 0;
 
    }     
 
-  if(isDefined(newEvent)){
+  if(isDefined(newEvents[newEvent])){
+
+    if(validDomEvent(newEvent)){
 
     target[newEvent]=newEvents[newEvent];
 
+    }else{
+
+        ParserWarning(`
+        
+        "${newEvent}" doesn't seem to be a valid dom event.
+        
+        `)
+
+    }
 
   }
 
@@ -956,18 +1249,28 @@ for(let i=0; _greater.length>i ; i++){
 
 }
 
-function diffingChildren(_new, _old){
+function diffingChildren(__new, __old, realParent, diff){
 
-    
-    
+    const _new=Array.from(__new),
+    _old=Array.from(__old);
+    let removed=0;
 
     for(let i=0; i<_new.length; i++){
 
-     
+        
+        
+     /**
+      * {tag:"h2"}  {tag:"h2"}
+      * {tag:null} {tag:null}
+      * {tag:"button"} {tag:"button"}
+      * 
+      */
 
-        const newChild=_new[i];
-        const oldChild=_old[i];
+        const newChild=_new[i],
+              oldChild=_old[i],
+              __newChild=__old[i];
 
+    
         const {
             tag:newTag,
             text:newText,
@@ -976,7 +1279,8 @@ function diffingChildren(_new, _old){
             attrs:newAttrs={},
             styles:newStyles={},
             update=true,
-            updateChildren=true
+            updateChildren=true,
+            renderIf:newRenderIf
             
         }=newChild;
         
@@ -987,61 +1291,268 @@ function diffingChildren(_new, _old){
         events:oldEvents={},
         attrs:oldAttrs={},
         styles:oldStyles={},
+        renderIf:oldRenderIf,
         target   
 
        }=oldChild;
 
        
-       
 
-            if(!update){
+            if(!update){  
+            
 
-                
+                if(newChildren.length==oldChildren.length && newChildren.length!==0){
+                    
+
+                    diffingChildren(newChildren, oldChildren);
+
+                };
+
 
                 continue;
 
+            
+
             }else if(newChildren.length!==oldChildren.length && updateChildren){
 
-                target.parentNode.replaceChild(toDOM(newChild), oldChild.target);
+                if(target && target.parentNode!=null){
+
+                    const newElement=toDOM(newChild, true);
+
+                     realParent.replaceChild(newElement, target);
+
+                     Object.assign(oldChild, newChild);
+                      oldChild.target=newElement
+                
+            }
+
+                
+                continue;
 
             }else{
 
+
                 if(newTag!==oldTag){
+
+                        
+                    const newELement=toDOM(newChild, true);
+
+                    Object.assign(oldChild, newChild);
+
+                    if(target && target.parentNode!=null){
+
+                        realParent.replaceChild(newELement, target);
+                        oldChild.target=newELement;
+
+                    }
 
                     
 
-             target.parentNode.replaceChild(toDOM(newChild), oldChild.target);
+                    continue
+                    
+             
+                }
+
+                
+
+                if(isFalse(newRenderIf) && target && target.parentNode!=null){
+
+                    realParent.removeChild(target);
+
+                    if(i<_new.length-1){
+                    
+                    i--;
+                    removed++;
+
+                    }
+
+
+                    
+                    continue;
+
+                }
+
+                
+                if(isTrue(newRenderIf)){
+                    
+
+                    if(target && target.parentNode==null){
+
+                        
+                        const newELement=toDOM(newChild, true);
+
+                        Object.assign(oldChild, newChild);
+
+                        oldChild.target=newELement
+
+                    if(isAtag(realParent.children[i-removed])){
+
+                        realParent.insertBefore(newELement, realParent.children[i-removed]);
+
+                    }else{
+
+                        realParent.appendChild(newELement)
+
+
+                    }
+
+                    continue;
+                    
+
+                }
+
+
+
+                if(!target){
+
+
+                    if(isAtag(realParent.children[i-removed])){
+
+                        const newELement=toDOM(newChild, true);
+
+                        Object.assign(oldChild, newChild);
+
+                        oldChild.target=newELement
+
+
+                        realParent.insertBefore(newELement, realParent.children[i-removed]);
+
+                    }else{
+
+                        
+                        const newELement=toDOM(newChild, true);
+
+                        Object.assign(oldChild, newChild);
+
+                        oldChild.target=newELement
+                          
+                        realParent.appendChild(newELement)
+
+                    }
+
+                }
+
+                }
+
+
+                if(newChildren.length==oldChildren.length && newChildren.length!==0){
+
+                    
+
+                    diffingChildren(newChildren, oldChildren, target);
 
                     continue;
 
                 }
 
-                if(newChildren.length==newChildren.length){
+                
+                if(oldText!==newText && target){
 
-                    
+                    target.textContent=newText
+                    oldChild.text=newText
 
-                    diffingChildren(newChildren, oldChildren);
+
 
                 }
 
                 
-                if(newText!==oldText){
-                    
-
-                target.textContent=newText;
-                       
-                    
 
 
-                };
-
+                Object.assign(oldChild, newChild)
+                oldChild.tag=oldTag
                 
+               if(target){                
                 attributeDiffing(target, oldAttrs, newAttrs);
                 styleDiffing(target, oldStyles, newStyles);
                 eventDeffing(target, oldEvents, newEvents);
-                
+               }
                 
 
             }
+
+            
         }
+    }
+    
+    function syncronizeRootChildrenLengAndSourceLength(root, iterable){
+
+        if(root.children.length>iterable.source.values.length){
+    
+            let length=root.children.length-iterable.source.values.length
+    
+                   while(length--){
+    
+                    root.removeChild(root.children[length]);
+    
+                   }
+    
+                }
+    
+    };
+
+    function defineReactorReactiveProps(reactor,original, updateSystem){
+
+        Object.defineProperties(original, {
+
+            otherArray:{
+                set(value){
+                    
+                    if(!isArray(value)){
+
+                        syErr(`The value of [List reactor].otherArray property must be an object.`)
+
+                    };
+
+
+                    defineNewEach(value);
+
+                    for(let item of value){
+
+                        checkType(item, updateSystem)
+
+                    }
+
+
+                },
+                get(){
+
+                    return void 0
+
+                },
+                configurable:!0
+            },
+            addItems:{
+                value(items, position){
+
+
+                    if(!isDefined(position) || position>reactor.length-1){
+
+                        for(const item of items){
+
+                         original.push(item);
+                            
+                         checkType(item, updateSystem);
+
+                        }
+
+                    }
+
+                    if(position==0 || position<0){
+
+                        for(let i=items.length-1; i>-1 ;i-- ){
+
+                            reactor.unshift(items[i]);
+
+                            checkType(items[i], updateSystem);
+
+                        }
+
+                    }
+
+                },
+                configurable:!0
+            }
+
+        })
+
     }

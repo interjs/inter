@@ -6,7 +6,6 @@ import{
     isObj,
     getId,
     consW,
-    array,
     isAtag,
     err,
     isCallable
@@ -385,7 +384,7 @@ export function renderIf(obj){
 
 function parseConditionalRendering(data,els){
 
-    const toArray=array.create(els);
+    const toArray=Array.from(els);
 
     function run(){
 
@@ -553,6 +552,8 @@ const reactor=new Proxy(data,{
             }, args[2]);
 
         }
+
+        return true;
 
     },
 

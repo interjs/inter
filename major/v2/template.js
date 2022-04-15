@@ -7,13 +7,13 @@ import{
     isCallable,
     isDefined,
     isObj,
-    array,
     ParserWarning,
     consW,
     validDomEvent,
     validStyleName,
     isBool,
-    valueType
+    valueType,
+    isFalse
     
 
 } from "./helpers.js"
@@ -23,55 +23,29 @@ import{
 
 export function template(obj){
 
-    const root="elements";
+    
 
-if(root in obj && array.is(obj.elements)){
+if(isObj(obj)){
 
-    const {elements}=obj;
 
-    if(isObj(elements[0])){
-
-        const temp=Symbol.for("template");
-
-        if(elements.length>1){
-
-            consW(`
-            
-            You are creating more than one element in template function without a container,
-            wrap the elements inside a container.
-            
-            `)
-
-        }
-
-        
+    const temp=Symbol.for("template");
 
         return {
 
             [temp]:!0,
-            element:{
-                tag:elements[0].tag,
-                text:elements[0].text,
-                events:elements[0].events==void 0 ? {} : elements[0].events,
-                attrs:elements[0].attrs==void 0 ? {} : elements[0].attrs,
-                styles:elements[0].styles==void 0 ? {} : elements[0].styles,
-                children:elements[0].children==void 0 ? [] : elements[0].children,
-                update:elements[0].update==void 0 ? true : elements[0].update,
-                updateChildren:elements[0].updateChildren==void 0 ? true : elements[0].updateChildren,
-                created:elements[0].created
-
-            }
+            element:obj,
             
         };
 
-    }
+
 
 
 }else{
 
     syErr(`
     
-    elements must be an array in template function.
+    The argument of the template function must be a plain Javascript object,
+    but you defined ${valueType(obj)} as its argument.
     
     `)
 
@@ -88,22 +62,42 @@ if(root in obj && array.is(obj.elements)){
  * 
  */
 
-         export function toDOM(obj){
+         export function toDOM(obj, isChild){
 
     
 
             let {
                 tag,
                 text,
+                renderIf,
+                attrs={},
                 events={},
                 styles={},
                 children=[],
-                created,
                 update=false,
                 updateChildren=false,
             }=obj;
 
-               
+            
+            
+            
+            tag=isCallable(tag) ? tag() : tag;
+
+            if(isDefined(renderIf) && !isChild){
+
+                
+
+              ParserWarning(`
+              
+              You can not conditionally render a container in template
+              function.
+              
+              `)
+
+              return false;
+
+            };
+
               if(!validTagOption(tag)){
 
                 syErr(`
@@ -133,18 +127,6 @@ if(root in obj && array.is(obj.elements)){
 
               }
 
-              tag=isCallable(tag) ? tag() : tag;
-
-              if(!isDefined(tag)){
-
-                syErr(`
-                
-                You can not conditionally render a container in template
-                function.
-                
-                `)
-
-              };
 
 
 
@@ -156,6 +138,43 @@ if(root in obj && array.is(obj.elements)){
                 target:container
 
               }) // For diffing task.
+
+              Object.entries(attrs).forEach((attr)=>{
+
+                let [name, value]=attr;
+
+                const setAttr=(attrValue)=>{
+                    
+                    if(isDefined(attrValue) && !isFalse(attrValue)){
+
+                        if(name!=="value"){
+
+                            container.setAttribute(name, attrValue)
+
+                        }else{
+
+                            container[name]=attrValue;
+
+                        }
+
+                    }
+
+                }
+
+                if(isCallable(value)){
+
+                    value=value();
+
+                    setAttr(value);
+
+
+                }else{
+
+                    setAttr(value);
+
+                }
+
+              })
 
                Object.entries(events).forEach(event => {
 
@@ -183,7 +202,7 @@ if(root in obj && array.is(obj.elements)){
 
                         ParserWarning(`
                         
-                        "${name}" doesn't seem to be a valid event of the dom.
+                        "${name}" doesn't seem to be a valid dom event.
                         
                         `)
 
@@ -196,13 +215,15 @@ if(root in obj && array.is(obj.elements)){
 
                 const [name, value]=style;
 
+                
+
                 if(validStyleName(name)){
 
-                    let styleValue=isCallable(value) ? value() : style;
+                    let styleValue=isCallable(value) ? value() : value;
 
                     if(isDefined(styleValue)){
-
-                        container.prototype.style.setProperty(name, styleValue);
+                        
+                        container.style.setProperty(name, styleValue);
                         
 
                     }
@@ -212,7 +233,7 @@ if(root in obj && array.is(obj.elements)){
 
                     ParserWarning(`
                     
-                    "${name}" doesn't seem to be a valid style's name.
+                    "${name}" doesn't seem to be a valid style name.
 
                     `)
 
@@ -254,11 +275,6 @@ if(root in obj && array.is(obj.elements)){
                }
 
                
-               if(isCallable(created)){
-
-                created(container);
-
-               }
 
 
                return container;
@@ -278,13 +294,28 @@ function createChildren(root, children){
         let {
             tag,
             text,
+            attrs={},
             events={},
             styles={},
             children=[],
-            created,
+            renderIf,
             update=false,
             updateChildren=false,
         }=child;
+
+        tag=isCallable(tag) ? tag() : tag;
+
+        if(isDefined(renderIf) && isBool(renderIf)){
+            
+
+          if(isFalse(renderIf)){
+
+            continue;
+
+          }
+
+        };
+
 
            
           if(!validTagOption(tag)){
@@ -317,18 +348,6 @@ function createChildren(root, children){
 
           }
 
-          tag=isCallable(tag) ? tag() : tag;
-
-          if(!isDefined(tag)){
-
-            syErr(`
-            
-            You can not conditionally render a container in template
-            function.
-            
-            `)
-
-          };
 
 
 
@@ -340,6 +359,43 @@ function createChildren(root, children){
              target:container
 
           }); //For diffing task.
+
+          Object.entries(attrs).forEach((attr)=>{
+
+            let [name, value]=attr;
+            const setAttr=(attrValue)=>{
+                
+                if(isDefined(attrValue) && !isFalse(attrValue)){
+
+                    if(name!=="value"){
+
+                        container.setAttribute(name, attrValue)
+
+                    }else{
+
+                        container[name]=attrValue;
+
+                    }
+
+                }
+
+            }
+
+            if(isCallable(value)){
+
+                value=value();
+
+                setAttr(value);
+
+
+            }else{
+
+                setAttr(value);
+
+            }
+
+          })
+
 
            Object.entries(events).forEach(event => {
 
@@ -367,7 +423,7 @@ function createChildren(root, children){
 
                     ParserWarning(`
                     
-                    "${name}" doesn't seem to be a valid event of the dom.
+                    "${name}" doesn't seem to be a valid dom event.
                     
                     `)
 
@@ -379,14 +435,15 @@ function createChildren(root, children){
            Object.entries(styles).forEach(style=>{
 
             const [name, value]=style;
+            
 
             if(validStyleName(name)){
 
-                let styleValue=isCallable(value) ? value() : style;
+                let styleValue=isCallable(value) ? value() : value;
 
                 if(isDefined(styleValue)){
 
-                    container.prototype.style.setProperty(name, styleValue);
+                    container.style.setProperty(name, styleValue);
                     
 
                 }
@@ -396,7 +453,7 @@ function createChildren(root, children){
 
                 ParserWarning(`
                 
-                "${name}" doesn't seem to be a valid style's name.
+                "${name}" doesn't seem to be a valid style name.
 
                 `)
 
@@ -438,11 +495,6 @@ function createChildren(root, children){
            }
 
            
-           if(isCallable(created)){
-
-            created(container);
-
-           };
 
            root.appendChild(container);
 

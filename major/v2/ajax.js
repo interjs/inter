@@ -39,12 +39,27 @@ function toObj(obj){
 }
 
 
+function openRequest(req, method,path, username, userpassword ){
+
+    if(username && userpassword){
+
+        req.open(method, path, true, username, userpassword);
+
+    }else{
+
+        req.open(method, path, true, username, userpassword);
+
+    }
+
+}
+
+
 export function Backend(){
 
     if(new.target===void 0){
 
 
-        err(`Backend is a constructor, call it with the new key word.`)
+        err(`Backend is a constructor, call it with the new keyword.`)
 
 
     }
@@ -80,7 +95,30 @@ Backend.prototype={
            security
        }=obj;
 
+       if(!isDefined(type) || typeof type!=="string"){
+
+        syErr(`
+        
+        You must define the type of request, in Ajax with the "type" option and
+        it must be a string.
+        
+        `)
+
+       }
+
+       if(!isDefined(path) || typeof path!=="string"){
+
+        syErr(`
+        
+        You must define the path where the request will be sent, with the "path" option and 
+        it must be a string.
+        
+        `)
+
+       }
+
        const reactorHandler=new Map();
+       let requestOpened=false;
 
 
 
@@ -95,7 +133,7 @@ Backend.prototype={
        ])
 
        
-       const _thisInReactor={
+       const _AjaxResponse={
 
           get status(){
 
@@ -112,6 +150,18 @@ Backend.prototype={
           get headers(){
 
             return req.getAllResponseHeaders();
+
+          },
+
+          get data(){
+
+            return toObj(req.responseText);
+
+          },
+
+          get [Symbol.toStringTag](){
+
+            return "AjaxResponse";
 
           },
 
@@ -135,66 +185,44 @@ Backend.prototype={
 
        
      
-       if(method=="GET"){
+           
+           if(isObj(security) && Object.keys(security).length>=2){
 
-           if(isObj(security) && Object.keys(security).length==2){
+            if(security.username && security.password){
 
-               if(security.username && security.password){
+                openRequest(req, method, path, security.username, security.password);
 
-           req.open(method,path,!0,security.username,security.password);
+                requestOpened=true;
 
-           }else{
+            }else{
 
-               req.open(method,path,!0);
-
-               consW(`
+                consW(`
                
-               Invalid "security" object, security object must have the username and passoword 
-               properties.
-               
-               `)
+                Invalid "security" object, security object must have the username and passoword 
+                properties.
+                
+                `)
 
+            }
+            
            }
 
-       }else{
+           if(!requestOpened){
+
+            openRequest(req, method, path)
+
+            requestOpened=true;
 
 
-           req.open(method, path, !0);
-
-       }
-               
-
-
-           
-
-       }else{
-
-
-           
-           if(isObj(security) && Object.keys(security).length==2){
-
-               if(security.username && security.password){
-
-               req.open(method,path,!0,security.username,security.password);
-
-           }else{
-
-               req.open(method,path,!0);
-
-               consW(`
-               
-               Invalid "security" object, security object must have the username and passoword 
-               properties.
-               
-               `)
 
            }
 
 
-       }
+
+       
       
 
-       }
+       
 
        
        if(!isObj(headers)){
@@ -202,7 +230,7 @@ Backend.prototype={
 
            syErr(`
            
-           the headers property must be an object, and
+           the "headers" property must be an object, and
            you defined it as : ${valueType(headers)}.
            
            `)
@@ -233,19 +261,27 @@ Backend.prototype={
 
                    req.onprogress=(ev)=>{
 
-                       handler.call(
-                           {
-                             abort(){
+                    const secondArg={
+                        abort(){
 
-                               req.abort();
+                          req.abort();
 
-                             }  
-                           }
-                           ,ev.loaded*100/ev.total);
+                        }  
+                      }
+
+                       handler(ev.loaded*100/ev.total,secondArg);
 
                    }
 
                }
+
+           }else{
+
+            consW(`
+            
+            There's not any event named "${name}" in Ajax request.
+            
+            `)
 
            }
 
@@ -262,7 +298,7 @@ Backend.prototype={
 
                 if(reactorHandler.has("okay")){
 
-                    reactorHandler.get("okay").call(_thisInReactor,toObj(this.responseText))
+                    reactorHandler.get("okay")(_AjaxResponse)
 
                 }
 
@@ -271,7 +307,7 @@ Backend.prototype={
 
                 if(reactorHandler.has("error")){
 
-                    reactorHandler.get("okay").call(_thisInReactor, toObj(this.responseText));
+                    reactorHandler.get("okay")(_AjaxResponse);
 
                 }
 
@@ -292,7 +328,7 @@ Backend.prototype={
 
              if(reactorHandler.has("error")){
              
-                const _this={
+                const _resp={
 
                     isObj:()=>false,
                     get statusText(){
@@ -313,9 +349,21 @@ Backend.prototype={
 
                     },
 
+                    get data(){
+
+                        return void 0;
+
+                    },
+
+                    get [Symbol.toStringTag](){
+
+                        return "AjaxResponse";
+
+                    }
+
                 }
 
-                reactorHandler.get("error").call(_this, new String());
+                reactorHandler.get("error")(_resp);
 
              }
 
@@ -340,7 +388,7 @@ Backend.prototype={
 
        if(method=="GET"){
 
-        req.send(void 0);
+        req.send(null);
 
        }else{
 

@@ -1,6 +1,14 @@
 
-// Helpers function.
+// Helpers functions.
 
+export function isNotConfigurable(obj){
+
+    return (Object.isFrozen(obj) || Object.isSealed(obj)
+    || !Object.isExtensible(obj)
+    )
+
+
+}
 
 export function isObj(o){ 
 
@@ -71,6 +79,8 @@ export function isObj(o){
         }
     
      }
+
+
 
 
  export function isAtag(tag){
@@ -240,61 +250,11 @@ export function ParserWarning(w){
     //
     
     
-    function ARRAY(){
-    
-        if(new.target==void 0){
-    
-            throw new Error("ARRAY must be called with the 'new' keyword")
-    
-        }
-    
-        this.create=itens=>{
-    
-            return itens==void 0 ? new Array() : Array.from(itens);
-    
-    
-        },
-        this.is=function(a){
-    
-            return Array.isArray(a);
-    
-        },
-    
-        this.distroy=function(arr){
-    
-            if(this.is(arr)){
-    
-                let length=arr.length;
-    
-                while(length--){
-    
-                    arr.pop();
-    
-                }
-    
-            }
-    
-        },
-    
-        this.isEmpty=function(arr){
-    
-            if(this.is(arr) && arr.length==0){
-    
-                return true;
-    
-            }else{
-    
-                 return false;
-    
-            }
-    
-        }
-    
-    
-    }
+    export function isArray(arg){
 
-    export const array=new ARRAY();
-    
+        return Array.isArray(arg);
+
+    }
     
     
     
@@ -312,9 +272,10 @@ export function ParserWarning(w){
     
     
              if(isAnobject){
+                 alert(true)
     
               return ( Object.prototype.toString.call(val).replace("[object","")
-              .replace("]","").replace(/\S/g,"").toLowerCase()
+              .replace("]","").replace(/\s/g,"").toLowerCase()
               
               );
     
@@ -382,11 +343,9 @@ export function ParserWarning(w){
 
         
 
-        return (
+        return typeof IN=="string" 
 
-            typeof IN=="string" || IN instanceof HTMLElement
-
-        );
+        
 
 
     }
@@ -396,8 +355,8 @@ export function ParserWarning(w){
 
         return (
 
-            each instanceof Array || each instanceof Map || each instanceof Set
-            || each instanceof WeakMap || each instanceof WeakSet || isObj(each)
+            each instanceof Array ||  isObj(each) || each instanceof Map || each instanceof Set ||
+            typeof each==="number"
 
         )
 
@@ -406,25 +365,21 @@ export function ParserWarning(w){
 
     function toIterable(data){
 
-        let iterable={
-         values:array.create(null),
+        const iterable={
+         values:new Array(),
          type:void 0,
-         _forEach(callBack){
-
-            this.values.forEach((val)=>{})
-
-         }
 
         };
 
-        if(array.is(data)){
+        if(isArray(data)){
 
            iterable.values=data;
+           iterable.type="array"
 
         }else if(isObj(data)){
 
             iterable.values=Object.entries(data);
-            iterable.type=1
+            iterable.type="object"
 
         }else if(data instanceof Map){
 
@@ -434,20 +389,23 @@ export function ParserWarning(w){
 
             });
 
-            
+            iterable.type="object"
 
 
         }else if(data instanceof Set){
 
          iterable.values=Array.from(data);
+         iterable.type="set";
          
 
-        }else if(data instanceof Number){
+        }else if(typeof data==="number"){
 
             for(let i=0; i<data; i++){
                 iterable.values.push(i);
 
             };
+
+            iterable.type="number";
 
 
 
@@ -476,7 +434,7 @@ export function ParserWarning(w){
 
             index++;
 
-            callBack(data, index);
+            callBack(data, index, this.source.type);
 
         };
 
@@ -491,12 +449,6 @@ export function ParserWarning(w){
         if(obj1===void 0 || obj2===void 0) return false;
 
         return !(Object.keys(obj1).length===Object.keys(obj2).length);
-
-
-    }
-
-    export function isReactivable(target){
-
 
 
     }
