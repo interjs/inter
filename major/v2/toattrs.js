@@ -3,7 +3,8 @@ import{
     isObj,
     getId,
     consW,
-    isCallable
+    isCallable,
+    validDomEvent
 
 } from "./helpers.js"
 
@@ -14,7 +15,11 @@ import{
 
     if(new.target!==void 0){
 
-        syErr()
+        syErr(`
+        toAttrs is not a constructor,
+        do not call it with the "new" keyword.
+        
+        `)
 
     }
 
@@ -31,19 +36,29 @@ import{
       data,
       
   }=obj;
-  
-  const root= getId(IN)
-          
 
+  if(!(typeof IN=="string")){
+
+    syErr(`
+    
+    The "in" property in toAttrs() function must be a string.
+    
+    `)
+
+  }
   if(!isObj(data)){
 
     syErr(`
 
-     data in toAttrs() must be an object.
+    The "data" property in toAttrs() function must be an object.
     `)
 
   }
       
+  
+  const root= getId(IN)
+          
+
   return findAttrManager(root,data);
 
 
@@ -96,11 +111,15 @@ import{
 
     function spread(el,attrs, attrManager, original){
 
-    
+    //We are considering them specials
+    // because we can not reset them with the setAttribute function.
+    const specialAttrs=new Set(["value", "currentTime"]);
         
-        function runUpdate(v, attrName){
+        function runUpdate(value, attrName){
 
-            if(v==void 0){
+            value=!attrName.startsWith("on") ? isCallable(value) ? attrValue.call(attrs) : value : value;
+
+            if(value==void 0){
 
                 if(!attrName.startsWith("on")){
 
@@ -111,21 +130,24 @@ import{
                     el[attrName]=void 0;
                 }
 
-            }else if(!attrName.startsWith("on") && attrName!=="value"){
+            }else if(!attrName.startsWith("on") && !specialAttrs.has(attrName)){
 
-                  el.setAttribute(attrName,v);
+                  el.setAttribute(attrName,value);
 
-                }else if(attrName=="value"){
+                }else if(specialAttrs.has(attrName)){
 
-                    el.value=v;
+                    el[attrName]=value;
                 }
                 
                 else{
 
-                    if(!isCallable(v)){
+                    if(attrName.startsWith("On")){
+                    
+                    if(validDomEvent(attrName)){
+                    if(!isCallable(value)){
 
                         syErr(`
-                        The value of "${v}" event, must be a function.
+                        The value of "${attrName}" event, must be a function.
                         `)
                     }
 
@@ -133,7 +155,19 @@ import{
 
                         v.call(original,e)
                     }
+                }else{
+
+                    consW(`
+                    
+                    "${attrName}" doesn't seem to be a valid dom event.
+                    
+                    `)
+
                 }
+
+            }
+
+        }
             }
 
 
@@ -150,15 +184,21 @@ import{
                 get(){
                    if(attrName.startsWith("on")){
 
-                       syErr(`
+                       consW(`
                        "${attrName}" seems to be an event listener, 
                        and you can not get the value of an event.
                        `)
 
+                   }if(!specialAttrs.has(attrName)){
+          
+                     return el.getAttribute(attrName);
+
+                     
+                      
                    }else{
 
-                     return el.getAttribute(attrName)
-                      
+                    return el[attrName];
+
                    }
                 }
             })
@@ -176,14 +216,31 @@ import{
          
          function spreadAttrs(attrName, attrValue){
             
-            if(attrValue!=void 0 && !attrName.startsWith("on")){
+            attrValue=!attrName.startsWith("on") ? isCallable(attrValue) ? attrValue.call(attrs) : attrValue : attrValue;
+
+            if(attrValue!=void 0 && !specialAttrs.has(attrName) && !attrName.startsWith("on")){
            
             el.setAttribute(attrName,attrValue);
 
-            }else{
+              }else if(attrValue!=void 0 && specialAttrs.has(attrName)){
+
+                el[attrName]=attrValue;
+
+
+              } else{
                 
-                if(attrName.startsWith("on") && isCallable(attrValue))
-               
+                if(attrName.startsWith("on")){
+               if(validDomEvent(attrName)){
+                if(!isCallable(attrValue)){
+
+                    syErr(`
+                    
+                    The value of "${attrName}" must be a function.
+
+                    `)
+
+                }
+
                 el[attrName]=function(e){
 
                      attrValue.call(original,e);
@@ -191,8 +248,18 @@ import{
                    }
                 
                
+               }else{
+
+                syErr(`
+                
+                "${attrName}" doesn't seem to be a valid dom event.
+                
+                `)
+
                }
-            
+              }
+
+            }
            }
 
         for( const[attrName, attrValue] of Object.entries(attrs)){

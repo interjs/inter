@@ -4,7 +4,6 @@ import {
     consW,
     isObj,
     syErr,
-    
     isDefined,
     isCallable,
     getId,
@@ -89,10 +88,6 @@ function refParser(p,refs,name,rparse){
      * 
      * <strong>Hi</strong>, { name }! Are you fine?
      * </div>
-     * 
-     * If we run this code in an app that
-     * uses Inter v1, the reference will not
-     * be parsed. And we must solve this in v2.
      * 
      * Usually the browser interprets space as a childNode,
      * in the above code, the div container has
@@ -200,7 +195,7 @@ function refParser(p,refs,name,rparse){
     
     }
         
-        for(let child of children){ 
+        for(const child of children){ 
     
             
             const _register={
@@ -209,12 +204,12 @@ function refParser(p,refs,name,rparse){
                 refs:refs
             }
     
-            for(let attr of child.attributes){
+            for(const attr of child.attributes){
     
-                 for(let r in refs){
+                 for(const r in refs){
                      const pattern=new RegExp(`{\\s*${r}\\s*}`)
                   if(pattern.test(attr.value)){
-                    
+                
                     if(!specialAttrs.has(attr.name)){
     
                         
@@ -228,6 +223,8 @@ function refParser(p,refs,name,rparse){
                                 [attr.name]:attr.value
                           }
                       })
+
+                      
                         
                     }
                     
@@ -235,7 +232,9 @@ function refParser(p,refs,name,rparse){
                   }
     
                  
+
             }
+            
             }
     
     
@@ -252,7 +251,7 @@ function refParser(p,refs,name,rparse){
           
               const nodes=child.childNodes;
               
-              for(let node of nodes){
+              for(const node of nodes){
     
                 if(node.hasChildNodes()){
                    
@@ -265,7 +264,7 @@ function refParser(p,refs,name,rparse){
     
                 
     
-                for(let r in refs){
+                for(const r in refs){
     
                     const pattern=new RegExp(`{\\s*${r}\\s*}`)
                     
@@ -329,14 +328,15 @@ function refParser(p,refs,name,rparse){
     
     
     
-    rparse.update(name)
-    
-    
     
     
     }
 
 }
+
+
+    rparse.update()
+    
 }
 
     
@@ -359,7 +359,7 @@ export function Ref(obj){
 
             syErr(`
             
-            The argument of toREF must be a plain object.
+            The argument of Ref must be a plain object.
 
             `)
 
@@ -371,17 +371,24 @@ export function Ref(obj){
                 
             }=obj;
             
-            if(isDefined(data)){
+            if(!(typeof IN==="string")){
 
-                consW(`
-               The data property in the argument of the toREF function
-                will be removed in version 2.1.0, use the refs property instead. 
+                syErr(`
+                The value of "in" property in the Ref function must be a string
+                
+                `)
 
+            };
+
+            if(!isObj(data)){
+
+                syErr(`
+                The value of "data" property in the Ref funtion must be a plain Javascript object.
+                
                 `)
 
             }
 
-            
   
             const source=data;
             
@@ -588,7 +595,7 @@ export function Ref(obj){
 
             // After updating the text reference, let's update the
                 // attribute reference.
-            
+                
                 if(this.attrs.size>0){
             
                     this.update2();
