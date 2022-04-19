@@ -95,7 +95,7 @@ export function isObj(o){
     
         if(isAtag(tag)){
     
-            const hasChildren=p.childNodes.length>0;
+            const hasChildren=tag.childNodes.length>0;
     
             return hasChildren;
     
