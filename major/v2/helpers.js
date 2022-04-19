@@ -91,22 +91,6 @@ export function isObj(o){
 
      }
     
- export function hasNodeChild(tag){
-    
-        if(isAtag(tag)){
-    
-            const hasChildren=tag.childNodes.length>0;
-    
-            return hasChildren;
-    
-        }else{
-
-
-            return false;
-
-        }
-    
-     }
     
  export  function validDomEvent(eventName){
 
@@ -272,7 +256,6 @@ export function ParserWarning(w){
     
     
              if(isAnobject){
-                 alert(true)
     
               return ( Object.prototype.toString.call(val).replace("[object","")
               .replace("]","").replace(/\s/g,"").toLowerCase()
