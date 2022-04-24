@@ -6,6 +6,7 @@ import{
     consW,
     getId,
     isDefined,
+    isCallable,
    
 
 
@@ -20,7 +21,8 @@ import{
    actualScript:void 0,
    hasContainer:false
 
- }
+ }, containerRenderingEvents=Object.create(null),
+  allowedEvents=new Set(["loading", "mounted"]);
 
 
 
@@ -51,7 +53,12 @@ import{
 
      }
 
-     if(!("in" in options) || typeof options.in!=="string"){
+     const{
+        in:IN,
+        events={}
+     }=options
+
+     if(typeof IN!=="string"){
 
 
         syErr(`
@@ -63,7 +70,32 @@ import{
         `)
 
      }
-        const root=getId(options.in);
+        const root=getId(IN);
+
+        const loading=events.loading,
+              mounted=events.mounted;
+
+              if(isDefined(loading) && !isCallable(loading)){
+
+               syErr(`
+               
+               The value of "loading" event in container rendering must be a function
+               
+               `)
+
+              };
+
+              if(isDefined(mounted) && !isCallable(mounted)){
+
+
+               syErr(`
+               
+               The value of "mounted" event in container rendering must be a function
+               
+               `)
+
+              }
+
 
         
 
@@ -89,7 +121,13 @@ import{
 
        }
 
-       getTheContainer(pathToContainer, root, info, this);
+       if(isCallable(loading)){
+
+         loading();
+
+       }
+
+       getTheContainer(pathToContainer, root, info, isCallable(mounted) ? mounted : null);
 
 
 
@@ -104,7 +142,7 @@ import{
 
  }
 
-function getTheContainer(pathToContainer, rootEl, info, loader){
+function getTheContainer(pathToContainer, rootEl, info, mountedEvent){
 
    const request=new XMLHttpRequest();
 
@@ -115,7 +153,7 @@ function getTheContainer(pathToContainer, rootEl, info, loader){
 
       if(this.readyState==4 && this.status==200){
 
-         parseStringToLang(this.responseText, rootEl, pathToContainer, info, loader);
+         parseStringToLang(this.responseText, rootEl, pathToContainer, info, mountedEvent);
       }
 
    };
@@ -127,9 +165,9 @@ function getTheContainer(pathToContainer, rootEl, info, loader){
 
 }
 
- function parseStringToLang(__string, __rootEl, __pathToContainer, __info, __loader){
+ function parseStringToLang(__string, __rootEl, __pathToContainer, __info, __mountedEvent){
 
-   
+   __rootEl.style.display="none";
 
    const __styleRule=/<style>(:?[\s\S]+)<\/style>/ig,
          __scriptRule=/<script>(:?[\s\S]+)<\/script>/ig,
@@ -145,50 +183,54 @@ function getTheContainer(pathToContainer, rootEl, info, loader){
          __style=document.createElement("style");
          __script=document.createElement("script");
          __div.innerHTML=__html;
+ 
+         const theScript=`
+            
+         const __container={
 
-         function __displayRoot(){
+            get info(){
+            
+            return ${isDefined(__info) ? JSON.stringify(__info) : void 0}
+            },
 
-            __rootEl.style.removeProperty("visibility");
+            get hasInfo(){
+
+              this.info!==void 0;
+
+            }
+
+
+         };
+
+
+         ${__js}
+         
+         
+         `;
+         
+         if(__containerRedefined(__js)){
+
+            err(`
+            
+            You've redefined the __container variable, it's forbidden.
+
+            At:"${__pathToContainer}"
+            
+            `)
 
          }
-         
+
 
          if(toUseModule(__js)){
 
             
             __script.type="module";
-            __script.innerHTML=`
-            
-            const __container={
-
-               get info(){
-               
-               return ${JSON.stringify(__info)}
-               },
-
-
-            };
-
-
-            ${__js}
-            
-            
-            `;
+            __script.innerHTML=theScript
             
 
          }else{
 
-            __script.innerHTML=`
-            
-            (function(){
-
-
-
-               ${__js}
-
-            })();
-            
-            `
+            __script.innerHTML=theScript
 
          }
 
@@ -255,7 +297,7 @@ function getTheContainer(pathToContainer, rootEl, info, loader){
          
             __rootEl.appendChild(__div);
             document.head.appendChild(__script)
-         
+
          }
          
 
@@ -271,8 +313,13 @@ function getTheContainer(pathToContainer, rootEl, info, loader){
 
          }
 
+         if(isCallable(__mountedEvent)){
 
-         
+            __mountedEvent()
+
+         }
+
+         setTimeout(()=>__rootEl.style.display="block", 100)
 
          
     
@@ -316,5 +363,15 @@ function getTheContainer(pathToContainer, rootEl, info, loader){
    })
 
 return url;
+
+ }
+
+ function __containerRedefined(js){
+
+   // We will check if the __container variable was redefined.
+
+   const rule=/(:?const|let|var)(:?\s+)__container|__container=/g;
+
+   return rule.test(js);
 
  }

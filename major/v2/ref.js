@@ -247,7 +247,7 @@ function refParser(p,refs,name,rparse){
     
             }
     
-            if(child.childNodes.length>0){
+            if(child.hasChildNodes()){
           
               const nodes=child.childNodes;
               
@@ -284,8 +284,9 @@ function refParser(p,refs,name,rparse){
       
               rparse.add(register)
                 
-    
-    
+            }
+        }
+    }
     
             }else{
     
@@ -320,9 +321,8 @@ function refParser(p,refs,name,rparse){
            
           
     
-        }
+        
     
-    }
     
 }
     
@@ -330,7 +330,7 @@ function refParser(p,refs,name,rparse){
     
     
     
-    }
+    
 
 }
 
@@ -557,7 +557,7 @@ export function Ref(obj){
                         // Returns the ref's Names
                          // in the string "text".                  
                         const refNames=getRefs(text);
-                        
+
 
                     for(const refName of refNames){
             
