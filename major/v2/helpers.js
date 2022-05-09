@@ -1,6 +1,13 @@
 
 // Helpers functions.
 
+export function isValidTemplateReturn(arg){
+
+    return isObj(arg) && arg.element && arg[Symbol.for("template")]
+        
+        
+}
+
 export function isNotConfigurable(obj){
 
     return (Object.isFrozen(obj) || Object.isSealed(obj)
@@ -91,6 +98,22 @@ export function isObj(o){
 
      }
     
+ export function hasNodeChild(tag){
+    
+        if(isAtag(tag)){
+    
+            const hasChildren=p.childNodes.length>0;
+    
+            return hasChildren;
+    
+        }else{
+
+
+            return false;
+
+        }
+    
+     }
     
  export  function validDomEvent(eventName){
 
@@ -256,6 +279,7 @@ export function ParserWarning(w){
     
     
              if(isAnobject){
+    
     
               return ( Object.prototype.toString.call(val).replace("[object","")
               .replace("]","").replace(/\s/g,"").toLowerCase()

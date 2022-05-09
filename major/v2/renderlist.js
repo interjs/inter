@@ -21,7 +21,8 @@
    isNotConfigurable,
    validStyleName,
    validDomEvent,
-   ParserWarning
+   ParserWarning,
+   isValidTemplateReturn
    
    
 
@@ -477,11 +478,25 @@ import{
 
  }
 
- function costumReactor(array, htmlEl, updateSystem){
+ function costumReactor(array, htmlEl, updateSystem, DO, pro){
 
     if(isNotConfigurable(array)){
 
         return false;
+
+    }
+
+
+    // Is not returning the template.
+    function runError(){
+
+        syErr(`
+                
+        You are not returning the template function
+        in "do" method, renderList, you must only return
+        the template function.
+        
+        `)
 
     }
         
@@ -518,7 +533,7 @@ Object.defineProperties(array, {
         
         
         Array.prototype.unshift.apply(array, arguments);
-        const _this=this;
+        
 
         if(arguments.length>1){
         
@@ -528,33 +543,44 @@ Object.defineProperties(array, {
         for(; i>-1; i--){
         
             
-        
-            const el=DO.call(_this,arguments[i],i);
-        
+            const temp=DO.call(pro,arguments[i],i, pro);
+
+            if(!isValidTemplateReturn(temp)){
+                 
+                runError();
+
+            }
             if(htmlEl.children[0]){
             
-                htmlEl.insertBefore(el, htmlEl.children[0]);
+                htmlEl.insertBefore(toDOM(temp.element), htmlEl.children[0]);
         
             }else{
         
-                htmlEl.appendChild(el);
+                htmlEl.appendChild(toDOM(temp.element));
         
             }
+
+        
         
         }
         
         }else if(arguments.length==1){
         
-        const el=DO.call(_this, arguments[0], 0);
+        const temp=DO.call(pro, arguments[0], 0, pro);
             
+        if(!isValidTemplateReturn(temp)){
+                 
+            runError();
+
+        }
         
         if(htmlEl.children[0]){
             
-            htmlEl.insertBefore(el, htmlEl.children[0]);
+            htmlEl.insertBefore(toDOM(temp.element), htmlEl.children[0]);
         
         }else{
         
-            htmlEl.appendChild(el);
+            htmlEl.appendChild(toDOM(temp.element));
         
         }
         
@@ -610,19 +636,25 @@ Object.defineProperties(array, {
         
             
         
-            if(end==0 && items){
-        
+            if(deleteCount==0 && items){
+
                 for(let l=items.length-1; l>-1; l--){
         
-                    const el=DO.call(pro, items[l], l);
+                    const temp=DO.call(pro, items[l], l, pro);
+                    
+                   if(!isValidTemplateReturn(temp)){
+                 
+                       runError();
+
+                       }
         
                     if(htmlEl.children[start]){
         
-                    htmlEl.insertBefore(el,htmlEl.children[start]);
+                    htmlEl.insertBefore(toDOM(temp.element),htmlEl.children[start]);
         
                     }else{
         
-                        htmlEl.appendChild(el);
+                        htmlEl.appendChild(toDOM(temp.element));
         
                     }
         
@@ -725,13 +757,6 @@ export function renderList(options){
 
     }
 
-    if(isArray(each)){
-
-
-        costumReactor(each, root, updateSystem);
-
-
-    }
 
     let pro, firstRender=true;
     const costumProps=new Set(["otherArray", "addItems"])
@@ -800,6 +825,15 @@ export function renderList(options){
 
             })
 
+
+
+            if(isArray(each)){
+
+
+                costumReactor(each, root, updateSystem, DO, pro);
+        
+        
+            }
 
         }
 
@@ -880,7 +914,7 @@ export function renderList(options){
     checkIterationSourceType();
 
              // The  function is returning the template.
-        if(isObj(newTemp) && newTemp[Symbol.for("template")] && isObj(newTemp.element)){
+        if(isValidTemplateReturn(newTemp)){
 
             
 
@@ -1192,7 +1226,7 @@ for(let i=0; _greater.length>i ; i++){
 
         ParserWarning(`
         
-        "${newStyle}" doesn't to seem to be a valid style name.
+        "${newStyle}" doesn't seem to be a valid style name.
         
         `)
 
