@@ -68,7 +68,7 @@ Almost every dom manipulation in an Inter app are handled by Inter, you  must ju
 
 # Compatibility
 
-*Inter* just supports the modern browsers, it means that no Internet Explorer support .
+*Inter* just supports the modern browsers, it means that no Internet Explorer support.
 
 # Lincense
 
