@@ -81,6 +81,13 @@ Backend.prototype={
 
        if(!isObj(obj)){
 
+           syErr(`
+           
+           The argument of [Backend instance].request method
+           must be an object, and you defined ${valueType(obj)}
+           as its value.
+           
+           `)
 
        }
 
@@ -396,6 +403,10 @@ Backend.prototype={
 
             req.send(body);
 
+        }else{
+        
+            req.send(null);
+        
         }
 
        }
