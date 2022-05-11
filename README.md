@@ -43,7 +43,7 @@ It's: **simple**, **intuitive** and **powerful**.
 
 # No complex setup
 
-You will not need to do any complex configuration to get up and running with Inter, just import the
+You will not need to do any complex configuration to start working with Inter, just import the
 framework in top of your page in a script tag, and start building even the most complex web apps.
 
 ```html
@@ -68,7 +68,7 @@ Almost every dom manipulation in an Inter app are handled by Inter, you  must ju
 
 # Compatibility
 
-*Inter* just supports the modern browsers, it's mean that no Internet Explorer support.
+*Inter* just supports the modern browsers, it means that no Internet Explorer support .
 
 # Lincense
 
