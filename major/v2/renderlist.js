@@ -1283,7 +1283,7 @@ function eventDeffing(target, oldEvents, newEvents){
 
 }
 
-function diffingChildren(__new, __old, realParent, diff){
+function diffingChildren(__new, __old, realParent){
 
     const _new=Array.from(__new),
     _old=Array.from(__old);
@@ -1301,8 +1301,8 @@ function diffingChildren(__new, __old, realParent, diff){
       */
 
         const newChild=_new[i],
-              oldChild=_old[i],
-              __newChild=__old[i];
+              oldChild=_old[i];
+              
 
     
         const {
@@ -1312,8 +1312,6 @@ function diffingChildren(__new, __old, realParent, diff){
             events:newEvents={},
             attrs:newAttrs={},
             styles:newStyles={},
-            update=true,
-            updateChildren=true,
             renderIf:newRenderIf
             
         }=newChild;
@@ -1325,29 +1323,11 @@ function diffingChildren(__new, __old, realParent, diff){
         events:oldEvents={},
         attrs:oldAttrs={},
         styles:oldStyles={},
-        renderIf:oldRenderIf,
         target   
 
        }=oldChild;
 
-       
-
-            if(!update){  
-            
-
-                if(newChildren.length==oldChildren.length && newChildren.length!==0){
-                    
-
-                    diffingChildren(newChildren, oldChildren);
-
-                };
-
-
-                continue;
-
-            
-
-            }else if(newChildren.length!==oldChildren.length && updateChildren){
+       if(newChildren.length!==oldChildren.length){
 
                 if(target && target.parentNode!=null){
 
@@ -1387,9 +1367,10 @@ function diffingChildren(__new, __old, realParent, diff){
              
                 }
 
-                
 
-                if(isFalse(newRenderIf) && target && target.parentNode!=null){
+                if(isFalse(newRenderIf)){
+
+                    if(target && target.parentNode!=null){
 
                     realParent.removeChild(target);
 
@@ -1400,9 +1381,13 @@ function diffingChildren(__new, __old, realParent, diff){
 
                     }
 
+                }else{
 
+                    removed++;
+
+                }
                     
-                    continue;
+                 
 
                 }
 
@@ -1448,7 +1433,7 @@ function diffingChildren(__new, __old, realParent, diff){
 
                         oldChild.target=newELement
 
-
+                        console.log(i-removed)
                         realParent.insertBefore(newELement, realParent.children[i-removed]);
 
                     }else{
@@ -1540,7 +1525,7 @@ function diffingChildren(__new, __old, realParent, diff){
 
                     defineNewEach(value);
 
-                    for(let item of value){
+                    for(const item of value){
 
                         checkType(item, updateSystem)
 

@@ -4,7 +4,8 @@ import{
     getId,
     consW,
     isCallable,
-    validDomEvent
+    validDomEvent,
+    ParserWarning
 
 } from "./helpers.js"
 
@@ -26,12 +27,13 @@ import{
     if(!isObj(obj)){
         
         syErr(`
-        The argument of "toATTR()" function must be an object.
+        The argument of "toAttrs()" function must be an object.
         `)
 
     }
 
   const{
+   
       in:IN,
       data,
       
@@ -41,22 +43,24 @@ import{
 
     syErr(`
     
-    The "in" property in toAttrs() function must be a string.
+    The "in" property value in toAttrs() function must be a string.
     
     `)
 
   }
+
   if(!isObj(data)){
 
     syErr(`
 
-    The "data" property in toAttrs() function must be an object.
+    The "data" property value in toAttrs() function must be an object.
+  
     `)
 
   }
       
   
-  const root= getId(IN)
+  const root=getId(IN)
           
 
   return findAttrManager(root,data);
@@ -71,24 +75,22 @@ import{
     const children=rootElem.getElementsByTagName("*");
     const reactors=Object.create(null);
 
-    for(let child of children){
+    for(const child of children){
         
         if(child.attributes.length==1){
           
             
             const theAttr=child.attributes[0].name;
           
-            for(let key of keys){
+            for(const key of keys){
         
             const pattern=new RegExp(`{...${key}}`);
 
             if(pattern.test(theAttr)){
 
-                
-              const copy=Object.assign({},attrManagers[key])
               child.removeAttribute(theAttr);   
 
-              const reactor=spread(child,copy,key,attrManagers[key]);
+              const reactor=spread(child,key,attrManagers[key]);
 
               
 
@@ -96,7 +98,41 @@ import{
               
        
         
+        }else{
+
+            const isAnAttrManager=/{(:?\.){3}(:?[\s\S]+)}/.test(theAttr);
+            const hasMoreThanThreeDots=/{(:?\.){4,}(:?[\s\S]+)}/.test(theAttr);
+            const attr=theAttr.replace(/{(:?\.){3}/, "").replace("}", "");
+            
+
+            if(hasMoreThanThreeDots){
+
+                ParserWarning(`
+                
+                "${theAttr}" is an invalid syntax for attribute manager.
+                The attribute manager must have only three dots.
+
+                Ex: {...managername}
+                
+                `)
+
+            }
+            if(isAnAttrManager && !attrManagers.hasOwnProperty(attr)){
+
+            // The attribute manager <key> was not defined in toAttrs function,
+            // but there is a reference to it in template.
+
+            ParserWarning(`
+            
+            The attribute manager parser found a manager named "${attr}" but
+            you did not defined it in the toAttrs function.
+            
+            `)
+            
+
         }
+
+    }
     }
     }
 
@@ -109,7 +145,7 @@ import{
     return reactors;
  }
 
-    function spread(el,attrs, attrManager, original){
+    function spread(el, attrManager, attrs){
 
     //We are considering them specials
     // because we can not reset them with the setAttribute function.
@@ -117,7 +153,7 @@ import{
         
         function runUpdate(value, attrName){
 
-            value=!attrName.startsWith("on") ? isCallable(value) ? attrValue.call(attrs) : value : value;
+            value=isCallable(value) ? value.call(attrs) : value;
 
             if(value==void 0){
 
@@ -130,11 +166,11 @@ import{
                     el[attrName]=void 0;
                 }
 
-            }else if(!attrName.startsWith("on") && !specialAttrs.has(attrName)){
+            }else if(!attrName.startsWith("on") && !specialAttrs.has(attrName) && el.getAttribute(attrName)!==value){
 
                   el.setAttribute(attrName,value);
 
-                }else if(specialAttrs.has(attrName)){
+                }else if(specialAttrs.has(attrName) && el[attrName]!==value){
 
                     el[attrName]=value;
                 }
@@ -174,7 +210,7 @@ import{
         
         function defineReactivity(attrName){
             
-            Object.defineProperty(original,attrName,{
+            Object.defineProperty(attrs,attrName,{
                 set(v){
                 
                     runUpdate(v, attrName)
@@ -243,7 +279,7 @@ import{
 
                 el[attrName]=function(e){
 
-                     attrValue.call(original,e);
+                     attrValue.call(attrs,e);
                
                    }
                 
@@ -272,12 +308,12 @@ import{
 
         //</>//
 
-        Object.defineProperties(original, {
+        Object.defineProperties(attrs, {
 
             setAttrs:{
-                 set(attrs){
+                 set(__attrs){
 
-                if(!isObj(attrs)){
+                if(!isObj(__attrs)){
 
                     syErr(`
                     
@@ -288,7 +324,7 @@ import{
 
                 };
 
-                for(const [attr, value] of Object.entries(attrs)){
+                for(const [attr, value] of Object.entries(__attrs)){
 
                     if(!(attr in this)){
 
@@ -296,7 +332,7 @@ import{
                         
                          The attribute manager "${attrManager}" 
                          does not manage an attribute named "${attr}",
-                         all the attributes must be defined in the "${attrManager}" manager
+                         all the attributes must be defined in the attrManager manager
                          object.
                         
                         `);
@@ -321,7 +357,7 @@ import{
         })
 
         return {
-            [attrManager]:original
+            [attrManager]:attrs
         };
         
         }

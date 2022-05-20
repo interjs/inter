@@ -56,12 +56,6 @@ if(isObj(obj)){
 
 
 
-
-/**
- * Exported(in modularized version) internal function.
- * 
- */
-
          export function toDOM(obj, isChild){
 
     
@@ -74,8 +68,6 @@ if(isObj(obj)){
                 events={},
                 styles={},
                 children=[],
-                update=false,
-                updateChildren=false,
             }=obj;
 
             
@@ -117,24 +109,11 @@ if(isObj(obj)){
 
               }
 
-              if(!isBool(update) || !isBool(updateChildren)){
-
-                syErr(`
-                
-                The "update" and "updateChildren" in template function must be only boolean(true/false).
-                
-                `)
-
-              }
-
-
 
 
               const container=document.createElement(tag);
               container.template=Object.assign(obj,{
 
-                update:update,
-                updateChildren:updateChildren,
                 target:container
 
               }) // For diffing task.
@@ -289,7 +268,7 @@ if(isObj(obj)){
 function createChildren(root, children){
 
 
-    for(let child of children){
+    for(const child of children){
 
         let {
             tag,
@@ -299,8 +278,6 @@ function createChildren(root, children){
             styles={},
             children=[],
             renderIf,
-            update=false,
-            updateChildren=false,
         }=child;
 
         tag=isCallable(tag) ? tag() : tag;
@@ -338,15 +315,7 @@ function createChildren(root, children){
           };
 
           
-          if(!isBool(update) || !isBool(updateChildren)){
-
-            syErr(`
-            
-            The "update" and "updateChildren" in template function must be only boolean(true/false).
-            
-            `)
-
-          }
+         
 
 
 
@@ -354,8 +323,6 @@ function createChildren(root, children){
           const container=document.createElement(tag);
           container.template=Object.assign(child,{
 
-             update:update,
-             updateChildren:updateChildren,
              target:container
 
           }); //For diffing task.

@@ -81,13 +81,14 @@ Backend.prototype={
 
        if(!isObj(obj)){
 
-           syErr(`
-           
-           The argument of [Backend instance].request method
-           must be an object, and you defined ${valueType(obj)}
-           as its value.
-           
-           `)
+        syErr(`
+        
+        The argument of [Backend instance].request method
+        must be only an object, and you defined "${valueType(obj)}"
+        as its argument.
+        
+        `)
+
 
        }
 
@@ -97,7 +98,7 @@ Backend.prototype={
            events={},
            timeout,
            withCredentials,
-           body,
+           body=null,
            headers={},
            security
        }=obj;
@@ -268,15 +269,9 @@ Backend.prototype={
 
                    req.onprogress=(ev)=>{
 
-                    const secondArg={
-                        abort(){
+                    const Arg={abort:()=>req.abort(), progress:ev.loaded*100/ev.total}
 
-                          req.abort();
-
-                        }  
-                      }
-
-                       handler(ev.loaded*100/ev.total,secondArg);
+                       handler(Arg);
 
                    }
 
@@ -393,23 +388,8 @@ Backend.prototype={
        }
 
 
-       if(method=="GET"){
+       req.send(body);
 
-        req.send(null);
-
-       }else{
-
-        if(isDefined(body)){
-
-            req.send(body);
-
-        }else{
-        
-            req.send(null);
-        
-        }
-
-       }
 
    }
 
