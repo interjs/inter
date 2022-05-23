@@ -8,7 +8,7 @@ import {
     valueType,
     isDefined
 
-} from "./helpers.js"
+} from "./helpers.js";
 
 
 function toObj(obj){

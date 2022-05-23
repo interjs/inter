@@ -6,15 +6,16 @@ import{
     isObj,
     getId,
     consW,
-    isAtag,
     err,
     isCallable,
-    isTrue,
+    isANode,
     valueType,
-    isBool
+    isBool,
+    isTrue,
     
 
-} from "./helpers.js"
+} from "./helpers.js";
+
 
 
 
@@ -240,7 +241,7 @@ function parseAttrs(container){
 
     parseAttrs(theContainer)
 
-        const reactor=parseConditionalRendering(data,els);
+        const reactor=runRenderingSystem(data,els);
 
         
 
@@ -254,13 +255,13 @@ function parseAttrs(container){
 }
 
 
-function parseConditionalRendering(data,els){
+function runRenderingSystem(data,els){
 
     const toArray=Array.from(els);
 
     function run(){
 
-        for(let el of toArray){
+        for(const el of toArray){
 
             const{
                 target,
@@ -274,19 +275,22 @@ function parseConditionalRendering(data,els){
 
             if(ifNot){
 
-                const current=root.children[i];
+                
+
+                const current=root.childNodes[i];
 
                 if(isFalse(data[ifNot]) && !target.isSameNode(current)){
 
 
-                    if(isAtag(current)){
+                    if(isANode(current)){
 
-                        root.replaceChild(current, target)
+                        root.insertBefore(target, current)
 
 
                     }else{
 
                         root.appendChild(target);
+
 
                     }
 
@@ -294,7 +298,7 @@ function parseConditionalRendering(data,els){
 
                 }else{
 
-                    if(target.parentNode==root){
+                    if(target.parentNode==root && isTrue(data[ifNot])){
 
                         root.removeChild(target);
 
@@ -318,7 +322,7 @@ function parseConditionalRendering(data,els){
 
               }else if(ELSE){
 
-                if(root.children[i] && root.children[i].isSameNode(ELSE)){
+                if(root.childNodes[i] && root.childNodes[i].isSameNode(ELSE)){
 
                 }else{
 
@@ -337,9 +341,9 @@ function parseConditionalRendering(data,els){
             }else{
                 
                 
-                 if(root.children[i]){
+                 if(root.childNodes[i]){
 
-                    const el=root.children[i];
+                    const el=root.childNodes[i];
 
                     
                      if(el.isSameNode(target)){
@@ -373,6 +377,8 @@ function parseConditionalRendering(data,els){
 
                 else{
 
+                    
+
                     root.appendChild(target)
 
                 }
@@ -390,8 +396,9 @@ function parseConditionalRendering(data,els){
 run();
 
 const observer=new Map();
+const proxyTarget=Object.assign({}, data);
 
-const reactor=new Proxy(data,{
+const reactor=new Proxy(proxyTarget,{
 
     set(target, prop, value){
 
@@ -407,7 +414,7 @@ const reactor=new Proxy(data,{
 
         }
 
-        if(!isBool(value)){
+        if(!isBool(value) && prop!=="setConds"){
 
             err(`
             The values of all conditional properties must be either true or false,
@@ -420,7 +427,12 @@ const reactor=new Proxy(data,{
 
         Reflect.set(target, prop, value);
 
+
+        if(prop!=="setConds"){
+
         run();
+
+        }
 
         if(observer.size==1){
 
@@ -480,6 +492,8 @@ Object.defineProperties(reactor,{
 
         set(conditions){
 
+            
+
             if(!isObj(conditions)){
 
                 syErr(`
@@ -496,9 +510,9 @@ Object.defineProperties(reactor,{
             for(let [prop, cond] of Object.entries(conditions)){
 
                 cond=isCallable(cond) ? cond.call(data) : cond;
-
+            
                 if(!isBool(cond)){
-
+                    
                     err(`
                     All the values of conditional properties must be either true or false,
                     and not ${cond}.

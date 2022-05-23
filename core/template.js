@@ -16,7 +16,7 @@ import{
     isFalse
     
 
-} from "./helpers.js"
+} from "./helpers.js";
 
 
 
@@ -202,7 +202,7 @@ if(isObj(obj)){
 
                     if(isDefined(styleValue)){
                         
-                        container.style.setProperty(name, styleValue);
+                        container.style[name]=styleValue;
                         
 
                     }
@@ -410,7 +410,7 @@ function createChildren(root, children){
 
                 if(isDefined(styleValue)){
 
-                    container.style.setProperty(name, styleValue);
+                    container.style[name]=styleValue;
                     
 
                 }

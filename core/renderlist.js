@@ -1,4 +1,5 @@
 
+
   import {
 
     syErr,
@@ -34,7 +35,7 @@ import{
     toDOM
 
 
-} from "./template.js"
+} from "./template.js";
 
 
 /**
@@ -486,6 +487,13 @@ import{
 
     }
 
+    //It is already reactive array.
+    if(Symbol.for("reactive") in array){
+
+        return false;
+
+    }
+
 
     // Is not returning the template.
     function runError(){
@@ -844,7 +852,7 @@ export function renderList(options){
         each=newArray;
         proSetup();
         updateSystem();
-        defineReactorReactiveProps(pro, each, updateSystem);
+        defineReactorReactiveProps(each, updateSystem);
         
 
     }
@@ -855,7 +863,7 @@ export function renderList(options){
 
         if(isArray(each)){
 
-        defineReactorReactiveProps(pro, each, updateSystem);
+        defineReactorReactiveProps(each, updateSystem);
 
         };
 
@@ -1218,9 +1226,9 @@ for(let i=0; _greater.length>i ; i++){
 
       if(newStyles[newStyle]!==oldStyles[newStyle]){
 
-          if(validStyleName[newStyle]){
+          if(validStyleName(newStyle)){
 
-          target.style.setProperty(newStyle, newStyles[newStyle])
+          target.style[newStyle]=newStyles[newStyle];
 
       }else{
 
@@ -1509,9 +1517,17 @@ function diffingChildren(__new, __old, realParent){
     
     };
 
-    function defineReactorReactiveProps(reactor,original, updateSystem){
+    function defineReactorReactiveProps(array, updateSystem){
 
-        Object.defineProperties(original, {
+        const reactive=Symbol.for("reactive");
+
+        if(reactive in array){
+
+            return false;
+
+        }
+
+        Object.defineProperties(array, {
 
             otherArray:{
                 set(value){
@@ -1533,26 +1549,49 @@ function diffingChildren(__new, __old, realParent){
 
 
                 },
-                get(){
 
-                    return void 0
-
-                },
                 configurable:!0
             },
             addItems:{
                 value(items, position){
 
 
-                    if(!isDefined(position) || position>reactor.length-1){
+                    if(isDefined(position) && (typeof position!=="number")){
+
+                        syErr(`
+                        
+                        The second argument of [LIST REACTOR].addItems must 
+                        be a number.
+                        
+                        `)
+
+                    }
+
+                    
+                    if(!isArray(items)){
+
+                        syErr(`
+                        
+                        The first argument of [LIST REACTOR ].addItems must be an array.
+                        
+                        `)
+
+                    }
+
+                    if(!isDefined(position) || position>this.length-1){
 
                         for(const item of items){
 
-                         original.push(item);
+                            
+                            
+                         this.push(item);
+                         
                             
                          checkType(item, updateSystem);
 
                         }
+
+                        
 
                     }
 
@@ -1560,9 +1599,17 @@ function diffingChildren(__new, __old, realParent){
 
                         for(let i=items.length-1; i>-1 ;i-- ){
 
-                            reactor.unshift(items[i]);
+                            this.unshift(items[i]);
 
                             checkType(items[i], updateSystem);
+
+                        }
+
+                    }else{
+
+                        for(const item of items){
+
+                            this.splice(position, 0, item)
 
                         }
 
@@ -1570,8 +1617,11 @@ function diffingChildren(__new, __old, realParent){
 
                 },
                 configurable:!0
-            }
+            },
+            [reactive]:{value:true}
 
         })
+
+
 
     }

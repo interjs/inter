@@ -73,20 +73,6 @@ export function isObj(o){
     
      }
     
- export function hasProp(obj){
-    
-        if(isObj(obj)){
-    
-            return Object.keys(obj).length>0;
-    
-        }else{
-
-            return false;
-
-        }
-    
-     }
-
 
 
 
@@ -97,24 +83,15 @@ export function isObj(o){
 
 
      }
-    
- export function hasNodeChild(tag){
-    
-        if(isAtag(tag)){
-    
-            const hasChildren=p.childNodes.length>0;
-    
-            return hasChildren;
-    
-        }else{
+ 
+export function isANode(target){
+
+    return isDefined(target) && (target.nodeType==1 || target.nodeType==3)
+
+}
 
 
-            return false;
 
-        }
-    
-     }
-    
  export  function validDomEvent(eventName){
 
     return eventName in HTMLElement.prototype;
@@ -124,7 +101,7 @@ export function isObj(o){
 
  export function validStyleName(styeName){
 
-    return styeName in document.createElement("p").style;
+    return (styeName in document.createElement("p").style);
 
  }   
 
@@ -304,30 +281,6 @@ export function ParserWarning(w){
     
     
 
-      export  function hasChildren(el){
-
-            if(isAtag(el)){
-
-
-                return el.getElementsByTagName("*").length>0;
-
-            }else{
-
-
-                return false;
-
-            }
-
-
-
-
-        }
-
-    export function equal(val1,val2){
-
-        return Object.is(val1,val2);
-
-    }
 
     export function isBool(val){
 
@@ -451,11 +404,3 @@ export function ParserWarning(w){
 
     //</>
 
-    export function notSameLength(obj1, obj2){
-
-        if(obj1===void 0 || obj2===void 0) return false;
-
-        return !(Object.keys(obj1).length===Object.keys(obj2).length);
-
-
-    }

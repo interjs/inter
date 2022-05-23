@@ -7,7 +7,7 @@ import{
     validDomEvent,
     ParserWarning
 
-} from "./helpers.js"
+} from "./helpers.js";
 
  export function toAttrs(obj){
 

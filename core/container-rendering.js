@@ -21,12 +21,11 @@ import{
    actualScript:void 0,
    hasContainer:false
 
- }, containerRenderingEvents=Object.create(null),
-  allowedEvents=new Set(["loading", "mounted"]);
+ };
 
 
 
- export function container(options){
+ export function Container(options){
 
     /**
      * 
