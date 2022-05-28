@@ -1,19 +1,26 @@
-import {
 
-    consW,
+import {
     isObj,
     syErr,
     isDefined,
     isCallable,
     getId,
-    hasProp,
-    ParserWarning,
+    consW,
+    
     
      
 
 
 }  from "./helpers.js";
 
+
+
+function hasProp(object){
+
+    return Object.keys(object).length>0;
+
+
+}
 
 
 function hasRefs(text){
@@ -388,10 +395,25 @@ export function Ref(obj){
 
             }
 
+            
+
   
             
             
-            for(let r in data){
+            for(const r in data){
+
+                if(r=="setRefs" || r=="observe"){
+
+                    consW(`
+                    
+                    "${r}" is a reserved property, you can use it
+                    as the reference name.
+                    
+                    `);
+
+                    continue;
+
+                }
 
                 if(isCallable(data[r])){
 
@@ -609,10 +631,13 @@ export function Ref(obj){
             }
             }
             
-            refParser(getId(IN),data,IN, store);
+            
 
             
             const proxyTarget=Object.assign({}, data);
+
+            refParser(getId(IN),proxyTarget,IN, store);
+
             const reactor=new Proxy(proxyTarget,{
 
                 set(t,k,v,p){
@@ -652,7 +677,7 @@ export function Ref(obj){
                     
                     // Dynamic ref.
 
-                    refParser(getId(IN),data, IN,store)
+                    refParser(getId(IN),proxyTarget, IN,store)
 
 
 
@@ -668,25 +693,13 @@ export function Ref(obj){
 
                 get(...args){
 
-                    if(args[1] in data){
+                    
 
 
                    return Reflect.get(...args);
 
                     
 
-                }else{
-
-
-                    /**
-                     * There is an attempt to get
-                     * a property that was not registered as reference.
-                     * We should return undefined.
-                     */
-
-                     return void 0;
-
-                }
             }
 
             })
@@ -702,17 +715,30 @@ export function Ref(obj){
                     if(isObj(o)){
 
                         
-                        for(let[refName,refValue] of Object.entries(o)){
+                        for(const [refName,refValue] of Object.entries(o)){
+
+                            if(refName=="observe" || refName=="setRefs"){
+
+                                consW(`
+                                
+                                "${refName}" is a reserved property, you can not
+                                use it as the reference name.
+                                
+                                `)
+
+                                continue;
+
+                            }
 
                             const oldRefValue=data[refName];
                             
                             if(isCallable(refValue)){
 
-                                data[refName]=refValue.call(reactor);
+                            proxyTarget[refName]=refValue.call(reactor);
 
                             }else{
                            
-                            data[refName]=refValue;
+                            proxyTarget[refName]=refValue;
 
                             }
 
@@ -721,7 +747,7 @@ export function Ref(obj){
 
                                 const callBack=store.observed.get("callBack");
             
-                                callBack(oldRefValue, refValue, refName, data);
+                                callBack(refName, refValue, oldRefValue);
             
                                 }
 
@@ -784,4 +810,5 @@ export function Ref(obj){
 }
 
             
+
 

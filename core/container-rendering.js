@@ -63,7 +63,7 @@ import{
         syErr(`
         
 
-        The options argument in container function must have the "in" property, and its value
+        The options argument in the Container function must have the "in" property, and its value
         must be a string.
         
         `)
@@ -105,7 +105,7 @@ import{
        if(typeof pathToContainer!=="string"){
 
 
-         syErr(`The argument of render function must be a string`);
+         syErr(`The first argument of the render function must be a string`);
 
 
        }
@@ -194,7 +194,7 @@ function getTheContainer(pathToContainer, rootEl, info, mountedEvent){
 
             get hasInfo(){
 
-              this.info!==void 0;
+             return this.info!==void 0;
 
             }
 
@@ -219,19 +219,24 @@ function getTheContainer(pathToContainer, rootEl, info, mountedEvent){
 
          }
 
+         if(hasExportKeyWord(__js)){
 
-         if(toUseModule(__js)){
+            syErr(`
+            
+            You are using the export keyword in the container
+            at: "${__pathToContainer}", and it's a syntax error. You can not
+            use the export keyword in a container.
+            
+            `)
+
+         }
 
             
             __script.type="module";
             __script.innerHTML=theScript
             
 
-         }else{
-
-            __script.innerHTML=theScript
-
-         }
+         
 
          if(toLoadCss(__css)){
 
@@ -328,14 +333,14 @@ function getTheContainer(pathToContainer, rootEl, info, mountedEvent){
  }
 
 
- function toUseModule(jsString){
+ function hasExportKeyWord(string){
 
-   
+   // script container.
 
-   const rule=/\/\/(:?\s+)*use(:?\s+)*module(\s+)/gi;
+   const rule=/export(:?\s+)(:?const|let|var|class|function|default)/g;
 
-   return rule.test(jsString);
-   
+   return rule.test(string);
+
 
  }
 

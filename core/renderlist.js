@@ -69,6 +69,224 @@ import{
 
  }
 
+
+ 
+ function exactElToRemove(obj, key, root){
+
+  
+if(isObj(obj)){
+
+    _inObj(obj, key, root);
+
+}else if(isSet(obj)){
+
+    _inSet(obj, key, root);
+
+}else{
+
+    _inMap(obj, key, root);
+
+}
+  
+
+
+ }
+
+ function _inObj(obj, key, root){
+
+    const keys=Object.keys(obj);
+
+    keys.some((prop,i)=>{
+
+        if(prop==key){
+    
+           _Exactremove(root, i);
+    
+        }
+    
+      })
+
+ }
+
+ function _inSet(set, key, root){
+
+    const obj=Array.from(set);
+    
+
+    obj.some((item, i)=>{
+
+        if(item==key){
+
+            _exactRemove(root, i);
+
+        }
+
+    })
+
+ }
+
+ function _inMap(obj, key, root){
+
+    let i=-1;
+
+    obj.forEach((value, prop)=>{
+
+        i++;
+
+        if(prop==key){
+
+            _exactRemove(root, i);
+
+        }
+
+    })
+
+    
+
+ }
+
+ function _exactRemove(root, i){
+
+    const elToRmove=root.children[i];
+    
+    if(isAtag(elToRmove)){
+
+        root.removeChild(elToRmove);
+
+    }
+
+ }
+
+function createArrayReactor(each, updateSystem){
+
+
+    if(isNotConfigurable(each)){
+
+        err(`
+        
+        Inter fails to define the reactivity in the list reactor,
+        because the array  of the each option is not configurable.
+        
+        `)
+
+    }
+
+    const costumProps=new Set(["otherArray", "addItems"]);
+
+    return new Proxy(each, {
+
+        set(target, prop, value){
+          
+            if(costumProps.has(prop)){
+
+                Reflect.set(target, prop, value);
+                return true;    
+            }
+
+            
+            Reflect.set(target, prop, value);
+
+            updateSystem();
+
+            if(typeof prop !=="number" && validEachProperty(value)){
+
+                
+
+                checkType(value, updateSystem)
+
+            }
+
+            return true;
+
+
+        },
+
+        get(){
+
+
+            return Reflect.get(...arguments);
+
+        },
+
+    })
+
+
+
+
+}
+    
+function createObjReactor(each, updateSystem, root){
+
+    if(isNotConfigurable(each)){
+
+        err(`
+        
+        Inter fails to define the reactivity in the list reactor,
+        because the array  of the each option is not configurable.
+        
+        `)
+
+    }
+
+
+
+    return new Proxy(each, {
+
+        set(target, prop, value){
+          
+
+            Reflect.set(target, prop, value);
+
+            updateSystem();
+
+            if(typeof prop !=="number" && validEachProperty(value)){
+
+                
+
+                checkType(value, updateSystem)
+
+            }
+
+            return true;
+
+
+        },
+
+        get(){
+
+
+            return Reflect.get(...arguments);
+
+        },
+
+        deleteProperty(target, prop){
+
+            if(prop in target){
+
+                exactElToRemove(target, prop, root)
+                Reflect.deleteProperty(...arguments);
+                updateSystem()
+                
+
+                return true;
+
+            }
+
+            consW(`
+            You are trying to delete the "${prop}" property in the list
+            reactor, but that property does not exist in the list reactor.
+            
+            `)
+
+        }
+
+    })
+
+
+
+
+}
+
  function defineReactiveObj(obj, call){
 
     const reactive=Symbol.for("reactive"),
@@ -321,7 +539,7 @@ import{
 
     };
 
-    walkArray(array);
+    walkArray(array, call);
 
     Object.defineProperty(array, reactive, {
 
@@ -332,7 +550,7 @@ import{
 
  };
 
- function defineReactiveMap(map, call){
+ function defineReactiveMap(map, call, listReactor, root){
 
     const reactive=Symbol.for("reactive");
 
@@ -360,6 +578,7 @@ import{
 
             value(){
 
+                if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root)
                 Map.prototype[method].apply(this, arguments);
                 if(method=="add"){
 
@@ -377,7 +596,7 @@ import{
 
     }
 
-    walkMap(map);
+    walkMap(map, call);
 
     Object.defineProperty(map, reactive, {
 
@@ -389,7 +608,7 @@ import{
 
  }
 
- function defineReactiveSet(set, call){
+ function defineReactiveSet(set, call, listReactor, root){
 
     const reactive=Symbol.for("reactive");
 
@@ -414,6 +633,7 @@ import{
 
             value(){
 
+                if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root);
                 Set.prototype[method].apply(this,arguments);
 
                 if(method==="add"){
@@ -430,7 +650,7 @@ import{
 
     };
 
-    walkSet(set);
+    walkSet(set, call);
 
     Object.defineProperty(set, reactive, {
 
@@ -441,17 +661,17 @@ import{
 
  }
 
- function walkMap(map){
+ function walkMap(map, call){
 
     /**
      * The goal here is to iterate through the map collection
-     * and if we found an object, an array, a set or even a map, we must make reactive.
+     * and if we found an object, an array, a set or even a map, we must make it reactive.
      * 
      */
 
      map.forEach((value)=>{
 
-        checkType(value)
+        checkType(value, call)
 
 
      })
@@ -459,21 +679,21 @@ import{
 
  }
 
- function walkArray(array){
+ function walkArray(array, call){
 
-    for(let item of array){
+    for(const item of array){
 
-        checkType(item);
+        checkType(item, call);
 
     }
 
  }
 
- function walkSet(set){
+ function walkSet(set, call){
 
     set.forEach((value)=>{
 
-        checkType(value)
+        checkType(value, call)
 
     })
 
@@ -721,7 +941,7 @@ export function renderList(options){
         in:IN,
         each,
         do:DO,
-        reactive=true
+        
     }=options;
 
     const root=getId(IN)
@@ -767,83 +987,36 @@ export function renderList(options){
 
 
     let pro, firstRender=true;
-    const costumProps=new Set(["otherArray", "addItems"])
 
     function proSetup(){
 
         
 
-        if(typeof each!=="number"){
+        if(isArray(each)){
+            pro=createArrayReactor(each, updateSystem);
+            
+            costumReactor(each, root, updateSystem, DO, pro);
+        }
+        else if(isObj(each)){
 
-            if(isNotConfigurable(each)){
-
-                err(`
-                
-                Inter fails to define the reactivity in the list reactor,
-                because the  value(array or plain object) of the each option is not configurable.
-                
-                `)
-
-            }
-
-            pro=new Proxy(each, {
-
-                set(target, prop, value){
-                  
-                    if(costumProps.has(prop)){
-
-                        Reflect.set(target, prop, value);
-                        return true;    
-                    }
-
-                    Reflect.set(target, prop, value);
-
-                    updateSystem();
-
-                    if(typeof prop !=="number" && validEachProperty(value)){
-
-                        
-
-                        checkType(value, updateSystem)
-
-                    }
-
-                    return true;
-
-
-                },
-
-                get(){
-
-
-                    return Reflect.get(...arguments);
-
-                },
-                defineProperty(){
-
-                    Reflect.deleteProperty(...arguments);
-
-                    updateSystem();
-
-                    return true;
-
-                },
-
-                
-
-            })
-
-
-
-            if(isArray(each)){
-
-
-                costumReactor(each, root, updateSystem, DO, pro);
-        
-        
-            }
+            pro=createObjReactor(each, updateSystem, root);
 
         }
+        else if(isSet(each)){
+
+            defineReactiveSet(each, updateSystem, true, root);
+            pro=each;
+
+        } else{
+
+             if(isMap(each)){
+
+            defineReactiveMap(each, updateSystem, true, root);
+            pro=each;
+
+        }
+
+    }
 
     }
 
@@ -852,12 +1025,13 @@ export function renderList(options){
         each=newArray;
         proSetup();
         updateSystem();
+        costumReactor(each, root, updateSystem, DO, pro);
         defineReactorReactiveProps(each, updateSystem);
         
 
     }
 
-    if(reactive){
+    
 
         proSetup();
 
@@ -866,15 +1040,6 @@ export function renderList(options){
         defineReactorReactiveProps(each, updateSystem);
 
         };
-
-        
-
-    }
-
-
-    
-    
-    
 
 
     function updateSystem(){
@@ -962,7 +1127,7 @@ export function renderList(options){
     
                 }
 
-            if(firstRender && reactive){
+            if(firstRender){
             checkType(type!=="object" ? data : data[1] /*obj prop*/, updateSystem);
 
             }
@@ -992,11 +1157,7 @@ updateSystem()
 
 firstRender=false;
 
-if(!reactive){
 
-    return updateSystem;
-
-};
 
 
 }

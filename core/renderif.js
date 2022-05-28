@@ -58,7 +58,7 @@ export function renderIf(obj){
         if(!(typeof IN==="string")){
 
             syErr(`
-            The value of "in" property in renderList function must be a string.
+            The value of "in" property in renderIf function must be a string.
             
             `)
 
@@ -67,8 +67,21 @@ export function renderIf(obj){
         if(!isObj(data)){
 
             syErr(`
-            The value of "data" property in renderList function must be a plain Javascript object.
+            The value of "data" property in renderIf function must be a plain Javascript object.
 
+            `)
+
+        }
+
+        if(("setConds" in data)){
+
+            delete data.setConds;
+
+            consW(`
+            
+            "setConds" is a reserved property in conditional rendering, you can not use it
+            as conditional property that's why Inter deleted it from the data object.
+            
             `)
 
         }
@@ -241,7 +254,7 @@ function parseAttrs(container){
 
     parseAttrs(theContainer)
 
-        const reactor=runRenderingSystem(data,els);
+        const reactor=runRenderingSystem(els, data);
 
         
 
@@ -255,11 +268,11 @@ function parseAttrs(container){
 }
 
 
-function runRenderingSystem(data,els){
+function runRenderingSystem(els, data){
 
     const toArray=Array.from(els);
 
-    function run(){
+    function run(source){
 
         for(const el of toArray){
 
@@ -279,7 +292,7 @@ function runRenderingSystem(data,els){
 
                 const current=root.childNodes[i];
 
-                if(isFalse(data[ifNot]) && !target.isSameNode(current)){
+                if(isFalse(source[ifNot]) && !target.isSameNode(current)){
 
 
                     if(isANode(current)){
@@ -298,7 +311,7 @@ function runRenderingSystem(data,els){
 
                 }else{
 
-                    if(target.parentNode==root && isTrue(data[ifNot])){
+                    if(target.parentNode==root && isTrue(source[ifNot])){
 
                         root.removeChild(target);
 
@@ -309,7 +322,7 @@ function runRenderingSystem(data,els){
             }
             
 
-            else if(isFalse(data[IF])){
+            else if(isFalse(source[IF])){
 
                 
                 
@@ -393,16 +406,18 @@ function runRenderingSystem(data,els){
     
 }
 
-run();
+
 
 const observer=new Map();
 const proxyTarget=Object.assign({}, data);
+
+run(proxyTarget);
 
 const reactor=new Proxy(proxyTarget,{
 
     set(target, prop, value){
 
-        if(!(prop in data)){
+        if(!(prop in data) && prop!=="setConds"){
  
             consW(`
             "${prop}" was not defined 
@@ -430,10 +445,9 @@ const reactor=new Proxy(proxyTarget,{
 
         if(prop!=="setConds"){
 
-        run();
+        run(proxyTarget);
 
-        }
-
+        
         if(observer.size==1){
 
 
@@ -443,6 +457,9 @@ const reactor=new Proxy(proxyTarget,{
 
 
         }
+
+        }
+
 
         return true;
 
@@ -510,12 +527,13 @@ Object.defineProperties(reactor,{
             for(let [prop, cond] of Object.entries(conditions)){
 
                 cond=isCallable(cond) ? cond.call(data) : cond;
+
             
                 if(!isBool(cond)){
                     
                     err(`
                     All the values of conditional properties must be either true or false,
-                    and not ${cond}.
+                    and not "${valueType(cond)}" as you defined.
                     
                     `)
 
@@ -532,7 +550,7 @@ Object.defineProperties(reactor,{
                 };
 
 
-                    data[prop]=cond;
+                    proxyTarget[prop]=cond;
 
                 
 
@@ -540,7 +558,7 @@ Object.defineProperties(reactor,{
 
 
 
-            run();
+            run(proxyTarget);
 
         },
         enumerable:!1,
