@@ -17,14 +17,28 @@ import{
 } from "./helpers.js";
 
 
+function getChildNodes(root){
 
+    const nodes=new Array();
+
+    root.childNodes.forEach((node)=>{
+        
+        if(node.nodeType==1 || node.nodeType==3 && !node.textContent.trim().length==0){
+
+            nodes.push(node);
+
+        }
+
+    });
+
+    return nodes;
+
+
+}
 
 
 export function renderIf(obj){
 
-    // This function is a replacement
-    // for Inter.renderIf()
-    // Inter.renderIf() was removed since version 2.0.0.
 
     if(!isObj(obj)){
 
@@ -285,15 +299,20 @@ function runRenderingSystem(els, data){
                 root
             }=el;
 
+            const current=getChildNodes(root)[i];
+
 
             if(ifNot){
 
                 
 
-                const current=root.childNodes[i];
+               
+
+                
 
                 if(isFalse(source[ifNot]) && !target.isSameNode(current)){
 
+                    
 
                     if(isANode(current)){
 
@@ -335,7 +354,7 @@ function runRenderingSystem(els, data){
 
               }else if(ELSE){
 
-                if(root.childNodes[i] && root.childNodes[i].isSameNode(ELSE)){
+                if(current && current.isSameNode(ELSE)){
 
                 }else{
 
@@ -354,9 +373,9 @@ function runRenderingSystem(els, data){
             }else{
                 
                 
-                 if(root.childNodes[i]){
+                 if(current){
 
-                    const el=root.childNodes[i];
+                    const el=current;
 
                     
                      if(el.isSameNode(target)){

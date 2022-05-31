@@ -290,8 +290,7 @@ function createObjReactor(each, updateSystem, root){
  function defineReactiveObj(obj, call){
 
     const reactive=Symbol.for("reactive"),
-          defineProps="defineProps",
-          setProps="setProps",
+           reservedProps=new Set(["setProps","defineProps","deleteProps"]),
           share=Object.assign(Object.create(null), obj);
 
     if(reactive in obj){
@@ -308,7 +307,7 @@ function createObjReactor(each, updateSystem, root){
         consW(`
         
         Inter fails to define reactivity
-        in a plain Javascript object because it is a no-configurable object.
+        in a plain Javascript object because it is a non-configurable object.
         
         `);
 
@@ -316,37 +315,24 @@ function createObjReactor(each, updateSystem, root){
 
     }
 
-    if(defineProps in obj){
-
-        console.log(obj)
-
-        consW(`
-        
-        "defineprops" is a reserved property,
-        do not create a property with this name in the reactor
-        of reactive listing.
-        
-        `);
-
-      delete obj.defineProps;  
-
-    };
-
-    if(setProps in obj){
-
-        consW(`
-        
-        "setProps" is a reserved property,
-        do not create a property with this name in the reactor
-        of reactive listing.
-        
-        `);
-
-        delete obj.setProps;
-
-    };
 
     for(const prop of Object.keys(obj)){
+
+        if(reservedProps.has(prop)){
+
+        delete obj[prop];
+
+        consW(`
+        
+        "${prop}" is a reserved property,
+        do not create a property with this name in the reactor
+        of reactive listing.
+        
+        `);
+
+        
+
+        }
 
         Object.defineProperty(obj, prop, {
 
@@ -389,7 +375,9 @@ function createObjReactor(each, updateSystem, root){
 
                 for(const [prop, value] of Object.entries(props)){
 
-                    if(!(prop in this) && prop!==defineProps && prop!==setProps){
+                    if(!(prop in this) && prop!=="defineProps" && prop!=="setProps"
+                    && prop!=="removeProps" 
+                    ){
 
                         share[prop]=value;
 
@@ -426,7 +414,9 @@ function createObjReactor(each, updateSystem, root){
 
                 for(const [prop, value] of Object.entries(props)){
 
-                    if(prop in this && prop!==defineProps && prop!==setProps){
+                    if(prop in this && prop!=="defineProps" && prop!=="setProps"
+                    && prop!=="deleteProps"
+                    ){
 
                         share[prop]=value;
 
@@ -699,6 +689,8 @@ function createObjReactor(each, updateSystem, root){
 
  }
 
+ const reactive=Symbol.for("reactive");
+
  function costumReactor(array, htmlEl, updateSystem, DO, pro){
 
     if(isNotConfigurable(array)){
@@ -708,7 +700,7 @@ function createObjReactor(each, updateSystem, root){
     }
 
     //It is already reactive array.
-    if(Symbol.for("reactive") in array){
+    if(reactive in array){
 
         return false;
 
@@ -900,7 +892,8 @@ Object.defineProperties(array, {
         }
 
 
-    }
+    },
+    [reactive]:{value:true}
         
          })
         
@@ -911,9 +904,11 @@ Object.defineProperties(array, {
  }
 
 
- let defineNewEach;
+ 
 
 export function renderList(options){
+
+    
 
     if(new.target!==void 0){
 
@@ -1020,26 +1015,138 @@ export function renderList(options){
 
     }
 
-    defineNewEach=(newArray)=>{
+    const defineNewEach=(newArray)=>{
 
         each=newArray;
+        defineReactorReactiveProps(each, updateSystem);
         proSetup();
         updateSystem();
-        costumReactor(each, root, updateSystem, DO, pro);
-        defineReactorReactiveProps(each, updateSystem);
+        
         
 
+    }
+
+    function defineReactorReactiveProps(){
+
+        const reactive=Symbol.for("reactive");
+    
+        if(reactive in each){
+          
+            return false;
+    
+        }
+    
+        Object.defineProperties(each, {
+    
+            otherArray:{
+                set(value){
+                    
+                    if(!isArray(value)){
+    
+                        syErr(`The value of [List reactor].otherArray property must be an object.`)
+    
+                    };
+                      console.log(true)
+                    
+    
+                    defineNewEach(value);
+    
+                    for(const item of value){
+    
+                        checkType(item, updateSystem)
+    
+                    }
+    
+    
+                },
+    
+                configurable:!0
+            },
+            addItems:{
+                value(items, position){
+    
+    
+                    if(isDefined(position) && (typeof position!=="number")){
+    
+                        syErr(`
+                        
+                        The second argument of [LIST REACTOR].addItems must 
+                        be a number.
+                        
+                        `)
+    
+                    }
+    
+                    
+                    if(!isArray(items)){
+    
+                        syErr(`
+                        
+                        The first argument of [LIST REACTOR ].addItems must be an array.
+                        
+                        `)
+    
+                    }
+    
+                    if(!isDefined(position) || position>this.length-1){
+    
+                        for(const item of items){
+    
+                            
+                            
+                         this.push(item);
+                         
+                            
+                         checkType(item, updateSystem);
+    
+                        }
+    
+                        
+    
+                    }
+    
+                    if(position==0 || position<0){
+    
+                        for(let i=items.length-1; i>-1 ;i-- ){
+    
+                            this.unshift(items[i]);
+    
+                            checkType(items[i], updateSystem);
+    
+                        }
+    
+                    }else{
+    
+                        for(const item of items){
+    
+                            this.splice(position, 0, item)
+    
+                        }
+    
+                    }
+    
+                },
+                configurable:!0
+            },
+            
+    
+        })
+    
+    
+    
+    }
+    
+    if(isArray(each)){
+    
+        defineReactorReactiveProps();
+    
     }
 
     
 
         proSetup();
 
-        if(isArray(each)){
-
-        defineReactorReactiveProps(each, updateSystem);
-
-        };
+        
 
 
     function updateSystem(){
@@ -1156,6 +1263,11 @@ export function renderList(options){
 updateSystem()
 
 firstRender=false;
+
+
+
+
+return pro;
 
 
 
@@ -1677,112 +1789,3 @@ function diffingChildren(__new, __old, realParent){
                 }
     
     };
-
-    function defineReactorReactiveProps(array, updateSystem){
-
-        const reactive=Symbol.for("reactive");
-
-        if(reactive in array){
-
-            return false;
-
-        }
-
-        Object.defineProperties(array, {
-
-            otherArray:{
-                set(value){
-                    
-                    if(!isArray(value)){
-
-                        syErr(`The value of [List reactor].otherArray property must be an object.`)
-
-                    };
-
-
-                    defineNewEach(value);
-
-                    for(const item of value){
-
-                        checkType(item, updateSystem)
-
-                    }
-
-
-                },
-
-                configurable:!0
-            },
-            addItems:{
-                value(items, position){
-
-
-                    if(isDefined(position) && (typeof position!=="number")){
-
-                        syErr(`
-                        
-                        The second argument of [LIST REACTOR].addItems must 
-                        be a number.
-                        
-                        `)
-
-                    }
-
-                    
-                    if(!isArray(items)){
-
-                        syErr(`
-                        
-                        The first argument of [LIST REACTOR ].addItems must be an array.
-                        
-                        `)
-
-                    }
-
-                    if(!isDefined(position) || position>this.length-1){
-
-                        for(const item of items){
-
-                            
-                            
-                         this.push(item);
-                         
-                            
-                         checkType(item, updateSystem);
-
-                        }
-
-                        
-
-                    }
-
-                    if(position==0 || position<0){
-
-                        for(let i=items.length-1; i>-1 ;i-- ){
-
-                            this.unshift(items[i]);
-
-                            checkType(items[i], updateSystem);
-
-                        }
-
-                    }else{
-
-                        for(const item of items){
-
-                            this.splice(position, 0, item)
-
-                        }
-
-                    }
-
-                },
-                configurable:!0
-            },
-            [reactive]:{value:true}
-
-        })
-
-
-
-    }
