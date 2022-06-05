@@ -100,7 +100,8 @@ if(isObj(obj)){
 
         if(prop==key){
     
-           _Exactremove(root, i);
+           _exactRemove(root, i);
+           
     
         }
     
@@ -340,7 +341,7 @@ function createObjReactor(each, updateSystem, root){
 
                 share[prop]=newValue;
                 call();
-                checkType(newValue)
+                checkType(newValue, call)
 
             },
 
@@ -352,6 +353,8 @@ function createObjReactor(each, updateSystem, root){
             configurable:!0
 
         })
+
+        checkType(obj[prop], call);
 
     };
 
@@ -385,13 +388,13 @@ function createObjReactor(each, updateSystem, root){
 
                                 share[prop]=newValue;
                                 call();
-                                checkType(newValue);
+                                checkType(newValue, call);
 
                             },
                             get(){  return share[prop]  }
                         });
 
-                        checkType(value);
+                        checkType(value, call);
 
                     }
 
@@ -431,7 +434,7 @@ function createObjReactor(each, updateSystem, root){
                     ){
 
                         share[prop]=value;
-                        checkType(value);
+                        checkType(value, call);
 
                     }
 
@@ -512,12 +515,13 @@ function createObjReactor(each, updateSystem, root){
             value(start, deleteCount, ...items){
 
                 Array.prototype[method].apply(this, arguments);
+                call();
 
                 if(method==="push" || method==="unshift"){
 
                     for(const arg of arguments){
 
-                         checkType(arg)
+                         checkType(arg, call)
 
                     }
 
@@ -527,7 +531,7 @@ function createObjReactor(each, updateSystem, root){
 
                         for(const item of items){
 
-                            checkType(item);
+                            checkType(item, call);
 
                         }
 
@@ -581,17 +585,19 @@ function createObjReactor(each, updateSystem, root){
 
             value(){
 
-                if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root)
+                if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root);
                 Map.prototype[method].apply(this, arguments);
-                if(method=="add"){
+                call();
+                
+                if(method=="set"){
 
                     const value=arguments[1];
 
-                    checkType(value);
+                    checkType(value, call);
 
                 }
 
-                call();
+                
 
             }
 
@@ -638,14 +644,14 @@ function createObjReactor(each, updateSystem, root){
 
                 if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root);
                 Set.prototype[method].apply(this,arguments);
-
+                call();
                 if(method==="add"){
 
-                    checkType(arguments[0]);
+                    checkType(arguments[0], call);
 
                 };
 
-                call();
+                
 
             }
 

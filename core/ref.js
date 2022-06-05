@@ -148,11 +148,11 @@ function refParser(p,refs,name,rparse){
                        const register={
                            target:node,
                            text:node.textContent,
-                           refs:refs,
+                           
        
                    };
     
-                   node.ref=true;
+                   
 
                    rparse.add(register);
     
@@ -282,11 +282,11 @@ function refParser(p,refs,name,rparse){
                     const register={
                         target:node,
                         text:node.textContent,
-                        refs:refs
+                        
     
                 }
     
-             node.ref=true;
+             
       
               rparse.add(register)
                 
@@ -303,7 +303,6 @@ function refParser(p,refs,name,rparse){
             const register={
                 target:child,
                 text:text,
-                refs:refs
                 
             };
             
@@ -315,7 +314,7 @@ function refParser(p,refs,name,rparse){
     
                 rparse.add(register);
 
-                child.ref=true;
+                
                     
                     
                     
@@ -355,7 +354,7 @@ export function Ref(obj){
 
         syErr(`
         
-        Do not call Ref with the new keyword.
+        Do not call the Ref function with the new keyword.
 
         `)
 
@@ -380,7 +379,7 @@ export function Ref(obj){
             if(!(typeof IN==="string")){
 
                 syErr(`
-                The value of "in" property in the Ref function must be a string
+                The value of "in" property in the Ref function must be a string.
                 
                 `)
 
@@ -423,12 +422,13 @@ export function Ref(obj){
 
             }
 
+            const proxyTarget=Object.assign({}, data);
             const store={
                 attrs: new Set(), // Attribute reference.
                 text:new Set(), // Text reference.
                 specialAttrs: new Set(),     
                 observed:new Map(),          
-                refs:void 0,
+                refs:proxyTarget,
                 add(setting,attr){
  
                     // if attr, the parser must register the reference 
@@ -491,7 +491,7 @@ export function Ref(obj){
 
                             
                             const pattern=new RegExp(`{\s*${ref}\s*}`, "g");
-                             
+                            console.log(this.refs[ref])
                             special.target[sp[0]]=sp[1].replace(pattern, this.refs[ref]);
 
 
@@ -634,7 +634,7 @@ export function Ref(obj){
             
 
             
-            const proxyTarget=Object.assign({}, data);
+            
 
             refParser(getId(IN),proxyTarget,IN, store);
 

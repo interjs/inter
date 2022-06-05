@@ -3,7 +3,7 @@
     
 /**
  * Interjs 
- * Version - 2.0.1
+ * Version - 2.0.2
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -420,6 +420,7 @@
 
 
 
+
 function hasProp(object){
 
     return Object.keys(object).length>0;
@@ -553,11 +554,11 @@ function refParser(p,refs,name,rparse){
                        const register={
                            target:node,
                            text:node.textContent,
-                           refs:refs,
+                           
        
                    };
     
-                   node.ref=true;
+                   
 
                    rparse.add(register);
     
@@ -687,11 +688,11 @@ function refParser(p,refs,name,rparse){
                     const register={
                         target:node,
                         text:node.textContent,
-                        refs:refs
+                        
     
                 }
     
-             node.ref=true;
+             
       
               rparse.add(register)
                 
@@ -708,7 +709,6 @@ function refParser(p,refs,name,rparse){
             const register={
                 target:child,
                 text:text,
-                refs:refs
                 
             };
             
@@ -720,7 +720,7 @@ function refParser(p,refs,name,rparse){
     
                 rparse.add(register);
 
-                child.ref=true;
+                
                     
                     
                     
@@ -760,7 +760,7 @@ function refParser(p,refs,name,rparse){
 
         syErr(`
         
-        Do not call Ref with the new keyword.
+        Do not call the Ref function with the new keyword.
 
         `)
 
@@ -785,7 +785,7 @@ function refParser(p,refs,name,rparse){
             if(!(typeof IN==="string")){
 
                 syErr(`
-                The value of "in" property in the Ref function must be a string
+                The value of "in" property in the Ref function must be a string.
                 
                 `)
 
@@ -828,12 +828,13 @@ function refParser(p,refs,name,rparse){
 
             }
 
+            const proxyTarget=Object.assign({}, data);
             const store={
                 attrs: new Set(), // Attribute reference.
                 text:new Set(), // Text reference.
                 specialAttrs: new Set(),     
                 observed:new Map(),          
-                refs:void 0,
+                refs:proxyTarget,
                 add(setting,attr){
  
                     // if attr, the parser must register the reference 
@@ -896,7 +897,7 @@ function refParser(p,refs,name,rparse){
 
                             
                             const pattern=new RegExp(`{\s*${ref}\s*}`, "g");
-                             
+                            console.log(this.refs[ref])
                             special.target[sp[0]]=sp[1].replace(pattern, this.refs[ref]);
 
 
@@ -1039,7 +1040,7 @@ function refParser(p,refs,name,rparse){
             
 
             
-            const proxyTarget=Object.assign({}, data);
+            
 
             refParser(getId(IN),proxyTarget,IN, store);
 
@@ -1214,7 +1215,6 @@ function refParser(p,refs,name,rparse){
 
 }
 
-            
 
 
 function getChildNodes(root){
@@ -2145,7 +2145,6 @@ return reactor;
         }
 
 
-
  function template(obj){
 
     
@@ -2600,6 +2599,7 @@ function createChildren(root, children){
 
 
 
+
 /**
  *  Reactive system for listing 
  *
@@ -2662,7 +2662,8 @@ if(isObj(obj)){
 
         if(prop==key){
     
-           _Exactremove(root, i);
+           _exactRemove(root, i);
+           
     
         }
     
@@ -2902,7 +2903,7 @@ function createObjReactor(each, updateSystem, root){
 
                 share[prop]=newValue;
                 call();
-                checkType(newValue)
+                checkType(newValue, call)
 
             },
 
@@ -2914,6 +2915,8 @@ function createObjReactor(each, updateSystem, root){
             configurable:!0
 
         })
+
+        checkType(obj[prop], call);
 
     };
 
@@ -2947,13 +2950,13 @@ function createObjReactor(each, updateSystem, root){
 
                                 share[prop]=newValue;
                                 call();
-                                checkType(newValue);
+                                checkType(newValue, call);
 
                             },
                             get(){  return share[prop]  }
                         });
 
-                        checkType(value);
+                        checkType(value, call);
 
                     }
 
@@ -2993,7 +2996,7 @@ function createObjReactor(each, updateSystem, root){
                     ){
 
                         share[prop]=value;
-                        checkType(value);
+                        checkType(value, call);
 
                     }
 
@@ -3074,12 +3077,13 @@ function createObjReactor(each, updateSystem, root){
             value(start, deleteCount, ...items){
 
                 Array.prototype[method].apply(this, arguments);
+                call();
 
                 if(method==="push" || method==="unshift"){
 
                     for(const arg of arguments){
 
-                         checkType(arg)
+                         checkType(arg, call)
 
                     }
 
@@ -3089,7 +3093,7 @@ function createObjReactor(each, updateSystem, root){
 
                         for(const item of items){
 
-                            checkType(item);
+                            checkType(item, call);
 
                         }
 
@@ -3143,17 +3147,19 @@ function createObjReactor(each, updateSystem, root){
 
             value(){
 
-                if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root)
+                if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root);
                 Map.prototype[method].apply(this, arguments);
-                if(method=="add"){
+                call();
+                
+                if(method=="set"){
 
                     const value=arguments[1];
 
-                    checkType(value);
+                    checkType(value, call);
 
                 }
 
-                call();
+                
 
             }
 
@@ -3200,14 +3206,14 @@ function createObjReactor(each, updateSystem, root){
 
                 if(method=="delete" && listReactor)exactElToRemove(this, arguments[0], root);
                 Set.prototype[method].apply(this,arguments);
-
+                call();
                 if(method==="add"){
 
-                    checkType(arguments[0]);
+                    checkType(arguments[0], call);
 
                 };
 
-                call();
+                
 
             }
 
@@ -4848,7 +4854,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.1 of Inter was succefully loaded.")
+ console.log("The global version 2.0.2 of Inter was succefully loaded.")
 
 })();
 
