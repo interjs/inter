@@ -45,7 +45,7 @@ if(isObj(obj)){
     syErr(`
     
     The argument of the template function must be a plain Javascript object,
-    but you defined ${valueType(obj)} as its argument.
+    but you defined "${valueType(obj)}" as its argument.
     
     `)
 
@@ -170,7 +170,7 @@ if(isObj(obj)){
 
                             ParserWarning(`
                             
-                            The event "${name}" was not created because
+                            The "${name}" event was not created because
                             its handler is not a function, in tempate function.
                             
                             `)
@@ -379,7 +379,7 @@ function createChildren(root, children){
 
                         ParserWarning(`
                         
-                        The event "${name}" was not created because
+                        The "${name}" event was not created because
                         its handler is not a function, in tempate function.
                         
                         `)

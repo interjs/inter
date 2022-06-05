@@ -339,8 +339,8 @@ function createObjReactor(each, updateSystem, root){
             set(newValue){
 
                 share[prop]=newValue;
-
                 call();
+                checkType(newValue)
 
             },
 
@@ -380,6 +380,18 @@ function createObjReactor(each, updateSystem, root){
                     ){
 
                         share[prop]=value;
+                        Object.defineProperty(this, prop, {
+                            set(newValue){
+
+                                share[prop]=newValue;
+                                call();
+                                checkType(newValue);
+
+                            },
+                            get(){  return share[prop]  }
+                        });
+
+                        checkType(value);
 
                     }
 
@@ -419,6 +431,7 @@ function createObjReactor(each, updateSystem, root){
                     ){
 
                         share[prop]=value;
+                        checkType(value);
 
                     }
 

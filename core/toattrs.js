@@ -166,11 +166,11 @@ import{
                     el[attrName]=void 0;
                 }
 
-            }else if(!attrName.startsWith("on") && !specialAttrs.has(attrName) && el.getAttribute(attrName)!==value){
+            }else if(!attrName.startsWith("on") && !specialAttrs.has(attrName)){
 
                   el.setAttribute(attrName,value);
 
-                }else if(specialAttrs.has(attrName) && el[attrName]!==value){
+                }else if(specialAttrs.has(attrName)){
 
                     el[attrName]=value;
                 }
