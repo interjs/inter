@@ -121,6 +121,8 @@ function parseAttrs(container){
                 root:container
             }
 
+            child.index=index;
+
 
            const sibling=child.nextElementSibling,
                  previous=child.previousElementSibling;
@@ -151,6 +153,7 @@ function parseAttrs(container){
                 if(setting.ifNot in data){
 
                     child.removeAttribute("_ifNot");
+                    
 
                     els.add(setting);
 
@@ -249,13 +252,15 @@ function parseAttrs(container){
 
                 setting.else=sibling;
                 sibling.removeAttribute("_else");
+                
 
    
 
 
             } if(setting.if){
 
-                els.add(setting)
+                els.add(setting);
+                
 
 
                 
@@ -303,11 +308,6 @@ function runRenderingSystem(els, data){
 
 
             if(ifNot){
-
-                
-
-               
-
                 
 
                 if(isFalse(source[ifNot]) && !target.isSameNode(current)){
@@ -376,12 +376,12 @@ function runRenderingSystem(els, data){
                  if(current){
 
                     const el=current;
-
+                  
                     
                      if(el.isSameNode(target)){
                        
                         if(ELSE && ELSE.parentNode!=null){
-
+                       
 
                             root.removeChild(ELSE)
 
@@ -400,7 +400,8 @@ function runRenderingSystem(els, data){
                     
                     else{
 
-                    root.insertBefore(target,el);
+                insertBefore(root, target);
+                    
 
                     }
 
@@ -409,9 +410,7 @@ function runRenderingSystem(els, data){
 
                 else{
 
-                    
-
-                    root.appendChild(target)
+                    insertBefore(root, target)
 
                 }
 
@@ -425,6 +424,49 @@ function runRenderingSystem(els, data){
     
 }
 
+
+function insertBefore(root, target){
+
+    
+    const children=getChildNodes(root),
+    lastChild=children[children.length-1];
+
+
+    if(target.parentNode==null){
+
+    if(lastChild && lastChild.index>target.index){
+
+
+
+    for(const child of children){
+
+    if(child.index>target.index){
+
+    
+   root.insertBefore(target,  child);
+
+   break;
+
+    
+
+   }
+
+}
+
+} else{
+
+  root.appendChild(target);
+
+  }
+
+
+    
+
+
+
+    }
+
+}
 
 
 const observer=new Map();
@@ -452,7 +494,7 @@ const reactor=new Proxy(proxyTarget,{
 
             err(`
             The values of all conditional properties must be either true or false,
-            and not ${valueType(value)}
+            and not "${valueType(value)}".
             `);
 
             return false;

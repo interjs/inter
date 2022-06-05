@@ -3,7 +3,7 @@
     
 /**
  * Interjs 
- * Version - 2.0.2
+ * Version - 2.0.3
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -420,7 +420,6 @@
 
 
 
-
 function hasProp(object){
 
     return Object.keys(object).length>0;
@@ -477,7 +476,7 @@ function hasRefs(text){
 /**
  * 
  * We are considering them as special attributes
- * because we must not use the settAttribute method
+ * because we must not use the setAttribute method
  * to set them.
  * 
  */
@@ -1215,6 +1214,8 @@ function refParser(p,refs,name,rparse){
 
 }
 
+            
+
 
 
 function getChildNodes(root){
@@ -1321,6 +1322,8 @@ function parseAttrs(container){
                 root:container
             }
 
+            child.index=index;
+
 
            const sibling=child.nextElementSibling,
                  previous=child.previousElementSibling;
@@ -1351,6 +1354,7 @@ function parseAttrs(container){
                 if(setting.ifNot in data){
 
                     child.removeAttribute("_ifNot");
+                    
 
                     els.add(setting);
 
@@ -1449,13 +1453,15 @@ function parseAttrs(container){
 
                 setting.else=sibling;
                 sibling.removeAttribute("_else");
+                
 
    
 
 
             } if(setting.if){
 
-                els.add(setting)
+                els.add(setting);
+                
 
 
                 
@@ -1503,11 +1509,6 @@ function runRenderingSystem(els, data){
 
 
             if(ifNot){
-
-                
-
-               
-
                 
 
                 if(isFalse(source[ifNot]) && !target.isSameNode(current)){
@@ -1576,12 +1577,12 @@ function runRenderingSystem(els, data){
                  if(current){
 
                     const el=current;
-
+                  
                     
                      if(el.isSameNode(target)){
                        
                         if(ELSE && ELSE.parentNode!=null){
-
+                       
 
                             root.removeChild(ELSE)
 
@@ -1600,7 +1601,8 @@ function runRenderingSystem(els, data){
                     
                     else{
 
-                    root.insertBefore(target,el);
+                insertBefore(root, target);
+                    
 
                     }
 
@@ -1609,9 +1611,7 @@ function runRenderingSystem(els, data){
 
                 else{
 
-                    
-
-                    root.appendChild(target)
+                    insertBefore(root, target)
 
                 }
 
@@ -1625,6 +1625,49 @@ function runRenderingSystem(els, data){
     
 }
 
+
+function insertBefore(root, target){
+
+    
+    const children=getChildNodes(root),
+    lastChild=children[children.length-1];
+
+
+    if(target.parentNode==null){
+
+    if(lastChild && lastChild.index>target.index){
+
+
+
+    for(const child of children){
+
+    if(child.index>target.index){
+
+    
+   root.insertBefore(target,  child);
+
+   break;
+
+    
+
+   }
+
+}
+
+} else{
+
+  root.appendChild(target);
+
+  }
+
+
+    
+
+
+
+    }
+
+}
 
 
 const observer=new Map();
@@ -1652,7 +1695,7 @@ const reactor=new Proxy(proxyTarget,{
 
             err(`
             The values of all conditional properties must be either true or false,
-            and not ${valueType(value)}
+            and not "${valueType(value)}".
             `);
 
             return false;
@@ -1789,7 +1832,6 @@ Object.defineProperties(reactor,{
 return reactor;
 
 }
-
 
   function toAttrs(obj){
 
@@ -2143,6 +2185,8 @@ return reactor;
         };
         
         }
+
+
 
 
  function template(obj){
@@ -2594,8 +2638,6 @@ function createChildren(root, children){
 
 
     }
-
-
 
 
 
@@ -4854,7 +4896,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.2 of Inter was succefully loaded.")
+ console.log("The global version 2.0.3 of Inter was succefully loaded.")
 
 })();
 

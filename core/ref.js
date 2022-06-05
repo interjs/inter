@@ -71,7 +71,7 @@ function hasRefs(text){
 /**
  * 
  * We are considering them as special attributes
- * because we must not use the settAttribute method
+ * because we must not use the setAttribute method
  * to set them.
  * 
  */
