@@ -1,5 +1,5 @@
 <p align="center">
-<a href="http://interjs.epizy.com">
+<a href="https://interjs.github.io">
  <img src="https://github.com/DenisPower1/inter/blob/main/Inter.png"
       width="200" 
       >

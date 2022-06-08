@@ -1,12 +1,12 @@
 {
   "name": "inter",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "The javascript framework to build highly interactive front-end web applications.",
   "author": "Denis Power",
   "license": "MIT",
   "jsdelivr": "inter.min.js",
   "repository": "github:interjs/inter",
-  "homepage": "https://inter.js.org",
+  "homepage": "https://interjs.github.io",
   "devDependencies":{
   "nodejs":">=14.18.0"
     

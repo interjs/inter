@@ -39,7 +39,7 @@ import{
 
 
 /**
- *  Reactive system for listing 
+ *  Reactive system for listing. 
  *
  */
 
@@ -1368,13 +1368,14 @@ function ContainerDeffing(newContainer, oldContainer, diff){
 
     const rootEL=target.parentNode
 
+
     
 
      if(newTag!==oldTag){
 
         const newElement=toDOM(newContainer);
 
-        rootEl.replaceChild(newElement,target);
+        rootEL.replaceChild(newElement,target);
 
         diff.children=false;
 
@@ -1390,7 +1391,7 @@ function ContainerDeffing(newContainer, oldContainer, diff){
 
         const newElement=toDOM(newContainer)
 
-        rootEL.replaceChild(newELement, target);
+        rootEL.replaceChild(newElement, target);
 
         diff.children=false;
         shareProps(oldContainer, newContainer);

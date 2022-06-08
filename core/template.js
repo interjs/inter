@@ -291,7 +291,19 @@ function createChildren(root, children){
 
           }
 
-        };
+        }
+
+        if(isDefined(renderIf) && !isBool(renderIf)){
+
+
+            consW(`
+            
+            The value of the renderIf property must be only boolean(true/false) in template 
+            function.
+            
+            `)
+
+        }
 
 
            

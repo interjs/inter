@@ -3,7 +3,7 @@
     
 /**
  * Interjs 
- * Version - 2.0.3
+ * Version - 2.0.4
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -417,6 +417,7 @@
     }
 
     //</>
+
 
 
 
@@ -1217,7 +1218,6 @@ function refParser(p,refs,name,rparse){
             
 
 
-
 function getChildNodes(root){
 
     const nodes=new Array();
@@ -1517,7 +1517,7 @@ function runRenderingSystem(els, data){
 
                     if(isANode(current)){
 
-                        root.insertBefore(target, current)
+                        insertBefore(root, target);
 
 
                     }else{
@@ -1832,6 +1832,7 @@ Object.defineProperties(reactor,{
 return reactor;
 
 }
+
 
   function toAttrs(obj){
 
@@ -2459,7 +2460,19 @@ function createChildren(root, children){
 
           }
 
-        };
+        }
+
+        if(isDefined(renderIf) && !isBool(renderIf)){
+
+
+            consW(`
+            
+            The value of the renderIf property must be only boolean(true/false) in template 
+            function.
+            
+            `)
+
+        }
 
 
            
@@ -2642,8 +2655,9 @@ function createChildren(root, children){
 
 
 
+
 /**
- *  Reactive system for listing 
+ *  Reactive system for listing. 
  *
  */
 
@@ -3972,13 +3986,14 @@ function ContainerDeffing(newContainer, oldContainer, diff){
 
     const rootEL=target.parentNode
 
+
     
 
      if(newTag!==oldTag){
 
         const newElement=toDOM(newContainer);
 
-        rootEl.replaceChild(newElement,target);
+        rootEL.replaceChild(newElement,target);
 
         diff.children=false;
 
@@ -3994,7 +4009,7 @@ function ContainerDeffing(newContainer, oldContainer, diff){
 
         const newElement=toDOM(newContainer)
 
-        rootEL.replaceChild(newELement, target);
+        rootEL.replaceChild(newElement, target);
 
         diff.children=false;
         shareProps(oldContainer, newContainer);
@@ -4896,7 +4911,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.3 of Inter was succefully loaded.")
+ console.log("The global version 2.0.4 of Inter was succefully loaded.")
 
 })();
 

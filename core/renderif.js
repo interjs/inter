@@ -316,7 +316,7 @@ function runRenderingSystem(els, data){
 
                     if(isANode(current)){
 
-                        root.insertBefore(target, current)
+                        insertBefore(root, target);
 
 
                     }else{
