@@ -379,7 +379,7 @@ function createObjReactor(each, updateSystem, root){
                 for(const [prop, value] of Object.entries(props)){
 
                     if(!(prop in this) && prop!=="defineProps" && prop!=="setProps"
-                    && prop!=="removeProps" 
+                    && prop!=="dleteProps" 
                     ){
 
                         share[prop]=value;
@@ -391,7 +391,8 @@ function createObjReactor(each, updateSystem, root){
                                 checkType(newValue, call);
 
                             },
-                            get(){  return share[prop]  }
+                            get(){  return share[prop]  },
+                            configurable:!0
                         });
 
                         checkType(value, call);
@@ -405,6 +406,7 @@ function createObjReactor(each, updateSystem, root){
             },
             enumerable:!1,
             configurable:!1
+          
 
             
 
@@ -463,10 +465,12 @@ function createObjReactor(each, updateSystem, root){
 
                 for(const prop of props){
                     
+                    console.log(prop in this)
 
                     if(prop in this){
 
                         delete this[prop];
+                        delete share[prop];
 
                     };
 
@@ -944,7 +948,7 @@ export function renderList(options){
 
         syErr(`
         
-        The options(the argument of renderList) in renderList must be a plain Javascript object.
+        The options(the argument of renderList) must be a plain Javascript object.
         
         `)
 
@@ -965,8 +969,7 @@ export function renderList(options){
 
         syErr(`
         
-        The "in" option in renderList must be either a string
-        or an HTMLElement.
+        The "in" option in renderList must be a string.
         
         `)
 
@@ -976,8 +979,8 @@ export function renderList(options){
 
         syErr(`
   
-        "${valueType(each)}" is not a valid value for the "each" options in renderList.
-        The value that are accepted in "each" options, are:
+        "${valueType(each)}" is not a valid value for the "each" option in renderList.
+        The value that are accepted in "each" option, are:
 
         Array.
         Plain js object.
@@ -1062,10 +1065,10 @@ export function renderList(options){
                     
                     if(!isArray(value)){
     
-                        syErr(`The value of [List reactor].otherArray property must be an object.`)
+                        syErr(`The value of [List reactor].otherArray property must be an Array.`)
     
                     };
-                      console.log(true)
+                      
                     
     
                     defineNewEach(value);
@@ -1101,7 +1104,7 @@ export function renderList(options){
     
                         syErr(`
                         
-                        The first argument of [LIST REACTOR ].addItems must be an array.
+                        The first argument of [LIST REACTOR ].addItems must be an Array.
                         
                         `)
     
@@ -1264,7 +1267,7 @@ export function renderList(options){
 
             syErr(`
             
-           The template function is not being returned inside the do method in
+           The template function is not being returned inside the "do" method in
            renderList(reactive listing), just return the template function.
             
             `)
@@ -1310,7 +1313,7 @@ function runDiff(newTemp, oldTemp, oldRoot){
          children:true
      }
 
-
+    
 
      ContainerDeffing(newTemp, oldTemp, diff)
 
@@ -1584,14 +1587,30 @@ function eventDeffing(target, oldEvents, newEvents){
 
 }
 
+function insertBefore(root, index, virtualElement){
+
+    for(let i=0; i<root.children.length; i++){
+
+        const realElement=root.children[i]
+        if(realElement.index>index){
+            root.insertBefore(virtualElement, realElement);
+            break;
+
+        }
+
+    }
+
+
+}
+
 function diffingChildren(__new, __old, realParent){
 
     const _new=Array.from(__new),
     _old=Array.from(__old);
-    let removed=0;
+    
 
     for(let i=0; i<_new.length; i++){
-
+        
         
         
      /**
@@ -1613,7 +1632,7 @@ function diffingChildren(__new, __old, realParent){
             events:newEvents={},
             attrs:newAttrs={},
             styles:newStyles={},
-            renderIf:newRenderIf
+            renderIf:newRenderIf,
             
         }=newChild;
         
@@ -1624,15 +1643,24 @@ function diffingChildren(__new, __old, realParent){
         events:oldEvents={},
         attrs:oldAttrs={},
         styles:oldStyles={},
-        target   
+        target,
+        index            
 
        }=oldChild;
+
+       let theLastElement;
+
+       if(realParent){
+
+       theLastElement=realParent.children[realParent.children.length-1];
+       
+       }
 
        if(newChildren.length!==oldChildren.length){
 
                 if(target && target.parentNode!=null){
 
-                    const newElement=toDOM(newChild, true);
+                    const newElement=toDOM(newChild, true, index);
 
                      realParent.replaceChild(newElement, target);
 
@@ -1650,7 +1678,7 @@ function diffingChildren(__new, __old, realParent){
                 if(newTag!==oldTag){
 
                         
-                    const newELement=toDOM(newChild, true);
+                    const newELement=toDOM(newChild, true, index);
 
                     Object.assign(oldChild, newChild);
 
@@ -1674,23 +1702,12 @@ function diffingChildren(__new, __old, realParent){
                     if(target && target.parentNode!=null){
 
                     realParent.removeChild(target);
-
-                    if(i<_new.length-1){
-                    
-                    i--;
-                    removed++;
-
-                    }
-
-                }else{
-
-                    removed++;
-
-                }
                     
                  
 
                 }
+
+            }
 
                 
                 if(isTrue(newRenderIf)){
@@ -1699,17 +1716,20 @@ function diffingChildren(__new, __old, realParent){
                     if(target && target.parentNode==null){
 
                         
-                        const newELement=toDOM(newChild, true);
+                        const newELement=toDOM(newChild, true, index);
+                             
 
                         Object.assign(oldChild, newChild);
 
                         oldChild.target=newELement
 
-                    if(isAtag(realParent.children[i-removed])){
+                    if(theLastElement.index>index){
 
-                        realParent.insertBefore(newELement, realParent.children[i-removed]);
+                        insertBefore(realParent, index, newELement);
 
                     }else{
+
+                        
 
                         realParent.appendChild(newELement)
 
@@ -1726,26 +1746,26 @@ function diffingChildren(__new, __old, realParent){
                 if(!target){
 
 
-                    if(isAtag(realParent.children[i-removed])){
+                    if(theLastElement.index>index){
 
-                        const newELement=toDOM(newChild, true);
+                        const newELement=toDOM(newChild, true, index);
 
                         Object.assign(oldChild, newChild);
 
                         oldChild.target=newELement
 
-                        console.log(i-removed)
-                        realParent.insertBefore(newELement, realParent.children[i-removed]);
+                        
+                        insertBefore(realParent, index, newELement);
 
                     }else{
 
                         
-                        const newELement=toDOM(newChild, true);
+                        const newELement=toDOM(newChild, true, index);
 
                         Object.assign(oldChild, newChild);
 
                         oldChild.target=newELement
-                          
+                        
                         realParent.appendChild(newELement)
 
                     }
@@ -1793,6 +1813,7 @@ function diffingChildren(__new, __old, realParent){
             
         }
     }
+
     
     function syncronizeRootChildrenLengAndSourceLength(root, iterable){
 

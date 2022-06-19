@@ -3,7 +3,7 @@
     
 /**
  * Interjs 
- * Version - 2.0.4
+ * Version - 2.0.5  
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -146,7 +146,7 @@
 
             syErr(`
             
-            The id's value must be an string.
+            The value of the id attribute must be a string.
             
             `)
 
@@ -158,7 +158,7 @@
     
             syErr(`
             
-            There's not an element in the document by id "${id}".
+            There's not an element on the document by id "${id}".
     
             `)
     
@@ -300,7 +300,7 @@
 
         /**
          * 
-         * Not use typeof val==="boolean"; due to 1 and 0.
+         * Don't use typeof val==="boolean"; due to 1 and 0.
          * 
          */
 
@@ -488,25 +488,8 @@ const specialAttrs=new Set([
 
 
 
-function refParser(p,refs,name,rparse){
+function refParser(p,refs,rparse){
 
-
-    
-    /**
-     *  There will be time
-     *  that we can write something like this:
-     * 
-     *  <div>
-     * 
-     * <strong>Hi</strong>, { name }! Are you fine?
-     * </div>
-     * 
-     * Usually the browser interprets space as a childNode,
-     * in the above code, the div container has
-     * two childNodes,a tag(strong) and a text.
-     * 
-     * 
-     */
 
     
      function getTextNodes(el){
@@ -896,8 +879,7 @@ function refParser(p,refs,name,rparse){
                         for(let ref of refs){
 
                             
-                            const pattern=new RegExp(`{\s*${ref}\s*}`, "g");
-                            console.log(this.refs[ref])
+                            const pattern=new RegExp(`{\\\s\*\(\:\?${ref}\)\\\s\*}`,"g");
                             special.target[sp[0]]=sp[1].replace(pattern, this.refs[ref]);
 
 
@@ -1042,7 +1024,7 @@ function refParser(p,refs,name,rparse){
             
             
 
-            refParser(getId(IN),proxyTarget,IN, store);
+            refParser(getId(IN),proxyTarget, store);
 
             const reactor=new Proxy(proxyTarget,{
 
@@ -1083,7 +1065,7 @@ function refParser(p,refs,name,rparse){
                     
                     // Dynamic ref.
 
-                    refParser(getId(IN),proxyTarget, IN,store)
+                    refParser(getId(IN),proxyTarget,store)
 
 
 
@@ -1215,7 +1197,6 @@ function refParser(p,refs,name,rparse){
 
 }
 
-            
 
 
 function getChildNodes(root){
@@ -1305,7 +1286,27 @@ function getChildNodes(root){
         const theContainer=getId(IN);
         const els=new Set();
 
-function parseAttrs(container){
+        for(let [prop, value] of Object.entries(data)){
+
+            value=isCallable(value) ? value.call(data) : value;
+
+            if(!isBool(value)){
+
+                err(`
+                
+                The value of a conditional property must be boolean(true/false),
+                and the value of  "${prop}" property is not boolean.
+                
+                `)
+
+            }
+
+            data[prop]=value;
+  
+
+        }
+
+      function parseAttrs(container){
 
          let index=-1;
 
@@ -1694,9 +1695,11 @@ const reactor=new Proxy(proxyTarget,{
         if(!isBool(value) && prop!=="setConds"){
 
             err(`
-            The values of all conditional properties must be either true or false,
-            and not "${valueType(value)}".
-            `);
+                
+            The value of a conditional property must be boolean(true/false),
+            and the value of  "${prop}" property is not boolean.
+            
+            `)
 
             return false;
 
@@ -1793,11 +1796,12 @@ Object.defineProperties(reactor,{
             
                 if(!isBool(cond)){
                     
-                    err(`
-                    All the values of conditional properties must be either true or false,
-                    and not "${valueType(cond)}" as you defined.
-                    
-                    `)
+                err(`
+                
+                The value of a conditional property must be boolean(true/false),
+                and the value of  "${prop}" property is not boolean.
+                
+                `)
 
                 }
 
@@ -1832,7 +1836,6 @@ Object.defineProperties(reactor,{
 return reactor;
 
 }
-
 
   function toAttrs(obj){
 
@@ -2189,7 +2192,6 @@ return reactor;
 
 
 
-
  function template(obj){
 
     
@@ -2225,7 +2227,7 @@ if(isObj(obj)){
 
 
 
-          function toDOM(obj, isChild){
+          function toDOM(obj, isChild, index){
 
     
 
@@ -2282,10 +2284,15 @@ if(isObj(obj)){
 
               const container=document.createElement(tag);
               container.template=Object.assign(obj,{
-
                 target:container
 
               }) // For diffing task.
+
+              if(isChild){
+
+                container.index=index;
+
+              }
 
               Object.entries(attrs).forEach((attr)=>{
 
@@ -2436,6 +2443,7 @@ if(isObj(obj)){
 
 function createChildren(root, children){
 
+    let index=-1;
 
     for(const child of children){
 
@@ -2449,6 +2457,10 @@ function createChildren(root, children){
             renderIf,
         }=child;
 
+        
+
+          index++;
+        child.index=index
         tag=isCallable(tag) ? tag() : tag;
 
         if(isDefined(renderIf) && isBool(renderIf)){
@@ -2502,12 +2514,12 @@ function createChildren(root, children){
 
 
           const container=document.createElement(tag);
+          container.index=index;
           container.template=Object.assign(child,{
-
-             target:container
-
+             target:container,
           }); //For diffing task.
 
+          
           Object.entries(attrs).forEach((attr)=>{
 
             let [name, value]=attr;
@@ -2651,6 +2663,7 @@ function createChildren(root, children){
 
 
     }
+
 
 
 
@@ -2997,7 +3010,7 @@ function createObjReactor(each, updateSystem, root){
                 for(const [prop, value] of Object.entries(props)){
 
                     if(!(prop in this) && prop!=="defineProps" && prop!=="setProps"
-                    && prop!=="removeProps" 
+                    && prop!=="dleteProps" 
                     ){
 
                         share[prop]=value;
@@ -3009,7 +3022,8 @@ function createObjReactor(each, updateSystem, root){
                                 checkType(newValue, call);
 
                             },
-                            get(){  return share[prop]  }
+                            get(){  return share[prop]  },
+                            configurable:!0
                         });
 
                         checkType(value, call);
@@ -3023,6 +3037,7 @@ function createObjReactor(each, updateSystem, root){
             },
             enumerable:!1,
             configurable:!1
+          
 
             
 
@@ -3081,10 +3096,12 @@ function createObjReactor(each, updateSystem, root){
 
                 for(const prop of props){
                     
+                    console.log(prop in this)
 
                     if(prop in this){
 
                         delete this[prop];
+                        delete share[prop];
 
                     };
 
@@ -3562,7 +3579,7 @@ Object.defineProperties(array, {
 
         syErr(`
         
-        The options(the argument of renderList) in renderList must be a plain Javascript object.
+        The options(the argument of renderList) must be a plain Javascript object.
         
         `)
 
@@ -3583,8 +3600,7 @@ Object.defineProperties(array, {
 
         syErr(`
         
-        The "in" option in renderList must be either a string
-        or an HTMLElement.
+        The "in" option in renderList must be a string.
         
         `)
 
@@ -3594,8 +3610,8 @@ Object.defineProperties(array, {
 
         syErr(`
   
-        "${valueType(each)}" is not a valid value for the "each" options in renderList.
-        The value that are accepted in "each" options, are:
+        "${valueType(each)}" is not a valid value for the "each" option in renderList.
+        The value that are accepted in "each" option, are:
 
         Array.
         Plain js object.
@@ -3680,10 +3696,10 @@ Object.defineProperties(array, {
                     
                     if(!isArray(value)){
     
-                        syErr(`The value of [List reactor].otherArray property must be an object.`)
+                        syErr(`The value of [List reactor].otherArray property must be an Array.`)
     
                     };
-                      console.log(true)
+                      
                     
     
                     defineNewEach(value);
@@ -3719,7 +3735,7 @@ Object.defineProperties(array, {
     
                         syErr(`
                         
-                        The first argument of [LIST REACTOR ].addItems must be an array.
+                        The first argument of [LIST REACTOR ].addItems must be an Array.
                         
                         `)
     
@@ -3882,7 +3898,7 @@ Object.defineProperties(array, {
 
             syErr(`
             
-           The template function is not being returned inside the do method in
+           The template function is not being returned inside the "do" method in
            renderList(reactive listing), just return the template function.
             
             `)
@@ -3928,7 +3944,7 @@ function runDiff(newTemp, oldTemp, oldRoot){
          children:true
      }
 
-
+    
 
      ContainerDeffing(newTemp, oldTemp, diff)
 
@@ -4202,14 +4218,30 @@ function eventDeffing(target, oldEvents, newEvents){
 
 }
 
+function insertBefore(root, index, virtualElement){
+
+    for(let i=0; i<root.children.length; i++){
+
+        const realElement=root.children[i]
+        if(realElement.index>index){
+            root.insertBefore(virtualElement, realElement);
+            break;
+
+        }
+
+    }
+
+
+}
+
 function diffingChildren(__new, __old, realParent){
 
     const _new=Array.from(__new),
     _old=Array.from(__old);
-    let removed=0;
+    
 
     for(let i=0; i<_new.length; i++){
-
+        
         
         
      /**
@@ -4231,7 +4263,7 @@ function diffingChildren(__new, __old, realParent){
             events:newEvents={},
             attrs:newAttrs={},
             styles:newStyles={},
-            renderIf:newRenderIf
+            renderIf:newRenderIf,
             
         }=newChild;
         
@@ -4242,15 +4274,24 @@ function diffingChildren(__new, __old, realParent){
         events:oldEvents={},
         attrs:oldAttrs={},
         styles:oldStyles={},
-        target   
+        target,
+        index            
 
        }=oldChild;
+
+       let theLastElement;
+
+       if(realParent){
+
+       theLastElement=realParent.children[realParent.children.length-1];
+       
+       }
 
        if(newChildren.length!==oldChildren.length){
 
                 if(target && target.parentNode!=null){
 
-                    const newElement=toDOM(newChild, true);
+                    const newElement=toDOM(newChild, true, index);
 
                      realParent.replaceChild(newElement, target);
 
@@ -4268,7 +4309,7 @@ function diffingChildren(__new, __old, realParent){
                 if(newTag!==oldTag){
 
                         
-                    const newELement=toDOM(newChild, true);
+                    const newELement=toDOM(newChild, true, index);
 
                     Object.assign(oldChild, newChild);
 
@@ -4292,23 +4333,12 @@ function diffingChildren(__new, __old, realParent){
                     if(target && target.parentNode!=null){
 
                     realParent.removeChild(target);
-
-                    if(i<_new.length-1){
-                    
-                    i--;
-                    removed++;
-
-                    }
-
-                }else{
-
-                    removed++;
-
-                }
                     
                  
 
                 }
+
+            }
 
                 
                 if(isTrue(newRenderIf)){
@@ -4317,17 +4347,20 @@ function diffingChildren(__new, __old, realParent){
                     if(target && target.parentNode==null){
 
                         
-                        const newELement=toDOM(newChild, true);
+                        const newELement=toDOM(newChild, true, index);
+                             
 
                         Object.assign(oldChild, newChild);
 
                         oldChild.target=newELement
 
-                    if(isAtag(realParent.children[i-removed])){
+                    if(theLastElement.index>index){
 
-                        realParent.insertBefore(newELement, realParent.children[i-removed]);
+                        insertBefore(realParent, index, newELement);
 
                     }else{
+
+                        
 
                         realParent.appendChild(newELement)
 
@@ -4344,26 +4377,26 @@ function diffingChildren(__new, __old, realParent){
                 if(!target){
 
 
-                    if(isAtag(realParent.children[i-removed])){
+                    if(theLastElement.index>index){
 
-                        const newELement=toDOM(newChild, true);
+                        const newELement=toDOM(newChild, true, index);
 
                         Object.assign(oldChild, newChild);
 
                         oldChild.target=newELement
 
-                        console.log(i-removed)
-                        realParent.insertBefore(newELement, realParent.children[i-removed]);
+                        
+                        insertBefore(realParent, index, newELement);
 
                     }else{
 
                         
-                        const newELement=toDOM(newChild, true);
+                        const newELement=toDOM(newChild, true, index);
 
                         Object.assign(oldChild, newChild);
 
                         oldChild.target=newELement
-                          
+                        
                         realParent.appendChild(newELement)
 
                     }
@@ -4411,6 +4444,7 @@ function diffingChildren(__new, __old, realParent){
             
         }
     }
+
     
     function syncronizeRootChildrenLengAndSourceLength(root, iterable){
 
@@ -4427,7 +4461,6 @@ function diffingChildren(__new, __old, realParent){
                 }
     
     };
-
 
 function toObj(obj){
 
@@ -4459,15 +4492,8 @@ function toObj(obj){
 
 function openRequest(req, method,path, username, userpassword ){
 
-    if(username && userpassword){
 
         req.open(method, path, true, username, userpassword);
-
-    }else{
-
-        req.open(method, path, true, username, userpassword);
-
-    }
 
 }
 
@@ -4911,7 +4937,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.4 of Inter was succefully loaded.")
+ console.log("The global version 2.0.5 of Inter was succefully loaded.")
 
 })();
 

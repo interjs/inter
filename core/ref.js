@@ -82,25 +82,8 @@ const specialAttrs=new Set([
 
 
 
-function refParser(p,refs,name,rparse){
+function refParser(p,refs,rparse){
 
-
-    
-    /**
-     *  There will be time
-     *  that we can write something like this:
-     * 
-     *  <div>
-     * 
-     * <strong>Hi</strong>, { name }! Are you fine?
-     * </div>
-     * 
-     * Usually the browser interprets space as a childNode,
-     * in the above code, the div container has
-     * two childNodes,a tag(strong) and a text.
-     * 
-     * 
-     */
 
     
      function getTextNodes(el){
@@ -490,8 +473,7 @@ export function Ref(obj){
                         for(let ref of refs){
 
                             
-                            const pattern=new RegExp(`{\s*${ref}\s*}`, "g");
-                            console.log(this.refs[ref])
+                            const pattern=new RegExp(`{\\\s\*\(\:\?${ref}\)\\\s\*}`,"g");
                             special.target[sp[0]]=sp[1].replace(pattern, this.refs[ref]);
 
 
@@ -636,7 +618,7 @@ export function Ref(obj){
             
             
 
-            refParser(getId(IN),proxyTarget,IN, store);
+            refParser(getId(IN),proxyTarget, store);
 
             const reactor=new Proxy(proxyTarget,{
 
@@ -677,7 +659,7 @@ export function Ref(obj){
                     
                     // Dynamic ref.
 
-                    refParser(getId(IN),proxyTarget, IN,store)
+                    refParser(getId(IN),proxyTarget,store)
 
 
 

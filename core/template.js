@@ -56,7 +56,7 @@ if(isObj(obj)){
 
 
 
-         export function toDOM(obj, isChild){
+         export function toDOM(obj, isChild, index){
 
     
 
@@ -113,10 +113,15 @@ if(isObj(obj)){
 
               const container=document.createElement(tag);
               container.template=Object.assign(obj,{
-
                 target:container
 
               }) // For diffing task.
+
+              if(isChild){
+
+                container.index=index;
+
+              }
 
               Object.entries(attrs).forEach((attr)=>{
 
@@ -267,6 +272,7 @@ if(isObj(obj)){
 
 function createChildren(root, children){
 
+    let index=-1;
 
     for(const child of children){
 
@@ -280,6 +286,10 @@ function createChildren(root, children){
             renderIf,
         }=child;
 
+        
+
+          index++;
+        child.index=index
         tag=isCallable(tag) ? tag() : tag;
 
         if(isDefined(renderIf) && isBool(renderIf)){
@@ -333,12 +343,12 @@ function createChildren(root, children){
 
 
           const container=document.createElement(tag);
+          container.index=index;
           container.template=Object.assign(child,{
-
-             target:container
-
+             target:container,
           }); //For diffing task.
 
+          
           Object.entries(attrs).forEach((attr)=>{
 
             let [name, value]=attr;

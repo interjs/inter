@@ -132,7 +132,7 @@ export function getId(id){
 
             syErr(`
             
-            The id's value must be an string.
+            The value of the id attribute must be a string.
             
             `)
 
@@ -144,7 +144,7 @@ export function getId(id){
     
             syErr(`
             
-            There's not an element in the document by id "${id}".
+            There's not an element on the document by id "${id}".
     
             `)
     
@@ -286,7 +286,7 @@ export function ParserWarning(w){
 
         /**
          * 
-         * Not use typeof val==="boolean"; due to 1 and 0.
+         * Don't use typeof val==="boolean"; due to 1 and 0.
          * 
          */
 

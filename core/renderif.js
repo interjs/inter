@@ -104,7 +104,27 @@ export function renderIf(obj){
         const theContainer=getId(IN);
         const els=new Set();
 
-function parseAttrs(container){
+        for(let [prop, value] of Object.entries(data)){
+
+            value=isCallable(value) ? value.call(data) : value;
+
+            if(!isBool(value)){
+
+                err(`
+                
+                The value of a conditional property must be boolean(true/false),
+                and the value of  "${prop}" property is not boolean.
+                
+                `)
+
+            }
+
+            data[prop]=value;
+  
+
+        }
+
+      function parseAttrs(container){
 
          let index=-1;
 
@@ -493,9 +513,11 @@ const reactor=new Proxy(proxyTarget,{
         if(!isBool(value) && prop!=="setConds"){
 
             err(`
-            The values of all conditional properties must be either true or false,
-            and not "${valueType(value)}".
-            `);
+                
+            The value of a conditional property must be boolean(true/false),
+            and the value of  "${prop}" property is not boolean.
+            
+            `)
 
             return false;
 
@@ -592,11 +614,12 @@ Object.defineProperties(reactor,{
             
                 if(!isBool(cond)){
                     
-                    err(`
-                    All the values of conditional properties must be either true or false,
-                    and not "${valueType(cond)}" as you defined.
-                    
-                    `)
+                err(`
+                
+                The value of a conditional property must be boolean(true/false),
+                and the value of  "${prop}" property is not boolean.
+                
+                `)
 
                 }
 

@@ -41,15 +41,8 @@ function toObj(obj){
 
 function openRequest(req, method,path, username, userpassword ){
 
-    if(username && userpassword){
 
         req.open(method, path, true, username, userpassword);
-
-    }else{
-
-        req.open(method, path, true, username, userpassword);
-
-    }
 
 }
 
