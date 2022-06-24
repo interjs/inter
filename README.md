@@ -21,9 +21,6 @@
 
 <a href="https://github.com/DenisPower1/inter/">
 
-
-
-
  <img src="https://img.shields.io/github/v/release/DenisPower1/inter.svg"
       width="100" 
       >
@@ -76,9 +73,4 @@ Almost every dom manipulation in an Inter app are handled by Inter, you  must ju
 
 # Guide
 
-<<<<<<< HEAD
 To get an in-depth guide just read the official tutorial at [tutorial](http://interjs.github.io/v2/tutorial/pt/instalacao), and if you want to check the tutorial for version 1, check it [here](http://interjs.epizy.com/v1/tutorial/pt/instalacao).
-=======
-To get an in-depth guide just read the official tutorial at [tutorial](https://interjs.github.io/v2/tutorial/pt/instalacao), and if you want to check the tutorial for version 1, check it [here](http://interjs.epizy.com/v1/tutorial/pt/instalacao).
->>>>>>> 6dfe1c91008c1cf45bb239e0006d81ab3b475173
-
