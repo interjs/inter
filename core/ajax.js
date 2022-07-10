@@ -96,6 +96,8 @@ Backend.prototype={
            security
        }=obj;
 
+       const unSupportedRequestType=new Set(["connect", "trace"]);
+
        if(!isDefined(type) || typeof type!=="string"){
 
         syErr(`
@@ -115,6 +117,18 @@ Backend.prototype={
         it must be a string.
         
         `)
+
+       };
+
+       if(unSupportedRequestType.has(path.toLowerCase())){
+
+        err(`
+        
+        "${type}" is an unsupported request type in Ajax.
+        
+        `);
+
+        
 
        }
 
