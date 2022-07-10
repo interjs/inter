@@ -73,6 +73,11 @@ export function isObj(o){
     
      }
     
+  export function isEmptyObj(obj){
+
+    return Object.keys(obj).length==0;
+
+  }   
 
 
 
