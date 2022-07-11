@@ -17,8 +17,7 @@ import {
 function createTypeProp(array, propValue){
 
     Object.defineProperty(array, "type",{
-        value:propValue,
-        enumerable:!1
+        get:()=>propValue
     });
 
 
@@ -36,9 +35,11 @@ function toIterable(data){
 
     }else if(isObj(data)){
 
-        createTypeProp(data, "Object");
+         const array=Object.entries(data);
 
-        return Object.entries(data);
+        createTypeProp(array, "Object");
+
+        return array;
 
     }else{
 
@@ -52,7 +53,7 @@ function toIterable(data){
 
         };
 
-        createTypeProp(data, "Number");
+        createTypeProp(array, "Number");
 
         return array;
 
@@ -232,7 +233,7 @@ export function staticList(options){
 
                let __refs; 
 
-               if(interationData.type==="Array"){
+               if(iterationData.type==="Array"){
 
                 __refs=refs(item, i);
 
