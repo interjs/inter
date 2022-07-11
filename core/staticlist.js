@@ -2,20 +2,70 @@ import {
 
   ParserWarning,
   isDefined,
-  isANode,
   isArray,
   isCallable,  
   isObj,
   syErr,
   isEmptyObj,
   err,
-  getId
+  getId,
+  valueType
 
 } from "./helpers.js"
 
 
+function createTypeProp(array, propValue){
+
+    Object.defineProperty(array, "type",{
+        value:propValue,
+        enumerable:!1
+    });
 
 
+}
+
+
+function toIterable(data){
+
+    if(isArray(data)){
+
+        createTypeProp(data, "Array");
+
+        return data;
+
+
+    }else if(isObj(data)){
+
+        createTypeProp(data, "Object");
+
+        return Object.entries(data);
+
+    }else{
+
+        // It is a number.
+
+        const array=new Array();
+
+        for(let i=0; i<data; i++){
+
+            array.push(i);
+
+        };
+
+        createTypeProp(data, "Number");
+
+        return array;
+
+    }
+
+
+}
+
+function isSupportedData(data){
+
+    return (isArray(data) || isObj(data) || typeof data==="number");
+
+}
 
 
 export function staticList(options){
@@ -146,11 +196,24 @@ export function staticList(options){
 
         else if(isObj(data[_forEach])){
 
-            const {data:iterationData, refs}=data[_forEach];
+            let {data:iterationData, refs}=data[_forEach];
             const  domParser=new DOMParser();
             let i=-1,  __template=target.innerHTML, parsedTemplate=__template;
+             
+            if(!isSupportedData(iterationData)){
 
-            if(!isDefined("refs") || !isCallable(refs)){
+                syErr(`
+                 
+                The "data" property in the list named "${_forEach}" must be defined and its value must be either an Array, an Object or
+                a number.
+                
+                `)
+
+             }
+
+            iterationData=toIterable(iterationData);
+
+            if(!isDefined(refs) || !isCallable(refs)){
 
                 syErr(`
                 
@@ -160,17 +223,6 @@ export function staticList(options){
 
             };
 
-            if(!isDefined(iterationData) || !isArray(iterationData)){
-
-                 syErr(`
-                 
-                 The "data" property in the list named "${_forEach}" must be defined and its value must be an array.
-                 
-                 `)
-
-
-            }
-
             target.removeAttribute("_forEach");
             target.innerHTML="";
 
@@ -178,7 +230,37 @@ export function staticList(options){
 
                i++;
 
-               const __refs=refs(item, i);
+               let __refs; 
+
+               if(interationData.type==="Array"){
+
+                __refs=refs(item, i);
+
+               }else if(iterationData.type==="Object"){
+
+                const [propName, propValue]=item;
+
+                __refs=refs(propName, propValue, i);
+
+               }else{
+
+                //Number.
+
+                __refs=refs(item);
+
+               }
+
+               
+
+               if(!isObj(__refs)){
+
+                syErr(`
+                
+                The "refs" method must return a plain Javascript object, and not "${valueType(__refs)}".
+                
+                `)
+
+               }
 
                for(const [refName, refValue] of Object.entries(__refs)){
 
