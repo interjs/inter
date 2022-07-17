@@ -73,12 +73,4 @@ Almost every dom manipulation in an Inter app are handled by Inter, you  must ju
 
 # Guide
 
-<<<<<<< HEAD
-
 To get an in-depth guide just read the official tutorial at [tutorial](http://interjs.github.io/v2/tutorial/pt/instalacao), and if you want to check the tutorial for version 1, check it [here](http://interjs.epizy.com/v1/tutorial/pt/instalacao).
-
-
-
-=======
-To get an in-depth guide just read the official tutorial at [tutorial](http://interjs.github.io/v2/tutorial/pt/instalacao), and if you want to check the tutorial for version 1, check it [here](http://interjs.epizy.com/v1/tutorial/pt/instalacao).
->>>>>>> e328e3620f8c9387144fccec0b6327bf2607d0cb
