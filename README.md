@@ -31,7 +31,7 @@
  
 </div>
  
-<h1 align="center"> <a href="http://interjs.epizy.com">Interjs</a></h1>
+<h1 align="center"> <a href="http://interjs.github.ao">Interjs</a></h1>
 
 
 Inter is a Javascript framework designed to build highly interactive front-end web applications.
