@@ -6,10 +6,32 @@ import {
     consW,
     isCallable,
     valueType,
-    isDefined
+    isDefined,
+	isArray
 
 } from "./helpers.js";
 
+
+function stringify(data){
+	
+	
+	if(isObj(data) || isArray(data)){
+		
+		return JSON.stringify(data)
+		
+	}else if(typeof data==="number"){
+		
+		return String(data);
+		
+	}else{
+		
+		
+		return data;
+		
+	}
+	
+	
+}
 
 function toObj(obj){
 
@@ -233,12 +255,6 @@ Backend.prototype={
            }
 
 
-
-       
-      
-
-       
-
        
        if(!isObj(headers)){
 
@@ -395,7 +411,7 @@ Backend.prototype={
        }
 
 
-       req.send(body);
+       req.send(stringify(body));
 
 
    }

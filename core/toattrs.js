@@ -5,16 +5,52 @@ import{
     consW,
     isCallable,
     validDomEvent,
-    ParserWarning
+    ParserWarning,
+    defineReactorNameInToString
 
 } from "./helpers.js";
 
- export function toAttrs(obj){
+
+/**
+ * We must not use the Object.assign method if we
+ * won't to loose the reactivity of the sourceObject property.
+ * 
+ */
+
+function addPropOf(sourceObject){
+
+    const theFirstKey=Object.keys(sourceObject)[0]; /* The reactor name */
+    const theValueOfTheKey=Object.values(sourceObject)[0]; /*  The reactor object */
+
+    const handler={
+ 
+        to(targetObject){
+  
+             targetObject[theFirstKey]=theValueOfTheKey;
+              
+             defineReactorNameInToString(theValueOfTheKey, "AttrManager_Reactor")
 
 
+        }
+    };
+
+    return handler;
+
+
+}
+
+function isDifferent(targetEl, attrName, newAttrValue){
+
+    const oldAttrValue=targetEl.getAttribute(attrName);
+
+    return !Object.is(newAttrValue, oldAttrValue)
+
+
+}
+
+export function toAttrs(obj){
     
-
-    if(new.target!==void 0){
+if(new.target!==void 0){
 
         syErr(`
         toAttrs is not a constructor,
@@ -74,6 +110,7 @@ import{
     const keys=Object.getOwnPropertyNames(attrManagers);
     const children=rootElem.getElementsByTagName("*");
     const reactors=Object.create(null);
+    
 
     for(const child of children){
         
@@ -92,10 +129,9 @@ import{
 
               const reactor=spread(child,key,attrManagers[key]);
 
-              
-
-              reactors[Object.keys(reactor)[0]]=Object.values(reactor)[0];
-              
+              addPropOf(reactor).to(reactors);
+                  
+              break;
        
         
         }else{
@@ -120,7 +156,7 @@ import{
             if(isAnAttrManager && !attrManagers.hasOwnProperty(attr)){
 
             // The attribute manager <key> was not defined in toAttrs function,
-            // but there is a reference to it in template.
+            // but there is a reference to it in the template.
 
             ParserWarning(`
             
@@ -142,12 +178,15 @@ import{
     
     }
 
+    
+
     return reactors;
+
  }
 
-    function spread(el, attrManager, attrs){
+    function spread(el/*manager target*/, attrManager/*Manager name*/, attrs/*Manager object*/){
 
-    //We are considering them specials
+    //We are considering them as specials
     // because we can not reset them with the setAttribute function.
     const specialAttrs=new Set(["value", "currentTime"]);
         
@@ -166,11 +205,16 @@ import{
                     el[attrName]=void 0;
                 }
 
-            }else if(!attrName.startsWith("on") && !specialAttrs.has(attrName)){
+            }else if(!attrName.startsWith("on") && !specialAttrs.has(attrName) && isDifferent(el,attrName,value)){
 
                   el.setAttribute(attrName,value);
 
                 }else if(specialAttrs.has(attrName)){
+                    
+                    /**
+                     * Here in special attributes we must not check for difference,
+                     * because even setting them with the same value can affect the interface.
+                     */
 
                     el[attrName]=value;
                 }
@@ -180,6 +224,7 @@ import{
                     if(attrName.startsWith("On")){
                     
                     if(validDomEvent(attrName)){
+
                     if(!isCallable(value)){
 
                         syErr(`
@@ -191,6 +236,7 @@ import{
 
                         v.call(original,e)
                     }
+
                 }else{
 
                     consW(`
@@ -211,6 +257,7 @@ import{
         function defineReactivity(attrName){
             
             Object.defineProperty(attrs,attrName,{
+
                 set(v){
                 
                     runUpdate(v, attrName)
@@ -218,6 +265,7 @@ import{
                 },
 
                 get(){
+
                    if(attrName.startsWith("on")){
 
                        consW(`
@@ -265,8 +313,10 @@ import{
 
               } else{
                 
-                if(attrName.startsWith("on")){
+              if(attrName.startsWith("on")){
+
                if(validDomEvent(attrName)){
+
                 if(!isCallable(attrValue)){
 
                     syErr(`
@@ -298,19 +348,18 @@ import{
             }
            }
 
-        for( const[attrName, attrValue] of Object.entries(attrs)){
+        for(const[attrName, attrValue] of Object.entries(attrs)){
              
             
-            spreadAttrs(attrName, attrValue);
+             spreadAttrs(attrName, attrValue);
              defineReactivity(attrName);
             
         }
 
         //</>//
 
-        Object.defineProperties(attrs, {
+        Object.defineProperty(attrs, "setAttrs", {
 
-            setAttrs:{
                  set(__attrs){
 
                 if(!isObj(__attrs)){
@@ -348,11 +397,7 @@ import{
             },
             configurable:!1
 
-        },
 
-        [Symbol.toStringTag]:{
-            value:()=>"Manager"
-        }
 
         })
 
