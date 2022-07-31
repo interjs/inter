@@ -166,7 +166,7 @@ function createArrayReactor(each, updateSystem){
         err(`
         
         Inter fails to define the reactivity in the list reactor,
-        because the array  of the each option is not configurable.
+        because the Array  of the each option is not configurable.
         
         `)
 
@@ -223,7 +223,7 @@ function createObjReactor(each, updateSystem, root){
         err(`
         
         Inter fails to define the reactivity in the list reactor,
-        because the array  of the each option is not configurable.
+        because the Array  of the each option is not configurable.
         
         `)
 

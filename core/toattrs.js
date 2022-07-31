@@ -145,7 +145,7 @@ if(new.target!==void 0){
 
                 ParserWarning(`
                 
-                "${theAttr}" is an invalid syntax for attribute manager.
+                "${theAttr}" is an invalid syntax for the attribute manager.
                 The attribute manager must have only three dots.
 
                 Ex: {...managername}

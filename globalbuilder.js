@@ -40,7 +40,7 @@ const __data=`
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version of Inter was succefully loaded.")
+ console.log("The global version of Inter was successfully loaded.")
 
 })();
 

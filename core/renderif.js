@@ -94,7 +94,7 @@ export function renderIf(obj){
             consW(`
             
             "setConds" is a reserved property in conditional rendering, you can not use it
-            as conditional property that's why Inter deleted it from the data object.
+            as a conditional property that's why Inter deleted it from the data object.
             
             `)
 
@@ -204,7 +204,7 @@ export function renderIf(obj){
                 ParserWarning(`
                                 
                 The parser found an element with an "_else" attribute,
-                but there is not an element by attribute "_if" before it.
+                but there is not an element with "_if" attribute before it.
 
                 `)
 

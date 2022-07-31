@@ -75,7 +75,7 @@ export function staticList(options){
 
         syErr(`
         
-        The argument of "staticList" function must be an object.
+        The argument of the "staticList" function must be an object.
         
         `)
 
@@ -178,8 +178,8 @@ export function staticList(options){
 
             ParserWarning(`
             
-            the staticList parsing system found an element with the
-            _forEach atribute, but its value is an empty string.
+            The staticList parsing system found an element with the
+            "_forEach" atribute, but its value is an empty string.
             
             `)
 

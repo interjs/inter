@@ -288,7 +288,7 @@ function createChildren(root, children){
 
         
 
-          index++;
+        index++;
         child.index=index
         tag=isCallable(tag) ? tag() : tag;
 
