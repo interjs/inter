@@ -37,7 +37,7 @@ function toObj(obj){
 
     /**
      * We will try to convert obj(if it's actually a JSON Object) to a plain object,
-     * if it fails we must return the obj argument.
+     * if it fails we must return the obj parameter.
      * 
      */
 
@@ -124,7 +124,7 @@ Backend.prototype={
 
         syErr(`
         
-        You must define the type of request, in Ajax with the "type" option and
+        You must define the type(method) of request, in Ajax with the "type" option and
         it must be a string.
         
         `)
@@ -314,7 +314,7 @@ Backend.prototype={
        })
 
 
-       req.onreadystatechange=function(e){
+       req.onreadystatechange=function(){
 
            if(this.readyState==4){
 
@@ -333,70 +333,17 @@ Backend.prototype={
 
                 if(reactorHandler.has("error")){
 
-                    reactorHandler.get("okay")(_AjaxResponse);
+                    reactorHandler.get("error")(_AjaxResponse);
 
                 }
 
             }
 
+        }
 
-           }else{
-
-            /**
-             *  
-             * If it runs probably because there was an internet connection error
-             * like: "no internet"
-             * 
-             * The request was not sent to the server, the error reactor must be called.
-             * 
-             */
+    }
 
 
-             if(reactorHandler.has("error")){
-             
-                const _resp={
-
-                    isObj:()=>false,
-                    get statusText(){
-
-                        return "No Internet connection"
-
-                    },
-
-                    get status(){
-
-                        return 0
-
-                    },
-
-                    get headers(){
-
-                        return new String();
-
-                    },
-
-                    get data(){
-
-                        return void 0;
-
-                    },
-
-                    get [Symbol.toStringTag](){
-
-                        return "AjaxResponse";
-
-                    }
-
-                }
-
-                reactorHandler.get("error")(_resp);
-
-             }
-
-
-           }
-
-       }
 
        if(typeof withCredentials=="boolean"){
 
@@ -428,7 +375,7 @@ Backend.prototype={
 
                 syErr(`
                 
-                The argument of okay reactor must be a function
+                The argument of okay method must be a function
                 and you defined ${valueType(fn)} as its argument
                 
                 `)
@@ -450,7 +397,7 @@ Backend.prototype={
 
                 syErr(`
                 
-                The argument of error reactor must be a function, and you
+                The argument of error method must be a function, and you
                 defined ${valueType(fn)} as its argument.
                 
                 `)
@@ -473,7 +420,7 @@ Backend.prototype={
 
                 syErr(`
                 
-                response reactor must have two arguments and you only
+                The response method must have two arguments and you only
                 defined ${arguments.length}.
                 
                 `)
@@ -484,7 +431,7 @@ Backend.prototype={
 
                 syErr(`
                 
-                The two arguments of response handler must be functions.
+                The two arguments of response method must be functions.
                 
                 
                 `)
