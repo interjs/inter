@@ -9,10 +9,10 @@ import {
   isEmptyObj,
   err,
   getId,
-  valueType
+  valueTypers,
+  consW
 
-} from "./helpers.js"
-
+} from "./helper.js"
 
 function createTypeProp(array, propValue){
 
@@ -262,9 +262,22 @@ export function staticList(options){
                 `)
 
                }
+			   
 
                for(const [refName, refValue] of Object.entries(__refs)){
 
+               if(refName==="_index"){
+				   
+				   consW(`
+				   
+				   _index is a reserved reference's name in staticList, Inter will
+				   ignore the one that you declared.
+				   
+				   `);
+				   
+				   continue;
+				   
+			   }
 
                 const rule=new RegExp(`{\\s*${refName}\\s*}`,"g");
                 parsedTemplate=parsedTemplate.replace(rule, refValue);
