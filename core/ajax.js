@@ -217,6 +217,24 @@ Backend.prototype={
 
             }
 
+          },
+
+          getHeader(header){
+
+            if(!isDefined(header) || typeof header!=="string"){
+
+
+                syErr(`
+
+                You must define the "header" argument and it must be a string
+                in "getHeader" method in AjaxResponse object.
+                
+                `)
+
+            }
+
+            return req.getResponseHeader(header);
+
           }
 
        }       
