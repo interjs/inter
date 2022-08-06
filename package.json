@@ -10,5 +10,8 @@
   "devDependencies":{
   "nodejs":">=14.18.0"
     
+  },
+  "dependencies":{
+  "UglifyJS":">=3.3.9"
   }
   }
