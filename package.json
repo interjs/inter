@@ -1,6 +1,6 @@
 {
   "name": "inter",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "The javascript framework to build highly interactive front-end web applications.",
   "author": "Denis Power",
   "license": "MIT",
@@ -10,8 +10,5 @@
   "devDependencies":{
   "node":">=14.18.0"
     
-  },
-  "dependencies":{
-  "UglifyJS":">=3.3.9"
   }
   }

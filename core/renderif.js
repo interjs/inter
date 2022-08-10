@@ -22,15 +22,9 @@ function getChildNodes(root){
 
     const nodes=new Array();
 
-    root.childNodes.forEach((node, index)=>{
+    root.childNodes.forEach((node)=>{
         
         if(node.nodeType==1 || node.nodeType==3 && !node.textContent.trim().length==0){
-
-            if(node.index===void 0){
-
-                node.index=index;
-
-            };
             
             nodes.push(node);
 
@@ -136,7 +130,7 @@ export function renderIf(obj){
 
          let index=-1;
 
-        for(const child of container.children){
+        for(const child of container.childNodes){
 
             index++;
 
@@ -150,6 +144,8 @@ export function renderIf(obj){
             }
 
             child.index=index;
+
+            if(child.nodeType==3)continue;
 
 
            const sibling=child.nextElementSibling,
@@ -264,7 +260,6 @@ export function renderIf(obj){
 
             }  if(setting.if && sibling && sibling.hasAttribute("_else")){
 
-             
                 
                 if(sibling.hasAttribute("_if")){
 
@@ -334,15 +329,11 @@ function runRenderingSystem(els, data){
 
             const current=getChildNodes(root)[i];
             
-
             if(ifNot){
-                
 
                 if(isFalse(source[ifNot]) && !target.isSameNode(current)){
 
-                    
-
-                    if(isANode(current)){
+                    if(isANode(current) || root.textContent.trim().length!==0){
 
                         insertBefore(root, target);
 
@@ -381,7 +372,9 @@ function runRenderingSystem(els, data){
 
              if(target.parentNode==root){
 
-               root.replaceChild(ELSE,target);
+               
+                root.removeChild(target);
+                insertBefore(root, ELSE);
 
 
                     }
@@ -391,16 +384,11 @@ function runRenderingSystem(els, data){
 
 
             }else{
-                
-                
-                 if(current){
+            
 
                // If true.
-
-                  const el=current;
-                   
-                                      
-                 if(el.isSameNode(target)){
+                          
+                 if(current && current.isSameNode(target)){
                        
                  if(ELSE && ELSE.parentNode!=null){
                        
@@ -416,7 +404,8 @@ function runRenderingSystem(els, data){
 
                         
 
-                 root.replaceChild(target,ELSE)
+                 root.removeChild(ELSE);
+                 insertBefore(root, target);
 
                         
 
@@ -428,16 +417,6 @@ function runRenderingSystem(els, data){
                     }
 
                 } 
-         
-
-                else{
-
-                    insertBefore(root, target)
-
-                }
-
-
-            }
 
 
     

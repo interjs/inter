@@ -1,9 +1,8 @@
-
 (function(){
-    
+
 /**
  * Interjs 
- * Version - 2.0.6  
+ * Version - 2.0.7  
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -1203,9 +1202,15 @@ function getChildNodes(root){
 
     const nodes=new Array();
 
-    root.childNodes.forEach((node)=>{
+    root.childNodes.forEach((node, index)=>{
         
         if(node.nodeType==1 || node.nodeType==3 && !node.textContent.trim().length==0){
+
+            if(node.index==void 0){
+
+                node.index=index;
+
+            }
 
             nodes.push(node);
 
@@ -1247,8 +1252,7 @@ function getChildNodes(root){
 
         const{
             in:IN,
-            data,
-            
+            data
         }=obj;
 
         if(!(typeof IN==="string")){
@@ -1309,8 +1313,9 @@ function getChildNodes(root){
       function parseAttrs(container){
 
          let index=-1;
+         const children=container.childNodes;
 
-        for(const child of container.children){
+        for(const child of children){
 
             index++;
 
@@ -1324,12 +1329,12 @@ function getChildNodes(root){
             }
 
             child.index=index;
-
+            
+            if(child.nodeType==3)continue;
 
            const sibling=child.nextElementSibling,
                  previous=child.previousElementSibling;
 
-            
             if(child.children.length>0){
 
                 parseAttrs(child)
@@ -1386,7 +1391,7 @@ function getChildNodes(root){
                 ParserWarning(`
                                 
                 The parser found an element with an "_else" attribute,
-                but there is not an element by attribute "_if" before it.
+                but there is not an element with attribute "_if" before it.
 
                 `)
 
@@ -1473,7 +1478,7 @@ function getChildNodes(root){
         }
     }
 
-    parseAttrs(theContainer)
+        parseAttrs(theContainer)
 
         const reactor=runRenderingSystem(els, data);
 
@@ -1506,17 +1511,14 @@ function runRenderingSystem(els, data){
                 root
             }=el;
 
-            const current=getChildNodes(root)[i];
-
+            const current=getChildNodes(root)[i]; 
 
             if(ifNot){
                 
 
                 if(isFalse(source[ifNot]) && !target.isSameNode(current)){
 
-                    
-
-                    if(isANode(current)){
+                    if(isANode(current) || root.textContent.trim().length!==0){
 
                         insertBefore(root, target);
 
@@ -1556,31 +1558,24 @@ function runRenderingSystem(els, data){
 
               }else if(ELSE){
 
-                if(current && current.isSameNode(ELSE)){
+                if(target.parentNode==root){
 
-                }else{
+                 root.removeChild(target);
+                 insertBefore(root, ELSE);
 
-                    if(target.parentNode==root){
-
-                root.replaceChild(ELSE,target);
-
-                    }
-
-                }
-
+                
               }
+
+            
+          }
 
 
 
             }else{
                 
-                
-                 if(current){
-
-                    const el=current;
                   
                     
-                     if(el.isSameNode(target)){
+                     if(current && current.isSameNode(target)){
                        
                         if(ELSE && ELSE.parentNode!=null){
                        
@@ -1592,29 +1587,17 @@ function runRenderingSystem(els, data){
                     }
                     else if(ELSE && ELSE.parentNode!=null){
 
-                        
-
-                        root.replaceChild(target,ELSE)
-
-                        
+                         root.removeChild(ELSE);
+                         insertBefore(root, target);
 
                     }
                     
                     else{
 
-                insertBefore(root, target);
+                          insertBefore(root, target);
                     
 
                     }
-
-                } 
-         
-
-                else{
-
-                    insertBefore(root, target)
-
-                }
 
 
             }
@@ -1643,7 +1626,6 @@ function insertBefore(root, target){
     for(const child of children){
 
     if(child.index>target.index){
-
     
    root.insertBefore(target,  child);
 
@@ -1657,6 +1639,7 @@ function insertBefore(root, target){
 
 } else{
 
+    
   root.appendChild(target);
 
   }
@@ -4876,7 +4859,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.6 of Inter was successfully loaded.")
+ console.log("The global version 2.0.7 of Inter was successfully loaded.")
 
 })();
 
