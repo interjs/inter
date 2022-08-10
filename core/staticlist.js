@@ -9,7 +9,7 @@ import {
   isEmptyObj,
   err,
   getId,
-  valueTypers,
+  valueType,
   consW
 
 } from "./helper.js"

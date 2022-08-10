@@ -17,14 +17,21 @@ import{
 } from "./helpers.js";
 
 
+
 function getChildNodes(root){
 
     const nodes=new Array();
 
-    root.childNodes.forEach((node)=>{
+    root.childNodes.forEach((node, index)=>{
         
         if(node.nodeType==1 || node.nodeType==3 && !node.textContent.trim().length==0){
 
+            if(node.index===void 0){
+
+                node.index=index;
+
+            };
+            
             nodes.push(node);
 
         }
@@ -65,13 +72,13 @@ export function renderIf(obj){
 
         const{
             in:IN,
-            data,
-            
+            data 
         }=obj;
 
         if(!(typeof IN==="string")){
 
             syErr(`
+
             The value of "in" property in renderIf function must be a string.
             
             `)
@@ -81,6 +88,7 @@ export function renderIf(obj){
         if(!isObj(data)){
 
             syErr(`
+
             The value of "data" property in renderIf function must be a plain Javascript object.
 
             `)
@@ -291,11 +299,9 @@ export function renderIf(obj){
         }
     }
 
-    parseAttrs(theContainer)
+          parseAttrs(theContainer)
 
         const reactor=runRenderingSystem(els, data);
-
-        
 
         return reactor;
     
@@ -313,6 +319,8 @@ function runRenderingSystem(els, data){
 
     function run(source){
 
+        
+
         for(const el of toArray){
 
             const{
@@ -325,7 +333,7 @@ function runRenderingSystem(els, data){
             }=el;
 
             const current=getChildNodes(root)[i];
-
+            
 
             if(ifNot){
                 
@@ -363,30 +371,22 @@ function runRenderingSystem(els, data){
 
             else if(isFalse(source[IF])){
 
-                
-                
 
               if(target.parentNode==root && !ELSE){   
 
-             root.removeChild(target)
-
-             
+                root.removeChild(target)          
 
               }else if(ELSE){
 
-                if(current && current.isSameNode(ELSE)){
 
-                }else{
+             if(target.parentNode==root){
 
-                    if(target.parentNode==root){
+               root.replaceChild(ELSE,target);
 
-                root.replaceChild(ELSE,target);
 
                     }
 
-                }
-
-              }
+                 }
 
 
 
@@ -395,32 +395,34 @@ function runRenderingSystem(els, data){
                 
                  if(current){
 
-                    const el=current;
-                  
-                    
-                     if(el.isSameNode(target)){
+               // If true.
+
+                  const el=current;
+                   
+                                      
+                 if(el.isSameNode(target)){
                        
-                        if(ELSE && ELSE.parentNode!=null){
+                 if(ELSE && ELSE.parentNode!=null){
                        
 
-                            root.removeChild(ELSE)
+                    root.removeChild(ELSE)
 
-                        }
-                        
-                    }
-                    else if(ELSE && ELSE.parentNode!=null){
-
-                        
-
-                        root.replaceChild(target,ELSE)
-
-                        
-
-                    }
                     
-                    else{
+                }
+                
+                
+                
+            } else if(ELSE && ELSE.parentNode!=null){
 
-                insertBefore(root, target);
+                        
+
+                 root.replaceChild(target,ELSE)
+
+                        
+
+                    } else{
+
+                    insertBefore(root, target);
                     
 
                     }
@@ -447,25 +449,23 @@ function runRenderingSystem(els, data){
 
 function insertBefore(root, target){
 
-    
     const children=getChildNodes(root),
     lastChild=children[children.length-1];
-
 
     if(target.parentNode==null){
 
     if(lastChild && lastChild.index>target.index){
 
-
-
     for(const child of children){
+
+        
 
     if(child.index>target.index){
 
     
-   root.insertBefore(target,  child);
+      root.insertBefore(target,  child);
 
-   break;
+      break;
 
     
 
@@ -473,15 +473,11 @@ function insertBefore(root, target){
 
 }
 
-} else{
+}else{
 
   root.appendChild(target);
 
   }
-
-
-    
-
 
 
     }
@@ -566,8 +562,10 @@ Object.defineProperties(reactor,{
         if(!isCallable(fn)){
 
             syErr(`
+
             The argument of [renderIf reactor].observe()
             must be a function.
+
             `)
 
         }
@@ -584,16 +582,13 @@ Object.defineProperties(reactor,{
 
 
 
-    },
-    enumerable:!1,
-    configurable:!1
+    }
     },
     setConds:{
 
         set(conditions){
 
             
-
             if(!isObj(conditions)){
 
                 syErr(`

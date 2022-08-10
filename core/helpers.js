@@ -19,7 +19,7 @@ export function isNotConfigurable(obj){
 
 export function defineReactorNameInToString(targetObject, returnInfo/*string*/){
 
-    Object.defineProperty(targetObject, [Symbol.toStringTag], {
+    Object.defineProperty(targetObject, Symbol.toStringTag, {
         get:()=>returnInfo
     })
 

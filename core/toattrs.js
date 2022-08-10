@@ -6,7 +6,9 @@ import{
     isCallable,
     validDomEvent,
     ParserWarning,
-    defineReactorNameInToString
+    defineReactorNameInToString,
+    validStyleName,
+    err
 
 } from "./helpers.js";
 
@@ -48,14 +50,129 @@ function isDifferent(targetEl, attrName, newAttrValue){
 
 }
 
+function spreadStyleAttrs(target, styleObj){
+
+    for(const [prop, value] of Object.entries(styleObj)){
+
+        if(validStyleName(prop)){
+
+            target.style[prop]=value;
+
+            defineReactiveStyleProp(styleObj, prop, target);
+
+        }else{
+
+            consW(`"${prop}" is not a valid style's name.`)
+            delete styleObj[prop];
+            
+
+        }
+
+    }
+
+  defineSetStylesProp(styleObj, target);
+
+
+}
+
+
+function defineReactiveStyleProp(styleObj, styleProp, target){
+
+    Object.defineProperty(styleObj, styleProp, {
+        get(){
+
+            return target.style[styleProp]
+
+        },
+        set(value){
+
+            if(value!==target.style[prop]){
+
+                target.style[styleProp]=value;
+
+            }
+
+        }
+    })
+
+}
+
+
+function defineSetStylesProp(styleObj, target){
+
+    Object.defineProperty(styleObj, "setStyles", {
+        set(o){
+
+            if(!isObj(o)){
+
+                syErr(`The value of the "setStyles" property must be a plain javascript object.`)
+
+            };
+
+            for(const [styleName, styleValue] of Object.entries(o)){
+
+                if(!validStyleName(prop)){
+
+                    consW(`"${styleName}" is not a valid styles' name.`);
+                    continue;
+
+                }
+
+                setStyle(target, styleName, styleValue);
+
+            }
+
+        }
+
+    })
+
+}
+
+function setStyle(target, styleName, styleValue){
+
+    if(styleValue!=void 0){
+
+    
+    target.style[styleName]=styleValue;
+
+    }else{
+
+        target.style[styleValue]=null;
+
+    }
+
+}
+
+
+function runStyleImmutabilityError(){
+
+    err(`
+                
+    When you define a plain Javascript object as the value of the "style" property, it becomes
+    immutable, it means that you can not delete or change this property directly, you must work with
+    its properties.
+    
+    `)
+
+};
+
+function runCanNotRedifineStylePropAsObjError(){
+
+    err(`
+    
+      You can not redifine the "style" property's value as plain Javascript object.
+    
+    `)
+
+}
+
 export function toAttrs(obj){
     
-if(new.target!==void 0){
+   if(new.target!==void 0){
 
         syErr(`
         toAttrs is not a constructor,
         do not call it with the "new" keyword.
-        
         `)
 
     }
@@ -68,12 +185,10 @@ if(new.target!==void 0){
 
     }
 
-  const{
-   
+    const  {
       in:IN,
-      data,
-      
-  }=obj;
+      data
+    }=obj;
 
   if(!(typeof IN=="string")){
 
@@ -187,14 +302,24 @@ if(new.target!==void 0){
     function spread(el/*manager target*/, attrManager/*Manager name*/, attrs/*Manager object*/){
 
     //We are considering them as specials
-    // because we can not reset them with the setAttribute function.
+    //because we can not reset them with the setAttribute function.
     const specialAttrs=new Set(["value", "currentTime"]);
+    let immutableStyle=false;
         
         function runUpdate(value, attrName){
 
             value=isCallable(value) ? value.call(attrs) : value;
 
-            if(value==void 0){
+             if(attrName==="style" && immutableStyle){
+
+                runStyleImmutabilityError();
+
+
+              }else if(attrName==="style" && isObj(value) && !immutableStyle){
+
+               runCanNotRedifineStylePropAsObjError();             
+
+              }else if(value==void 0){
 
                 if(!attrName.startsWith("on")){
 
@@ -232,16 +357,14 @@ if(new.target!==void 0){
                         `)
                     }
 
-                    el[attrName]=function(e){
-
-                        v.call(original,e)
-                    }
+                    el[attrName]=e=>value.call(original,e);
+                    
 
                 }else{
 
                     consW(`
                     
-                    "${attrName}" doesn't seem to be a valid dom event.
+                    "${attrName}" doesn't seem to be a valid dom's event.
                     
                     `)
 
@@ -258,9 +381,9 @@ if(new.target!==void 0){
             
             Object.defineProperty(attrs,attrName,{
 
-                set(v){
+                set(value){
                 
-                    runUpdate(v, attrName)
+                    runUpdate(value, attrName)
 
                 },
 
@@ -304,14 +427,26 @@ if(new.target!==void 0){
 
             if(attrValue!=void 0 && !specialAttrs.has(attrName) && !attrName.startsWith("on")){
            
-            el.setAttribute(attrName,attrValue);
+                 if(attrName==="style" && isObj(attrValue)){
+
+                    spreadStyleAttrs(el,attrValue);
+                    
+                   /*The style property must not be changed directly, we must only change its property*/
+                    immutableStyle=true;
+
+                 }else{
+
+                 
+                el.setAttribute(attrName,attrValue);
+
+                 }
 
               }else if(attrValue!=void 0 && specialAttrs.has(attrName)){
 
                 el[attrName]=attrValue;
 
 
-              } else{
+              }else{
                 
               if(attrName.startsWith("on")){
 
@@ -327,18 +462,14 @@ if(new.target!==void 0){
 
                 }
 
-                el[attrName]=function(e){
-
-                     attrValue.call(attrs,e);
-               
-                   }
+                el[attrName]=e=>attrValue.call(attrs,e);
                 
                
                }else{
 
                 syErr(`
                 
-                "${attrName}" doesn't seem to be a valid dom event.
+                "${attrName}" doesn't seem to be a valid dom's event.
                 
                 `)
 
@@ -348,7 +479,7 @@ if(new.target!==void 0){
             }
            }
 
-        for(const[attrName, attrValue] of Object.entries(attrs)){
+        for(const [attrName, attrValue] of Object.entries(attrs)){
              
             
              spreadAttrs(attrName, attrValue);
@@ -360,7 +491,7 @@ if(new.target!==void 0){
 
         Object.defineProperty(attrs, "setAttrs", {
 
-                 set(__attrs){
+                set(__attrs){
 
                 if(!isObj(__attrs)){
 
@@ -381,7 +512,7 @@ if(new.target!==void 0){
                         
                          The attribute manager "${attrManager}" 
                          does not manage an attribute named "${attr}",
-                         all the attributes must be defined in the attrManager manager
+                         all the attributes must be defined in the attrManager
                          object.
                         
                         `);

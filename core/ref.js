@@ -6,10 +6,7 @@ import {
     isCallable,
     getId,
     consW,
-    
-    
-     
-
+    valueType,
 
 }  from "./helpers.js";
 
@@ -88,14 +85,11 @@ function refParser(p,refs,rparse){
     
      function getTextNodes(el){
 
-    
-        
-
-        let _childNodes=new Set();
+        const _childNodes=new Set();
     
         if(el.hasChildNodes())
         
-        for(let child of el.childNodes){
+        for(const child of el.childNodes){
     
             if(child.nodeType==3 && child.textContent.trim().length>0 && hasRefs(child.textContent)){
                
@@ -120,11 +114,11 @@ function refParser(p,refs,rparse){
             
             function runRef(node){
     
-                for(let r in refs){
+                for(const ref in refs){
     
-                    const pattern=new RegExp(`{\\s*${r}\\s*}`)
+                    const pattern=new RegExp(`{\\s*${ref}\\s*}`)
                     
-                    if(!node.ref &&  node.textContent.trim().length>0 &&
+                    if(node.textContent.trim().length>0 &&
                      pattern.test(node.textContent)  
                     ){
                     
@@ -148,7 +142,7 @@ function refParser(p,refs,rparse){
             
              if(parentNode.nodeType==1){
 
-            for(let node of parentNode.childNodes){
+            for(const node of parentNode.childNodes){
     
                 if(node.hasChildNodes() && node.nodeType==1){
                   
@@ -175,7 +169,7 @@ function refParser(p,refs,rparse){
     
     if(getTextNodes(p).length>0){
     
-        for(let text of getTextNodes(p)){
+        for(const text of getTextNodes(p)){
     
         rChild(text);
         
@@ -195,8 +189,8 @@ function refParser(p,refs,rparse){
     
             for(const attr of child.attributes){
     
-                 for(const r in refs){
-                     const pattern=new RegExp(`{\\s*${r}\\s*}`)
+                 for(const ref in refs){
+                     const pattern=new RegExp(`{\\s*${ref}\\s*}`)
                   if(pattern.test(attr.value)){
                 
                     if(!specialAttrs.has(attr.name)){
@@ -253,11 +247,11 @@ function refParser(p,refs,rparse){
     
                 
     
-                for(const r in refs){
+                for(const ref in refs){
     
-                    const pattern=new RegExp(`{\\s*${r}\\s*}`)
+                    const pattern=new RegExp(`{\\s*${ref}\\s*}`)
                     
-                 if(!node.ref && node.textContent.trim().length>0 &&
+                 if(node.textContent.trim().length>0 &&
                   pattern.test(node.textContent)  
                  ){
                  
@@ -289,9 +283,9 @@ function refParser(p,refs,rparse){
                 
             };
             
-            for(let r in refs){
+            for(const ref in refs){
     
-                const pattern=new RegExp(`{\\s*${r}\\s*}`)
+                const pattern=new RegExp(`{\\s*${ref}\\s*}`)
     
                 if(!child.ref && pattern.test(text)){
     
@@ -305,25 +299,16 @@ function refParser(p,refs,rparse){
                 }
     
             }
-           
-           
-          
-    
         
     
     
 }
     
-    
-    
-    
-    
-    
 
 }
 
 
-    rparse.update()
+    rparse.updateTextRef()
     
 }
 
@@ -486,38 +471,34 @@ export function Ref(obj){
                     }
 
                 },
-                update2(){
+                updateAttrRef(){
             
                     // This is the attribute reference updater.
             
-                    for(const a_r of  Array.from(this.attrs)){
+                    for(const attributeRef of  Array.from(this.attrs)){
             
-                        let{
+                        const {
                             target,
                             attrs,
-                            
-                        }=a_r;
+                        }=attributeRef;
 
                
             
-                        for(let [name,v] of Object.entries(attrs)){
+                        for(let [name,value] of Object.entries(attrs)){
             
-                            const refNames=getRefs(v);
+                            const refNames=getRefs(value);
 
                             
-                            for(let refName of refNames){
+                            for(const refName of refNames){
             
                                 if(refName in this.refs){
-                                
-
+    
                              
                                 const pattern=new RegExp(`{\\\s\*\(\:\?${refName}\)\\\s\*}`,"g")
                 
-                                 v=v.replace(pattern,this.refs[refName]);
+                                 value=value.replace(pattern,this.refs[refName]);
                             
-                                  
-                                 
-
+                    
 
                                 }
                             }
@@ -525,9 +506,9 @@ export function Ref(obj){
                             
                             
                   
-                            if(target.getAttribute(name)!==v){
+                            if(target.getAttribute(name)!==value){
                             
-                                target.setAttribute(name,v);
+                                target.setAttribute(name,value);
 
                             }
             
@@ -540,7 +521,7 @@ export function Ref(obj){
                     }
             
                 },
-                update(){
+                updateTextRef(){
             
                     // This is the text reference updater.
             
@@ -548,14 +529,12 @@ export function Ref(obj){
             
                         
 
-                    for(const t_r of  Array.from(this.text)){
+                    for(const textRef of  Array.from(this.text)){
             
                         let {
                             target,
-                            text,
-                            
-                            
-                        }=t_r;
+                            text
+                        }=textRef;
 
                         // Returns the ref's Names
                          // in the string "text".                  
@@ -563,8 +542,6 @@ export function Ref(obj){
 
 
                     for(const refName of refNames){
-            
-                        
                         
                         if(refName in this.refs){
                       
@@ -573,22 +550,20 @@ export function Ref(obj){
                        if(isDefined(text)){     
                         
                         text=text.replace(pattern, this.refs[refName]);
-                      
-                    
-                     
                     
                         }
                     }
 
                     }
-                        if(isDefined(text)){
+
+                    if(isDefined(text)){
                             
                       if(target.textContent!==text){
 
                         target.textContent=text;
                       }
 
-                        }
+                    }
             
                 
             
@@ -596,12 +571,12 @@ export function Ref(obj){
                 
             }
 
-            // After updating the text reference, let's update the
+                // After updating the text reference, let's update the
                 // attribute reference.
                 
                 if(this.attrs.size>0){
             
-                    this.update2();
+                    this.updateAttrRef();
             
                 }
 
@@ -622,19 +597,19 @@ export function Ref(obj){
 
             const reactor=new Proxy(proxyTarget,{
 
-                set(t,k,v,p){
+                set(target,key,value, proxy){
 
-               const oldValue=t[k];     
+               const oldValue=target[key];     
                
-                    if(isCallable(v)){
+                    if(isCallable(value)){
 
-                        v=v.call(p);
+                        value=value.call(proxy);
                 
-                        Reflect.set(t,k,v,p);
+                        Reflect.set(...arguments);
 
                     }else{
       
-                   Reflect.set(t,k,v,p);
+                   Reflect.set(...arguments);
                     
                 }
 
@@ -643,19 +618,19 @@ export function Ref(obj){
 
                     const callBack=store.observed.get("callBack");
 
-                    callBack(k,v, oldValue);
+                    callBack(key,value, oldValue);
 
                     }
 
                     
 
-               if(store.specialAttrs.has(k)){
+               if(store.specialAttrs.has(key)){
 
                 store.updateSpecialAttrs();
 
                }
                 
-                   if(!(k in t)){
+                   if(!(key in proxy)){
                     
                     // Dynamic ref.
 
@@ -664,7 +639,8 @@ export function Ref(obj){
 
 
                    }else{
-                   store.update();
+
+                   store.updateTextRef();
                    return true;
 
                    }
@@ -704,7 +680,7 @@ export function Ref(obj){
                                 consW(`
                                 
                                 "${refName}" is a reserved property, you can not
-                                use it as the reference name.
+                                use it as the reference's name.
                                 
                                 `)
 
@@ -737,7 +713,16 @@ export function Ref(obj){
 
                         
 
-                        store.update();
+                        store.updateTextRef();
+
+                    }else{
+
+                        syErr(`
+                        
+                        "${valueType(o)}" is not a valid value for the "setRefs" property.
+                        The value of the setRefs property must be a plain Javascript object.
+
+                        `)
 
                     }
 
