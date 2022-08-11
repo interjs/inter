@@ -2,16 +2,16 @@
 
   import {
 
-    syErr,
-    isObj,
-    isCallable,
-    validInProperty,
-    validEachProperty,
-    valueType,
-    Iterable,
-    isAtag,
-    getId,
-    consW,
+   syErr,
+   isObj,
+   isCallable,
+   validInProperty,
+   validEachProperty,
+   valueType,
+   Iterable,
+   isAtag,
+   getId,
+   consW,
    isArray,
    isDefined,
    err,
@@ -464,8 +464,6 @@ function createObjReactor(each, updateSystem, root){
                 };
 
                 for(const prop of props){
-                    
-                    console.log(prop in this)
 
                     if(prop in this){
 
