@@ -2,7 +2,7 @@
 
 /**
  * Interjs 
- * Version - 2.0.7  
+ * Version - 2.0.8  
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -157,7 +157,7 @@
     
             syErr(`
             
-            There's not an element on the document by id "${id}".
+            There's not an element on the document with id "${id}".
     
             `)
     
@@ -2816,10 +2816,10 @@ function createArrayReactor(each, updateSystem){
 
         },
 
-        get(){
+        get(target, prop){
 
 
-            return Reflect.get(...arguments);
+            return target[prop];
 
         },
 
@@ -3417,7 +3417,7 @@ Object.defineProperties(array, {
         
             }
 
-        
+        checkType(arguments[i], updateSystem);
         
         }
         
@@ -3441,7 +3441,7 @@ Object.defineProperties(array, {
         
         }
         
-        
+        checkType(arguments[0], updateSystem);
         
         }
 
@@ -4859,7 +4859,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.7 of Inter was successfully loaded.")
+ console.log("The global version 2.0.8 of Inter was successfully loaded.")
 
 })();
 
