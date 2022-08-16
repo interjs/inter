@@ -202,10 +202,15 @@ function createArrayReactor(each, updateSystem){
 
         },
 
-        get(){
+        get(target, prop){
 
+            /**
+             * Note: Don't use Reflet.get(...arguments) here, because if 
+             * it's an Array of objects it will return an empty object.
+             * 
+             */
 
-            return Reflect.get(...arguments);
+            return target[prop];
 
         },
 
@@ -291,7 +296,7 @@ function createObjReactor(each, updateSystem, root){
  function defineReactiveObj(obj, call){
 
     const reactive=Symbol.for("reactive"),
-           reservedProps=new Set(["setProps","defineProps","deleteProps"]),
+          reservedProps=new Set(["setProps","defineProps","deleteProps"]),
           share=Object.assign(Object.create(null), obj);
 
     if(reactive in obj){
@@ -801,7 +806,7 @@ Object.defineProperties(array, {
         
             }
 
-        
+          checkType(arguments[i], updateSystem);
         
         }
         
@@ -825,7 +830,7 @@ Object.defineProperties(array, {
         
         }
         
-        
+        checkType(arguments[0], updateSystem)
         
         }
 
@@ -835,19 +840,15 @@ Object.defineProperties(array, {
         
         
         
-        
-        
-        
-        
         },
         
         
         
-         splice:{
+     splice:{
         
         value(start, deleteCount, ...items){
         
-        Array.prototype.splice.apply(array,arguments);
+        Array.prototype.splice.apply(array, arguments);
         
         
         if(items.length==0){
@@ -861,7 +862,6 @@ Object.defineProperties(array, {
          * 
          */
             for(let i=0; i<to; i++){
-        
                 
                 const node=htmlEl.children[from];
         
@@ -1008,6 +1008,7 @@ export function renderList(options){
         
 
         if(isArray(each)){
+
             pro=createArrayReactor(each, updateSystem);
             
             costumReactor(each, root, updateSystem, DO, pro);

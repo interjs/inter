@@ -1,4 +1,3 @@
-
 import {
 
     syErr,
@@ -9,6 +8,46 @@ import {
 } from "./helpers.js"
 
 
+  function extractVarsFromUrl(parsedUrl, dynamicPaths){
+
+
+  const varObject=Object.create(null);
+  let index=-1;          
+        
+   parsedUrl.replace(/(\w+|\d+|[a-z]+)/g ,(pathName)=>{
+          
+   index++;
+             
+   if(pathName.includes("mmmmmm")){
+
+    pathName=pathName.replace(/mmmmmm/g, "-");
+
+    }
+
+   if(pathName.includes("dddd")){
+
+     pathName=pathName.replace(/dddd/g, "_")
+
+  
+   }
+
+  if(pathName.includes("ppppp")){
+
+   pathName=pathName.replace(/ppppp/g, ".")
+
+
+  }
+
+     varObject[dynamicPaths[index]]=pathName
+            
+            
+    })
+
+
+    return Object.freeze(varObject);
+
+
+}
 
 
  class UrlParser{
@@ -21,18 +60,19 @@ import {
 
     static getVar(path){
 
-        const repl=new Array();
-        const dyP=new Array();
+        const staticPaths=new Array();
+        const dynamicPaths=new Array();
 
-        
-        path.replace(/\/(:?[a-z]+)\/|\/(\d+)/g, (m,_)=>{
-         
-          repl.push(m);
+
+        path.replace(/\/(:?[a-z]+)\/|\/(\d+)/g, (match)=>{
+
+          staticPaths.push(match);
+
         })
 
-        path.replace(/\((:?[a-z]+)\)/g, (m,_)=>{
-         
-         dyP.push(_);
+        path.replace(/\((:?[a-z]+)\)/g, (plainMatch, varName)=>{
+
+         dynamicPaths.push(varName)
          
         
         })
@@ -40,20 +80,20 @@ import {
       
         
 
-        let parsedUrl=this.prototype.url.replace(/-|_|\./g, (m,_)=>{
+        let parsedUrl=this.prototype.url.replace(/-|_|\./g, (match)=>{
        
-            if(m=="_"){
+            if(match==="_"){
                 
                 return "d".repeat("down".length); 
             }
 
-            if(m=="-"){
+            if(match==="-"){
 
                 return "m".repeat("middle".length);
 
             }
 
-            if(m=="."){
+            if(match==="."){
 
                 return "p".repeat("point".length);
 
@@ -62,58 +102,10 @@ import {
         });
 
       
-      
-      for(let par of repl){
 
-          parsedUrl=parsedUrl.replace(par,"/");
-
-      }
-
-      
-
-        const returnOBJ=Object.create(null);
-         
-          let index=-1;          
-        
-         parsedUrl.replace(/(\w+|\d+|[a-z]+)/g ,(__,_)=>{
-          
-             index++;
-             
-             let _path=_;
-             
-             if(_path.includes("mmmmmm")){
-             _path=_path.replace(
-
-                /mmmmmm/g, "-"
-             );
-             }
-             if(_path.includes("dddd")){
-
-                _path=_path.replace(
-                    /dddd/g, "_"
-                )
-             }
-
-             if(_path.includes("ppppp")){
-
-                _path=_path.replace(
-                    /ppppp/g, "."
-                )
-
-             }
-
-             
-             returnOBJ[dyP[index]]=_path
-            
-            
-            
-            
-    })
-
-    
-    
+    const varObject=extractVarsFromUrl(parsedUrl, dynamicPaths)
    
-   return Object.freeze(returnOBJ);
+     return varObject;
 
         
     }
@@ -133,7 +125,8 @@ function _setPath(path, hash){
             
             const unhash=hasHash.replace(/#/g,"");
             if(unhash==""){
-                //Actual path is "/".
+
+                //path is "/".
 
                 window.history.pushState(null,null,`#${path}`);
             }else{
@@ -180,7 +173,7 @@ const UrlInfo=new Map();
 
 const call=Symbol.for("callBack");
 
-// The request obj
+// The request object.
 
  const req={
 
@@ -197,9 +190,7 @@ const call=Symbol.for("callBack");
       
         const reg=/\((:?[\s\S]+)\)|\*/g
 
-        
-
-      return reg.test(route);
+         return reg.test(route);
 
     },
     
@@ -211,13 +202,13 @@ const call=Symbol.for("callBack");
 
       
           const urlSetted=this.url;
-          const p=pathWithVar.replace(
+          const path=pathWithVar.replace(
               /\((:?[\s\S]+)\)|\*/g, "[\\s\\S]"
           )
        
           const reg=new RegExp();
    
-           return reg.compile(p).test(urlSetted) 
+           return reg.compile(path).test(urlSetted) 
    
       
      
@@ -235,24 +226,20 @@ const call=Symbol.for("callBack");
     
  }
 
- Object.preventExtensions(req)
+
+ Object.preventExtensions(req);
  
 
-  function RoutingSystem(){
-
- 
-}
+  function RoutingSystem(){}
 
 
-// Since v2.0.0
+function runIterator(iterator,obj){
 
-
-function runInterator(inte,obj){
-
-    const next=inte.next()
+    const next=iterator.next()
     const arr=next.value;
     
     if(!next.done){
+
     Object.defineProperty(obj, arr[0],{
 
         get(){
@@ -264,7 +251,7 @@ function runInterator(inte,obj){
 
     }) 
         
-        runInterator(inte,obj)
+        runIterator(inte,obj)
 
     }
 
@@ -309,72 +296,62 @@ let started=false;
             }
                 
 
-                for(let[route,_handler] of Object.entries(handler)){
+                for(const [route,_handler] of Object.entries(handler)){
                     
             
-
-            
                     if(req.url==route){
-                       
-                        
 
-                        const varAndParam=Object.freeze({
-                            var:Object.create(null),
-                            param:Object.create(null),
+                        const varsAndParams=Object.freeze({
+                            vars:Object.create(null),
+                            params:Object.create(null),
                             url:req.url
                         })
 
-                        _handler(varAndParam);
+                        _handler(varsAndParams);
 
                         found=true;
 
                         break;
                     
                     }else{
+
                         if(req.has(route)){
 
-                            
-                        
-                            if(req.is(route)){
 
+                        if(req.is(route)){
                                 
                           const search=window.location.search;
                           found=true;
 
                            if(search){
 
-                            const p=new URLSearchParams(search);
-                            const ro=Object.create(null);
-                          
-                           
+                            const searchParams=new URLSearchParams(search);
+                            const requestObject=Object.create(null);
 
-                            runInterator(p.entries(), ro);
+                            runIterator(searchParams.entries(), requestObject);
                       
-                            const varAndParam=Object.freeze({
-                                var:req.getVar(route),
-                                param:ro,
+                            const varsAndParams=Object.freeze({
+                                vars:req.getVar(route),
+                                params:requestObject,
                                 url:req.url
 
                             })
 
-                            _handler(varAndParam);
+                            _handler(varsAndParams);
                            
 
 
                            }else{
 
 
-                            const varAndParam={
-                                var:req.getVar(route),
-                                param:Object.create(null),
+                            const varsAndParams={
+                                vars:req.getVar(route),
+                                params:Object.create(null),
                                 url:req.url
-                            };
-
-
-
+                            }
                             
 
-                            _handler(varAndParam);
+                            _handler(varsAndParams);
                             
 
                            }     
@@ -437,7 +414,7 @@ let started=false;
 
             consW( `
             
-            You already started the router, so you
+            You already started the router, you
             can not add more routes to it.
             
             `)
@@ -485,7 +462,7 @@ let started=false;
             `)
 
         }
-        if(!routeName.startsWith("/") && routeName!="*"){
+        if(!routeName.startsWith("/") && routeName!=="*"){
 
 
             syErr( `
@@ -513,9 +490,6 @@ let started=false;
 
             if(!(routeName in handler)){
 
-                
-                
-
                 handler[routeName]=routeHandler;
 
             }
@@ -528,38 +502,40 @@ let started=false;
 
 
 
- let created=false;
+let created=false;
 
 
  // The internal RoutingSystem prototype.
 
 RoutingSystem.prototype={
 
-createRouter(fn){
+createRouter(callBack){
  
     if(!created){
     
     created=true;
 
     
-    req[call]=fn;
+    req[call]=callBack;
     const hash=window.location.hash;
     
     if(hash){
-        const take_hash=window.location.hash.replace(/#/g,"");
-       UrlInfo.set("path",take_hash);   
+
+      const remove_hash=window.location.hash.replace(/#/g,"");
+       UrlInfo.set("path", remove_hash);   
       
        req[call](req);
+
     }else{
-        UrlInfo.set("path",
-        window.location.pathname
-        )
+
+        UrlInfo.set("path", window.location.pathname)
         req[call](req)
     
 
 }
 
-    }
+}
+
 }
 
 
@@ -628,7 +604,7 @@ createRouter(fn){
 
    function setPathWIthHash(pathName){
 
-        if(!started){
+    if(!started){
 
             err( `
             
@@ -674,7 +650,7 @@ createRouter(fn){
     };
 
 
-window.onpopstate=function(){
+   window.onpopstate=function(){
 
     const _Hash=this.location.hash;
     const _search=this.location.search;
@@ -687,21 +663,19 @@ window.onpopstate=function(){
 
         req[call](req);
 
-        return false;
+   
 
-    }
+    } else if(_Hash){
 
-    if(_Hash){
         const thePath=_Hash.replace(/#/g,"");
         
-         UrlInfo.set("path",
-        thePath=="" ? "/" : thePath
-        )
+         UrlInfo.set("path", thePath=="" ? "/" : thePath)
 
-      req[call](req);
+         req[call](req);
 
     }else{
-        const path=this.location.pathname;
+
+         const path=this.location.pathname;
    
          UrlInfo.set("path",path);
           
@@ -738,8 +712,4 @@ Router.prototype={
 
 
 }
-
-
-
-
 

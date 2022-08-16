@@ -157,7 +157,7 @@ export function getId(id){
     
             syErr(`
             
-            There's not an element on the document by id "${id}".
+            There's not an element on the document with id "${id}".
     
             `)
     
