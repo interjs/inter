@@ -12,7 +12,7 @@ import {
   valueType,
   consW
 
-} from "./helper.js"
+} from "./helpers.js"
 
 function createTypeProp(array, propValue){
 
