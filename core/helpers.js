@@ -155,7 +155,7 @@ export function getId(id){
         
         if(el==void 0){
     
-            syErr(`
+            err(`
             
             There's not an element on the document with id "${id}".
     
