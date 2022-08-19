@@ -38,7 +38,15 @@ function getChildNodes(root){
 }
 
 
+function runReservedPropWarning(prop){
+
+    consW(`${prop} is a reserved property, you can not it use as a conditional property.`)
+
+}
+
+
 export function renderIf(obj){
+
 
 
     if(!isObj(obj)){
@@ -89,24 +97,13 @@ export function renderIf(obj){
 
         }
 
-        if(("setConds" in data)){
-
-            delete data.setConds;
-
-            consW(`
-            
-            "setConds" is a reserved property in conditional rendering, you can not use it
-            as a conditional property that's why Inter deleted it from the data object.
-            
-            `)
-
-        }
-
-        
+        const reservedProps=new Set(["setConds", "observe"]);
         const theContainer=getId(IN);
         const els=new Set();
 
         for(let [prop, value] of Object.entries(data)){
+
+            if(reservedProps.has(prop)){ runReservedPropWarning(prop); continue }
 
             value=isCallable(value) ? value.call(data) : value;
 
@@ -463,7 +460,7 @@ function insertBefore(root, target){
 
 }
 
-
+const reservedProps=new Set(["setConds", "observe"]);
 const observer=new Map();
 const proxyTarget=Object.assign({}, data);
 
@@ -473,7 +470,7 @@ const reactor=new Proxy(proxyTarget,{
 
     set(target, prop, value){
 
-        if(!(prop in data) && prop!=="setConds"){
+        if(!(prop in data) && !reservedProps.has(prop)){
  
             consW(`
             "${prop}" was not defined 
@@ -485,7 +482,7 @@ const reactor=new Proxy(proxyTarget,{
 
         }
 
-        if(!isBool(value) && prop!=="setConds"){
+        if(!isBool(value) && !reservedProps.has(prop)){
 
             err(`
                 
@@ -501,7 +498,7 @@ const reactor=new Proxy(proxyTarget,{
         Reflect.set(target, prop, value);
 
 
-        if(prop!=="setConds"){
+        if(!reservedProps.has(prop)){
 
         run(proxyTarget);
 
@@ -561,12 +558,13 @@ Object.defineProperties(reactor,{
 
 
 
-    }
+    },
+    enumerable:!1,
+    writable:!1
     },
     setConds:{
 
         set(conditions){
-
             
             if(!isObj(conditions)){
 
@@ -582,6 +580,8 @@ Object.defineProperties(reactor,{
 
 
             for(let [prop, cond] of Object.entries(conditions)){
+
+                if(reservedProps.has(prop)){ runReservedPropWarning(prop); continue    }
 
                 cond=isCallable(cond) ? cond.call(data) : cond;
 
@@ -619,8 +619,7 @@ Object.defineProperties(reactor,{
             run(proxyTarget);
 
         },
-        enumerable:!1,
-        configurable:!1
+        enumerable:!1
 
     }
 })

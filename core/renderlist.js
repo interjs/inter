@@ -410,7 +410,7 @@ function createObjReactor(each, updateSystem, root){
 
             },
             enumerable:!1,
-            configurable:!1
+            
           
 
             
@@ -451,7 +451,7 @@ function createObjReactor(each, updateSystem, root){
 
             },
             enumerable:!1,
-            configurable:!1
+            
 
         },
         deleteProps:{
@@ -481,7 +481,8 @@ function createObjReactor(each, updateSystem, root){
 
                 call();
 
-            }
+            },
+            enumerable:!1
         },
         [reactive]:{
             get(){
@@ -1081,7 +1082,8 @@ export function renderList(options){
     
                 },
     
-                configurable:!0
+                configurable:!0,
+                enumerable:!1
             },
             addItems:{
                 value(items, position){
@@ -1147,7 +1149,9 @@ export function renderList(options){
                     }
     
                 },
-                configurable:!0
+                configurable:!0,
+                enumerable:!1,
+                writable:!1
             },
             
     
@@ -1363,7 +1367,7 @@ function ContainerDeffing(newContainer, oldContainer, diff){
         text:oldText,
         attrs:oldAttrs={},
         events:oldEvents={},
-        events:oldStyles={},
+        styles:oldStyles={},
         children:oldChildren,
         target
     }=oldContainer;
@@ -1505,7 +1509,8 @@ for(let i=0; _greater.length>i ; i++){
     
    if(!(oldStyle in newStyles) || !isDefined(newStyles[oldStyle])){
 
-        target.style.removeProperty(oldStyle)
+      target.style.removeProperty(oldStyle)
+      
         _new.splice(i,1);
         if(_new.length==0){
 

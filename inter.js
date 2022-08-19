@@ -2,7 +2,7 @@
 
 /**
  * Interjs 
- * Version - 2.0.8  
+ * Version - 2.0.9  
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -155,7 +155,7 @@
         
         if(el==void 0){
     
-            syErr(`
+            err(`
             
             There's not an element on the document with id "${id}".
     
@@ -417,7 +417,11 @@
 
     //</>
 
+ function runReservedRefNameWarning(refName){
 
+   consW(`${refName} is a reserved reference's name, use others names.`)
+    
+  }
 
 
 function hasProp(object){
@@ -784,27 +788,22 @@ function refParser(p,refs,rparse){
 
             
 
-  
+            const reservedRefNames=new Set(["setRefs", "observe"])
             
             
-            for(const r in data){
+            for(const refName in data){
 
-                if(r=="setRefs" || r=="observe"){
+                if(reservedRefNames.has(refName)){
 
-                    consW(`
-                    
-                    "${r}" is a reserved property, you can use it
-                    as the reference name.
-                    
-                    `);
+                    runReservedRefNameWarning(refName)
 
                     continue;
 
                 }
 
-                if(isCallable(data[r])){
+                if(isCallable(data[refName])){
 
-                    data[r]=data[r].call(data);
+                    data[refName]=data[refName].call(data);
 
                 }
 
@@ -1101,17 +1100,13 @@ function refParser(p,refs,rparse){
 
                     if(isObj(o)){
 
+                        const reservedRefNames=new Set(["setRefs", "observe"])
                         
                         for(const [refName,refValue] of Object.entries(o)){
 
-                            if(refName=="observe" || refName=="setRefs"){
+                            if(reservedRefNames.has(refName)){
 
-                                consW(`
-                                
-                                "${refName}" is a reserved property, you can not
-                                use it as the reference name.
-                                
-                                `)
+                                runReservedRefNameWarning(refName);
 
                                 continue;
 
@@ -1146,7 +1141,8 @@ function refParser(p,refs,rparse){
 
                     }
 
-                }
+                },
+                enumerable:!1
             },
             observe:{
 
@@ -1177,9 +1173,13 @@ function refParser(p,refs,rparse){
 
 
 
-                }
+                },
+            
+                writable:!1,
+                enumerable:!1
 
             }
+            
 
             });
 
@@ -1224,7 +1224,15 @@ function getChildNodes(root){
 }
 
 
+function runReservedPropWarning(prop){
+
+
+    consW(`${prop} is a reserved property, you can not it use as a conditional property.`)
+
+}
+
  function renderIf(obj){
+
 
 
     if(!isObj(obj)){
@@ -1273,24 +1281,13 @@ function getChildNodes(root){
 
         }
 
-        if(("setConds" in data)){
-
-            delete data.setConds;
-
-            consW(`
-            
-            "setConds" is a reserved property in conditional rendering, you can not use it
-            as conditional property that's why Inter deleted it from the data object.
-            
-            `)
-
-        }
-
-        
+        const reservedProps=new Set(["setConds", "observe"])
         const theContainer=getId(IN);
         const els=new Set();
 
         for(let [prop, value] of Object.entries(data)){
+
+            if(reservedProps.has(prop)){ runReservedPropWarning(prop); continue}
 
             value=isCallable(value) ? value.call(data) : value;
 
@@ -1653,7 +1650,7 @@ function insertBefore(root, target){
 
 }
 
-
+const reservedProps=new Set(["setConds", "observe"]);
 const observer=new Map();
 const proxyTarget=Object.assign({}, data);
 
@@ -1663,7 +1660,7 @@ const reactor=new Proxy(proxyTarget,{
 
     set(target, prop, value){
 
-        if(!(prop in data) && prop!=="setConds"){
+        if(!(prop in data) && !reservedProps.has(prop)){
  
             consW(`
             "${prop}" was not defined 
@@ -1675,7 +1672,7 @@ const reactor=new Proxy(proxyTarget,{
 
         }
 
-        if(!isBool(value) && prop!=="setConds"){
+        if(!isBool(value) && !reservedProps.has(prop)){
 
             err(`
                 
@@ -1690,10 +1687,9 @@ const reactor=new Proxy(proxyTarget,{
 
         Reflect.set(target, prop, value);
 
+        if(!reservedProps.has(prop)){
 
-        if(prop!=="setConds"){
-
-        run(proxyTarget);
+            run(proxyTarget);
 
         
         if(observer.size==1){
@@ -1750,8 +1746,8 @@ Object.defineProperties(reactor,{
 
 
     },
-    enumerable:!1,
-    configurable:!1
+    writable:!1,
+    enumerable:!1
     },
     setConds:{
 
@@ -1773,6 +1769,8 @@ Object.defineProperties(reactor,{
 
 
             for(let [prop, cond] of Object.entries(conditions)){
+
+                if(reservedProps.has(prop)){ runReservedPropWarning(prop); continue }
 
                 cond=isCallable(cond) ? cond.call(data) : cond;
 
@@ -1811,12 +1809,20 @@ Object.defineProperties(reactor,{
 
         },
         enumerable:!1,
-        configurable:!1
+        
 
     }
 })
 
 return reactor;
+
+}
+
+
+function runReservedAttrNameWarning(attrName){
+
+
+    consW(`${attrName} is a reserved Attribute's name.`)
 
 }
 
@@ -1961,6 +1967,7 @@ return reactor;
     //We are considering them specials
     // because we can not reset them with the setAttribute function.
     const specialAttrs=new Set(["value", "currentTime"]);
+    const reservedAttrsName=new Set(["setAttrs"]);
         
         function runUpdate(value, attrName){
 
@@ -2062,6 +2069,8 @@ return reactor;
 
          
          function spreadAttrs(attrName, attrValue){
+
+            if(reservedAttrsName.has(attrName)){ runReservedAttrNameWarning(attrName); return false;  }
             
             attrValue=!attrName.startsWith("on") ? isCallable(attrValue) ? attrValue.call(attrs) : attrValue : attrValue;
 
@@ -2152,12 +2161,20 @@ return reactor;
 
                     };
 
+                    if(reservedAttrsName.has(attr)){
+
+                        runReservedAttrNameWarning(attr);
+
+                        continue;
+
+                    }
+
                     this[attr]=value;
 
                 }
 
             },
-            configurable:!1
+            enumerable:!1
 
         },
 
@@ -3019,9 +3036,6 @@ function createObjReactor(each, updateSystem, root){
 
             },
             enumerable:!1,
-            configurable:!1
-          
-
             
 
         },
@@ -3060,7 +3074,6 @@ function createObjReactor(each, updateSystem, root){
 
             },
             enumerable:!1,
-            configurable:!1
 
         },
         deleteProps:{
@@ -3079,8 +3092,6 @@ function createObjReactor(each, updateSystem, root){
 
                 for(const prop of props){
                     
-                    console.log(prop in this)
-
                     if(prop in this){
 
                         delete this[prop];
@@ -3092,7 +3103,8 @@ function createObjReactor(each, updateSystem, root){
 
                 call();
 
-            }
+            },
+            enumerable:!1
         },
         [reactive]:{
             get(){
@@ -3696,7 +3708,8 @@ Object.defineProperties(array, {
     
                 },
     
-                configurable:!0
+                configurable:!0,
+                enumerable:!1
             },
             addItems:{
                 value(items, position){
@@ -3762,7 +3775,9 @@ Object.defineProperties(array, {
                     }
     
                 },
-                configurable:!0
+                configurable:!0,
+                enumerable:!1,
+                writable:!1
             },
             
     
@@ -3978,7 +3993,7 @@ function ContainerDeffing(newContainer, oldContainer, diff){
         text:oldText,
         attrs:oldAttrs={},
         events:oldEvents={},
-        events:oldStyles={},
+        styles:oldStyles={},
         children:oldChildren,
         target
     }=oldContainer;
@@ -4859,7 +4874,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.8 of Inter was successfully loaded.")
+ console.log("The global version 2.0.9 of Inter was successfully loaded.")
 
 })();
 

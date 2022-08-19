@@ -12,6 +12,13 @@ import{
 
 } from "./helpers.js";
 
+function runReservedAttrNameWarning(attrName){
+
+
+    consW(`${attrName} is a reserved Attribute's name.`)
+
+}
+
 
 /**
  * We must not use the Object.assign method if we
@@ -304,7 +311,9 @@ export function toAttrs(obj){
     //We are considering them as specials
     //because we can not reset them with the setAttribute function.
     const specialAttrs=new Set(["value", "currentTime"]);
+    const reservedAttrsName=new Set(["setAttrs"])
     let immutableStyle=false;
+
         
         function runUpdate(value, attrName){
 
@@ -422,6 +431,8 @@ export function toAttrs(obj){
 
          
          function spreadAttrs(attrName, attrValue){
+
+              if(reservedAttrsName.has(attrName)){ runReservedAttrNameWarning(attrName); return false   }
             
             attrValue=!attrName.startsWith("on") ? isCallable(attrValue) ? attrValue.call(attrs) : attrValue : attrValue;
 
@@ -489,9 +500,11 @@ export function toAttrs(obj){
 
         //</>//
 
+
         Object.defineProperty(attrs, "setAttrs", {
 
                 set(__attrs){
+
 
                 if(!isObj(__attrs)){
 
@@ -521,12 +534,20 @@ export function toAttrs(obj){
 
                     };
 
+                    if(reservedAttrsName.has(attr)){
+
+                        runReservedAttrNameWarning(attr);
+
+                        continue
+
+                    }
+
                     this[attr]=value;
 
                 }
 
             },
-            configurable:!1
+            enumerable:!1
 
 
 

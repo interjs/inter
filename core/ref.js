@@ -10,7 +10,11 @@ import {
 
 }  from "./helpers.js";
 
+function runReservedRefNameWarning(refName){
 
+    consW(`${refName} is a reserved reference's name, use others names.`)
+
+}
 
 function hasProp(object){
 
@@ -365,26 +369,21 @@ export function Ref(obj){
             
 
   
+             const reservedRefNames=new Set(["setRefs", "observe"]);          
             
-            
-            for(const r in data){
+            for(const refName in data){
 
-                if(r=="setRefs" || r=="observe"){
-
-                    consW(`
-                    
-                    "${r}" is a reserved property, you can use it
-                    as the reference name.
-                    
-                    `);
+                if(reservedRefNames.has(refName)){
+                 
+                    runReservedRefNameWarning(refName);
 
                     continue;
 
                 }
 
-                if(isCallable(data[r])){
+                if(isCallable(data[refName])){
 
-                    data[r]=data[r].call(data);
+                    data[refName]=data[refName].call(data);
 
                 }
 
@@ -672,17 +671,13 @@ export function Ref(obj){
 
                     if(isObj(o)){
 
+                        const reservedRefNames=new Set(["setRefs", "observe"])
                         
                         for(const [refName,refValue] of Object.entries(o)){
 
-                            if(refName=="observe" || refName=="setRefs"){
+                            if(reservedRefNames.has(refName)){
 
-                                consW(`
-                                
-                                "${refName}" is a reserved property, you can not
-                                use it as the reference's name.
-                                
-                                `)
+                                runReservedRefNameWarning(refName);
 
                                 continue;
 
@@ -726,7 +721,8 @@ export function Ref(obj){
 
                     }
 
-                }
+                },
+                enumerable:!1
             },
             observe:{
 
@@ -757,7 +753,9 @@ export function Ref(obj){
 
 
 
-                }
+                },
+                enumerable:!1,
+                writable:!1
 
             }
 
