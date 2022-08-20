@@ -11,7 +11,7 @@
  <span>
 
 <a href="https://github.com/DenisPower1/inter/blob/main/LICENSE">
- <img  width="97" src="https://github.com/DenisPower1/inter/blob/main/license.svg">
+ <img  width="97" src="https://github.com/DenisPower1/inter/blob/main/mitpic.svg">
 
 
   </a>
@@ -53,11 +53,7 @@ It does not mean that it is less capable, it means that it is easy to learn and 
 
 # You rarely touch in the *DOM*
 
-Almost every dom manipulation in an Inter app are handled by Inter, you  must just focus in your application logic, this way your code base will be:
-
-* Simpler.
-* Intuitive.
-* Maintainable.
+Almost every dom manipulation in an Inter app are handled by Inter, you  must just focus in your application logic, this way your code base will be: **simpler** and **more maintainable**
 
 # Reactivity
 
