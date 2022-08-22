@@ -40,7 +40,7 @@ function getChildNodes(root){
 
 function runReservedPropWarning(prop){
 
-    consW(`${prop} is a reserved property, you can not it use as a conditional property.`)
+    consW(`${prop} is a reserved property, you can not use it as a conditional property.`)
 
 }
 
