@@ -11,7 +11,7 @@ import {
   getId,
   valueType,
   consW
-
+  
 } from "./helpers.js"
 
 function createTypeProp(array, propValue){
@@ -227,7 +227,7 @@ export function staticList(options){
             target.removeAttribute("_forEach");
             target.innerHTML="";
 
-             for(const item of iterationData){
+         for(const item of iterationData){
 
                i++;
 
@@ -264,31 +264,30 @@ export function staticList(options){
                }
 			   
 
-               for(const [refName, refValue] of Object.entries(__refs)){
+        for(const [refName, refValue] of Object.entries(__refs)){
 
-               if(refName==="_index"){
+            if(refName==="_index"){
 				   
-				   consW(`
+        consW(`_index is a reserved reference's name in staticList, Inter will 
+            ignore the one that you declared. `);
 				   
-				   _index is a reserved reference's name in staticList, Inter will
-				   ignore the one that you declared.
+			continue;
 				   
-				   `);
-				   
-				   continue;
-				   
-			   }
+               
+         }
 
-                const rule=new RegExp(`{\\s*${refName}\\s*}`,"g");
-                parsedTemplate=parsedTemplate.replace(rule, refValue);
+          const rule=new RegExp(`{\\s*${refName}\\s*}`,"g");
+          parsedTemplate=parsedTemplate.replace(rule, refValue);
 
-               };
+               
+        
+    };
 
-               parsedTemplate=parsedTemplate.replace(new RegExp(`{\\s*_index\\s*}`,"g"),i);
+       parsedTemplate=parsedTemplate.replace(new RegExp(`{\\s*_index\\s*}`,"g"),i);
 
-               const producedHTML=domParser.parseFromString(parsedTemplate, "text/html").body.children[0];
-               target.appendChild(producedHTML);
-               parsedTemplate=__template
+       const producedHTML=domParser.parseFromString(parsedTemplate, "text/html").body.children[0];
+       target.appendChild(producedHTML);
+       parsedTemplate=__template
 
 
 
