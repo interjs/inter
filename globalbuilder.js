@@ -1,7 +1,7 @@
  const fs=require("fs");
 
  const   __dir="./core",
-        __files=["helpers.js", "ref.js", "renderif.js", "toattrs.js","template.js", "renderlist.js", "ajax.js"],
+        __files=["helpers.js", "ref.js", "renderif.js", "toattrs.js", "staticList.js" ,"template.js", "renderlist.js", "ajax.js"],
         __exportStatement=/export/g;
 
         
