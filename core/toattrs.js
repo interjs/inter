@@ -317,9 +317,9 @@ export function toAttrs(obj){
     let immutableStyle=false;
 
         
-        function runUpdate(value, attrName){
+        function runUpdate(attrName, value){
 
-            value=isCallable(value) ? value.call(attrs, attrsManagers) : value;
+            value=parseAttrValue(...arguments);
 
              if(attrName==="style" && immutableStyle){
 
@@ -368,7 +368,7 @@ export function toAttrs(obj){
                         `)
                     }
 
-                    definedomEvent(attrName);
+                    definedomEvent(...arguments);
 
                     
 
@@ -388,9 +388,9 @@ export function toAttrs(obj){
             }
 
 
-        function definedomEvent(domEvent){
+        function definedomEvent(domEvent, callBack){
 
-            el[domEvent]=event => attrValue.call(attrs, event, attrsManagers);
+            el[domEvent]=event => callBack.call(attrs, event, attrsManagers);
 
 
         }
@@ -402,7 +402,7 @@ export function toAttrs(obj){
 
                 set(value){
                 
-                    runUpdate(value, attrName)
+                    runUpdate(attrName, value);
 
                 },
 
@@ -437,28 +437,21 @@ export function toAttrs(obj){
 
         //<>//
 
-         // Spreading the attributes.
+         
 
          function parseAttrValue(attrName, attrValue){
 
-            if(!attrName.startsWith("on")){
+            if(!attrName.startsWith("on") && isCallable(attrValue)){
 
-                if(!isCallable(attrValue)){
-
-                  return  attrValue.call(attrs);
-
-                } else{
- 
-                    return attrValue;
-
-                }
+                  return  attrValue.call(attrs, attrsManagers);
 
             }
 
             return attrValue;
 
          }
-
+		 
+          // Spreading the attributes.
          
          function spreadAttrs(attrName, attrValue){
 
@@ -470,7 +463,7 @@ export function toAttrs(obj){
            
                  if(attrName==="style" && isObj(attrValue)){
 
-                    spreadStyleAttrs(el,attrValue);
+                    spreadStyleAttrs(el, attrValue);
                     
                    /*The style property must not be changed directly, we must only change its property*/
                     immutableStyle=true;
@@ -503,7 +496,7 @@ export function toAttrs(obj){
 
                 }
 
-                definedomEvent(attrName);
+                definedomEvent(...arguments);
                 
                
                }else{

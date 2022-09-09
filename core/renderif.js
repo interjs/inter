@@ -72,10 +72,12 @@ export function renderIf(obj){
 
     }else{
 
-        const{
+        const {
+
             in:IN,
             data 
-        }=obj;
+
+         } = obj;
 
         if(!(typeof IN==="string")){
 
@@ -101,7 +103,7 @@ export function renderIf(obj){
         const theContainer=getId(IN);
         const els=new Set();
 
-        for(let [prop, value] of Object.entries(data)){
+        for( let [prop, value] of Object.entries(data)){
 
             if(reservedProps.has(prop)){ runReservedPropWarning(prop); continue }
 
@@ -136,17 +138,18 @@ export function renderIf(obj){
                 if:void 0,
                 else:void 0,
                 ifNot:void 0,
+                elseIfs:new Set(),
                 i:index,
                 root:container
             }
 
             child.index=index;
 
-            if(child.nodeType==3)continue;
+            if(child.nodeType == 3) continue;
 
 
-           const sibling=child.nextElementSibling,
-                 previous=child.previousElementSibling;
+           const sibling = child.nextElementSibling,
+                 previous = child.previousElementSibling;
 
             
             if(child.children.length>0){
@@ -169,7 +172,7 @@ export function renderIf(obj){
 
                 }
 
-                setting.ifNot=child.getAttribute("_ifNot");
+                setting.ifNot = child.getAttribute("_ifNot");
 
                 if(setting.ifNot in data){
 
