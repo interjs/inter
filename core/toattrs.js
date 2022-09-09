@@ -1,4 +1,4 @@
-import{
+ import {
     syErr,
     isObj,
     getId,
@@ -37,7 +37,7 @@ function addPropOf(sourceObject){
   
              targetObject[theFirstKey]=theValueOfTheKey;
               
-             defineReactorNameInToString(theValueOfTheKey, "AttrManager_Reactor")
+             defineReactorNameInToString(theValueOfTheKey, "AttrsManager_Reactor")
 
 
         }
@@ -221,15 +221,15 @@ export function toAttrs(obj){
   const root=getId(IN)
           
 
-  return findAttrManager(root,data);
+  return findAttrsManager(root,data);
 
 
  
 }
 
- function findAttrManager(rootElem, attrManagers){
+ function findAttrsManager(rootElem, attrsManagers){
    
-    const keys=Object.getOwnPropertyNames(attrManagers);
+    const keys=Object.getOwnPropertyNames(attrsManagers);
     const children=rootElem.getElementsByTagName("*");
     const reactors=Object.create(null);
     
@@ -249,7 +249,7 @@ export function toAttrs(obj){
 
               child.removeAttribute(theAttr);   
 
-              const reactor=spread(child,key,attrManagers[key]);
+              const reactor=spread(child, key, attrsManagers[key], attrsManagers);
 
               addPropOf(reactor).to(reactors);
                   
@@ -258,7 +258,7 @@ export function toAttrs(obj){
         
         }else{
 
-            const isAnAttrManager=/{(:?\.){3}(:?[\s\S]+)}/.test(theAttr);
+            const isAnAttrsManager=/{(:?\.){3}(:?[\s\S]+)}/.test(theAttr);
             const hasMoreThanThreeDots=/{(:?\.){4,}(:?[\s\S]+)}/.test(theAttr);
             const attr=theAttr.replace(/{(:?\.){3}/, "").replace("}", "");
             
@@ -275,7 +275,7 @@ export function toAttrs(obj){
                 `)
 
             }
-            if(isAnAttrManager && !attrManagers.hasOwnProperty(attr)){
+            if(isAnAttrsManager && !attrsManagers.hasOwnProperty(attr)){
 
             // The attribute manager <key> was not defined in toAttrs function,
             // but there is a reference to it in the template.
@@ -306,7 +306,9 @@ export function toAttrs(obj){
 
  }
 
-    function spread(el/*manager target*/, attrManager/*Manager name*/, attrs/*Manager object*/){
+    function spread(el/*manager target*/, attrsManager/*Manager name*/, attrs/*Manager object*/,
+    attrsManagers/*data object*/
+    ){
 
     //We are considering them as specials
     //because we can not reset them with the setAttribute function.
@@ -317,7 +319,7 @@ export function toAttrs(obj){
         
         function runUpdate(value, attrName){
 
-            value=isCallable(value) ? value.call(attrs) : value;
+            value=isCallable(value) ? value.call(attrs, attrsManagers) : value;
 
              if(attrName==="style" && immutableStyle){
 
@@ -366,7 +368,8 @@ export function toAttrs(obj){
                         `)
                     }
 
-                    el[attrName]=e=>value.call(original,e);
+                    definedomEvent(attrName);
+
                     
 
                 }else{
@@ -385,10 +388,17 @@ export function toAttrs(obj){
             }
 
 
+        function definedomEvent(domEvent){
+
+            el[domEvent]=event => attrValue.call(attrs, event, attrsManagers);
+
+
+        }
+
         
         function defineReactivity(attrName){
             
-            Object.defineProperty(attrs,attrName,{
+            Object.defineProperty(attrs, attrName, {
 
                 set(value){
                 
@@ -401,17 +411,17 @@ export function toAttrs(obj){
                    if(attrName.startsWith("on")){
 
                        consW(`
-                       "${attrName}" seems to be an event listener, 
+                       "${attrName}" seems to be a dom's event, 
                        and you can not get the value of an event.
                        `)
 
-                   }if(!specialAttrs.has(attrName)){
+                   } if(!specialAttrs.has(attrName)){
           
                      return el.getAttribute(attrName);
 
                      
                       
-                   }else{
+                   } else{
 
                     return el[attrName];
 
@@ -429,12 +439,32 @@ export function toAttrs(obj){
 
          // Spreading the attributes.
 
+         function parseAttrValue(attrName, attrValue){
+
+            if(!attrName.startsWith("on")){
+
+                if(!isCallable(attrValue)){
+
+                  return  attrValue.call(attrs);
+
+                } else{
+ 
+                    return attrValue;
+
+                }
+
+            }
+
+            return attrValue;
+
+         }
+
          
          function spreadAttrs(attrName, attrValue){
 
               if(reservedAttrsName.has(attrName)){ runReservedAttrNameWarning(attrName); return false   }
             
-            attrValue=!attrName.startsWith("on") ? isCallable(attrValue) ? attrValue.call(attrs) : attrValue : attrValue;
+            attrValue=parseAttrValue(...arguments);
 
             if(attrValue!=void 0 && !specialAttrs.has(attrName) && !attrName.startsWith("on")){
            
@@ -473,7 +503,7 @@ export function toAttrs(obj){
 
                 }
 
-                el[attrName]=e=>attrValue.call(attrs,e);
+                definedomEvent(attrName);
                 
                
                }else{
@@ -523,9 +553,9 @@ export function toAttrs(obj){
 
                         consW(`
                         
-                         The attribute manager "${attrManager}" 
+                         The attribute manager "${attrsManager}" 
                          does not manage an attribute named "${attr}",
-                         all the attributes must be defined in the attrManager
+                         all the attributes must be defined in the attrsManager
                          object.
                         
                         `);
@@ -554,7 +584,7 @@ export function toAttrs(obj){
         })
 
         return {
-            [attrManager]:attrs
+            [attrsManager]:attrs
         };
         
         }
