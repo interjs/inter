@@ -1,4 +1,4 @@
-import{
+import {
 
     syErr,
     ParserWarning,
@@ -12,6 +12,7 @@ import{
     valueType,
     isBool,
     isTrue,
+    isDefined,
     
 
 } from "./helpers.js";
@@ -45,6 +46,69 @@ function runReservedPropWarning(prop){
 }
 
 
+const conditionalAttributeCounter = {
+     store: new Set(),
+     set( keys ){
+
+    for( const key of keys){    
+        
+    if(isDefined(key)) this.store.add(key);
+
+    }
+
+
+     },
+
+     getSize(){ 
+
+    const size = this.store.size;
+
+    this.store.clear();
+
+    return size;
+
+    }
+
+
+}
+
+
+function getTagName(elementNode) { return elementNode.nodeName.toLowerCase();   }
+
+function hasMoreThanOneConditionalAttribute(elementNode){
+
+const _ifAttrValue = elementNode.getAttribute("_if"),
+      _elseAttrValue = elementNode.getAttribute("_elseIf"),
+      _ifNotAttrValue = elementNode.getAttribute("_ifNot"),
+      _elseAttr = elementNode.hasAttribute("_elseIf") ? true : void 0;
+
+      conditionalAttributeCounter.set([_ifAttrValue, _elseAttrValue, _ifNotAttrValue, _elseAttr]);
+
+      return conditionalAttributeCounter.getSize();
+
+
+}
+
+ function hasNoConditionalAttr(elementNode){
+
+    const _ifAttr = elementNode.hasAttribute("_if"),
+         _elseIfAttr = elementNode.hasAttribute("_else"),
+         _ifNotAttr = elementNode.hasAttribute("_ifNot"),
+         _elseAttr = elementNode.hasAttribute("_else");
+
+
+      return (
+
+        !_ifAttr && !_elseIfAttr && !_ifNotAttr && !_elseAttr
+
+      );
+
+
+ }
+
+
+
+
 export function renderIf(obj){
 
 
@@ -60,7 +124,7 @@ export function renderIf(obj){
 
     }
 
-    if(new.target!==void 0){
+    if(new.target !== void 0){
 
         syErr(`
         
@@ -79,11 +143,11 @@ export function renderIf(obj){
 
          } = obj;
 
-        if(!(typeof IN==="string")){
+        if(!(typeof IN === "string")){
 
             syErr(`
 
-            The value of "in" property in renderIf function must be a string.
+            The value of the "in" property in renderIf function must be a string.
             
             `)
 
@@ -93,21 +157,21 @@ export function renderIf(obj){
 
             syErr(`
 
-            The value of "data" property in renderIf function must be a plain Javascript object.
+            The value of the "data" property in renderIf function must be a plain Javascript object.
 
             `)
 
         }
 
-        const reservedProps=new Set(["setConds", "observe"]);
-        const theContainer=getId(IN);
-        const els=new Set();
+        const reservedProps = new Set(["setConds", "observe"]);
+        const theContainer = getId(IN);
+        const conditionalRenderingCache = new Set();
 
         for( let [prop, value] of Object.entries(data)){
 
             if(reservedProps.has(prop)){ runReservedPropWarning(prop); continue }
 
-            value=isCallable(value) ? value.call(data) : value;
+            value = isCallable(value) ? value.call(data) : value;
 
             if(!isBool(value)){
 
@@ -120,66 +184,90 @@ export function renderIf(obj){
 
             }
 
-            data[prop]=value;
+            data[prop] = value;
   
 
         }
 
       function parseAttrs(container){
 
-         let index=-1;
+         let index = -1;
 
-        for(const child of container.childNodes){
+         
+         const setting = {
+            target: void 0,
+            if: void 0,
+            else: void 0,
+            ifNot: void 0,
+            elseIfs: new Set(),
+            index: void 0,
+            root: container,
+            set setParserOptions(obj){
+
+                for( const [option, value ] of Object.entries(obj)){
+
+                    this[option] = value;
+
+                }
+
+            },
+
+            canCache(){
+
+                return this.if || this.ifNot;
+
+            }
+        }
+
+        for( const child of container.childNodes ){
 
             index++;
 
-            const setting={
-                target:child,
-                if:void 0,
-                else:void 0,
-                ifNot:void 0,
-                elseIfs:new Set(),
-                i:index,
-                root:container
-            }
 
-            child.index=index;
+            child.index = index;
 
             if(child.nodeType == 3) continue;
 
-
-           const sibling = child.nextElementSibling,
-                 previous = child.previousElementSibling;
-
             
-            if(child.children.length>0){
+            if(child.children.length > 0){
 
                 parseAttrs(child)
                 
 
             }
 
+            if(hasMoreThanOneConditionalAttribute(child)){
+
+                ParserWarning(`
+                The conditional rendering parser found a/an "${ getTagName(child) }"
+                element which has more than one conditional atribute, it's forbidden.
+
+                `)
+
+                continue;
+
+            }
+
+            if(hasNoConditionalAttr(child) && setting.canCache()) conditionalRenderingCache.add(setting);
+
             if(child.hasAttribute("_ifNot")){
+        
+
+            const _ifNot = child.getAttribute("_ifNot");
                 
-                
-                if(child.hasAttribute("_if") && child.hasAttribute("_else")){
 
-                    ParserWarning(`
-                    The parser found an element with _ifNot attribute and one more conditional attribute,
-                    it's forbidden.
-                    
-                    `)
-
-                }
-
-                setting.ifNot = child.getAttribute("_ifNot");
-
-                if(setting.ifNot in data){
+                if(_ifNot in data){
 
                     child.removeAttribute("_ifNot");
-                    
+                
+                    setting.setParserOptions = {
+                        ifNot: _ifNot,
+                        target: child,
+                        index: index
 
-                    els.add(setting);
+                    }
+
+                    conditionalRenderingCache.add(setting)
 
                 }else{
 
@@ -187,108 +275,100 @@ export function renderIf(obj){
                     ParserWarning(`
                     
                     The conditional rendering parser found
-                    an element with the _notIf attribute and the value
-                    of this attribute is not a conditional property in data object.
+                    an element with the _ifNot attribute and the value
+                    of this attribute is not a conditional property in the data object.
 
                     {
                         element: ${child.nodeName.toLowerCase()},
-                        _ifNot:${setting.ifNot},
-                        data:${Object.keys(data)}
+                        _ifNot: ${_ifNot},
+                        data: ${Object.keys(data)}
                     }
                     
                     `)
                 }
 
 
-            }
+           }
 
-        else if(child.hasAttribute("_else") && !previous.hasAttribute("_if")){
+        else if(child.hasAttribute("_else")){
 
+
+              if(!setting.if){
 
                 ParserWarning(`
                                 
-                The parser found an element with an "_else" attribute,
-                but there is not an element with "_if" attribute before it.
+                The parser found an element with the "_else" attribute,
+                but there is not an element with "_if" or "_elseIf" attribute before it.
 
                 `)
 
-                return false;
+              } else{
 
-            };
-            
-
-             if(child.hasAttribute("_if")){
+                setting.else = child;
+                conditionalRenderingCache.add(setting);
                 
-                if(child.hasAttribute("_else")){
+                
 
-                    ParserWarning(`
-                    
-                    The parser found an element which has simultaneousilly
-                    the "_if" and "_else" attribute. It's forbidden.
-                    
-                    `)
+              }   
 
-                    return false;
+                
 
-                }
+            } else if(child.hasAttribute("_elseIf")){
 
-                setting.if=child.getAttribute("_if");
-                child.removeAttribute("_if");
 
-                if(!(setting.if in data)){
+           if(!setting.if){
+
+            ParserWarning(`
+            a/an "${ getTagName(child) }" element has the _elseIf attribute,
+            but it was not started with the element with the _if attribute.
+            
+            `)
+
+           } else {
+
+            setting.elseIfs.add({
+                target: child,
+                index: index
+            })
+
+           }
+
+
+            } else if(child.hasAttribute("_if")){
+                
+                const _if = child.getAttribute("_if");
+
+
+                if(!( _if in data )){
 
                     ParserWarning(`
                     
                     The conditional rendering parser found
-                    an element with the _If attribute and the value
+                    an element with the _if attribute and the value
                     of this attribute is not a conditional property in data object.
 
                     {
                         element: ${child.nodeName.toLowerCase()},
-                        _if:${setting.if},
-                        data:${Object.keys(data)}
+                        _if: ${setting.if},
+                        data: ${Object.keys(data)}
                     }
                     
                     `);
 
-                    setting.if=void 0;
+                    continue;
 
+                }
+
+                setting.setParserOptions = {
+                    if: _if,
+                    target: child,
+                    index: index
                 }
 
                                 
                 
 
-            }  if(setting.if && sibling && sibling.hasAttribute("_else")){
-
-                
-                if(sibling.hasAttribute("_if")){
-
-                    ParserWarning(`
-                    
-                    The parser found an element which has simultaneousilly
-                    the "_if" and "_else" attribute. It's forbidden.
-                    
-                    `)
-
-                    return false;
-                }
-
-                setting.else=sibling;
-                sibling.removeAttribute("_else");
-                
-
-   
-
-
-            } if(setting.if){
-
-                els.add(setting);
-                
-
-
-                
-
-            }
+            } 
 
 
         }
@@ -296,7 +376,7 @@ export function renderIf(obj){
 
           parseAttrs(theContainer)
 
-        const reactor=runRenderingSystem(els, data);
+        const reactor = runRenderingSystem(conditionalAttributeCounter, data);
 
         return reactor;
     
