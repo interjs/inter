@@ -1,24 +1,25 @@
- const fs=require("fs");
+ const fs = require("fs");
 
- const   __dir="./core",
-        __files=["helpers.js", "ref.js", "renderif.js", "toattrs.js", "staticList.js" ,"template.js", "renderlist.js", "ajax.js"],
-        __exportStatement=/export/g;
+ const   __dir = "./core",
+        __files = ["helpers.js", "ref.js", "renderif.js", "toattrs.js", "staticList.js" ,"template.js", "renderlist.js", "ajax.js"],
+        __exportStatement = /export/g;
 
         
     
-let __content="";
+let __content = "";
 
 for(const __file of __files){
 
-    __content+=fs.readFileSync(`${__dir}/${__file}`);
+    __content += fs.readFileSync(`${__dir}/${__file}`);
     
 
 };
 
-__content=__content.replace(__exportStatement,"");
+__content = __content.replace(__exportStatement,"");
 
 
-const __data=`
+const __data = `
+
 (function(){
     
 /**
@@ -33,12 +34,13 @@ const __data=`
 
  ${__content}
 
- window.Ref=Ref;
- window.renderIf=renderIf;
- window.toAttrs=toAttrs;
- window.renderList=renderList;
- window.template=template;
- window.Backend=Backend;
+ window.Ref = Ref;
+ window.renderIf = renderIf;
+ window.toAttrs = toAttrs;
+ window.renderList = renderList;
+ window.template = template;
+ window.staticList = staticList;
+ window.Backend = Backend;
  
  console.log("The global version of Inter was successfully loaded.")
 
@@ -48,7 +50,7 @@ const __data=`
 
 fs.writeFileSync("./inter.js", __data);
 
-console.log("The task was completed succefully.")
+console.log("The task was completed successfully.")
 
 
 
