@@ -1,5 +1,4 @@
 
-
   import {
 
    syErr,
@@ -1125,10 +1124,18 @@ export function renderList(options){
                         }
     
                         
+                        /**
+                         * The reactive system does not track calls to
+                         * the Array.prototype.push, so calling only
+                         * Array.prototype.push will not trigger any update. 
+                         * 
+                         */
+                        
+                        updateSystem();
     
                     }
     
-                    if(position==0 || position<0){
+                   else if(position==0 || position<0){
     
                         for(let i=items.length-1; i>-1 ;i-- ){
     
@@ -1140,9 +1147,11 @@ export function renderList(options){
     
                     }else{
     
-                        for(const item of items){
+                        for(let i=items.length-1; i>-1 ;i-- ){
     
-                            this.splice(position, 0, item)
+                            this.splice(position, 0, items[i]);
+
+                            checkType(items[i], updateSystem);
     
                         }
     

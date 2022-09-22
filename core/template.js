@@ -231,7 +231,7 @@ if(isObj(obj)){
 
                 const textContent=isCallable(text) ? createText(text()) : createText(text);
 
-                container.appendChild(textContent);
+                if(isDefined(textContent)) container.appendChild(textContent);
 
 
                }else if(isDefined(text) && children.length>0){
@@ -456,7 +456,7 @@ function createChildren(root, children){
 
             const textContent=isCallable(text) ? createText(text()) : createText(text);
 
-            container.appendChild(textContent);
+            if(isDefined(textContent)) container.appendChild(textContent);
 
 
            }else if(isDefined(text) && children.length>0){

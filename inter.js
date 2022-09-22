@@ -2,7 +2,7 @@
 
 /**
  * Interjs 
- * Version - 2.0.9  
+ * Version - 2.0.10  
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2022
@@ -2402,8 +2402,8 @@ if(isObj(obj)){
 
                 const textContent=isCallable(text) ? createText(text()) : createText(text);
 
-                container.appendChild(textContent);
-
+                if(isDefined(textContent)) container.appendChild(textContent);
+                
 
                }else if(isDefined(text) && children.length>0){
 
@@ -2627,7 +2627,7 @@ function createChildren(root, children){
 
             const textContent=isCallable(text) ? createText(text()) : createText(text);
 
-            container.appendChild(textContent);
+            if(isDefined(textContent)) container.appendChild(textContent);
 
 
            }else if(isDefined(text) && children.length>0){
@@ -3750,13 +3750,20 @@ Object.defineProperties(array, {
     
                         }
     
+                        /**
+                         * The reactive system does not track calls to
+                         * the Array.prototype.push, so calling only
+                         * Array.prototype.push will not trigger any update. 
+                         * 
+                         */
                         
+                        updateSystem();
     
                     }
     
-                    if(position==0 || position<0){
+                    else if(position==0 || position<0){
     
-                        for(let i=items.length-1; i>-1 ;i-- ){
+                       for(let i=items.length-1; i>-1 ;i-- ){
     
                             this.unshift(items[i]);
     
@@ -3766,9 +3773,11 @@ Object.defineProperties(array, {
     
                     }else{
     
-                        for(const item of items){
+                        for(let i=items.length-1; i>-1 ;i-- ){
     
-                            this.splice(position, 0, item)
+                            this.splice(position, 0, items[i]);
+
+                            checkType(items[i], updateSystem);
     
                         }
     
@@ -4874,7 +4883,7 @@ Object.freeze(Backend.prototype);
  window.template=template;
  window.Backend=Backend;
  
- console.log("The global version 2.0.9 of Inter was successfully loaded.")
+ console.log("The global version 2.0.10 of Inter was successfully loaded.")
 
 })();
 
