@@ -4287,6 +4287,8 @@ function diffingChildren(__new, __old, realParent){
 
        }=oldChild;
 
+       
+
        let theLastElement;
 
        if(realParent){
@@ -4351,7 +4353,6 @@ function diffingChildren(__new, __old, realParent){
                 
                 if(isTrue(newRenderIf)){
                     
-
                     if(target && target.parentNode==null){
 
                         
@@ -4362,7 +4363,7 @@ function diffingChildren(__new, __old, realParent){
 
                         oldChild.target=newELement
 
-                    if(theLastElement.index>index){
+                    if(theLastElement && theLastElement.index>index){
 
                         insertBefore(realParent, index, newELement);
 
@@ -4385,7 +4386,7 @@ function diffingChildren(__new, __old, realParent){
                 if(!target){
 
 
-                    if(theLastElement.index>index){
+                    if(theLastElement &&  theLastElement.index>index){
 
                         const newELement=toDOM(newChild, true, index);
 
@@ -4428,17 +4429,15 @@ function diffingChildren(__new, __old, realParent){
                 if(oldText!==newText && target && !hasChildren){
 
                     target.textContent=newText
-                    oldChild.text=newText
+                    oldChild.text=newText;
+                    
 
 
 
                 }
 
                 
-              
-
-                Object.assign(oldChild, newChild)
-                oldChild.tag=oldTag
+                oldChild.tag=newTag
                 
                if(target){ 
                         
@@ -4447,6 +4446,8 @@ function diffingChildren(__new, __old, realParent){
                 eventDeffing(target, oldEvents, newEvents);
                }
                 
+               
+               
 
             }
 
