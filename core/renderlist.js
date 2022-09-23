@@ -1635,6 +1635,7 @@ function diffingChildren(__new, __old, realParent){
 
         const newChild=_new[i],
               oldChild=_old[i];
+        let hasChildren = false;      
               
 
     
@@ -1790,16 +1791,15 @@ function diffingChildren(__new, __old, realParent){
 
                 if(newChildren.length==oldChildren.length && newChildren.length!==0){
 
-                    
-
+                
+                    hasChildren = true;
                     diffingChildren(newChildren, oldChildren, target);
 
-                    continue;
 
                 }
 
                 
-                if(oldText!==newText && target){
+                if(oldText!==newText && target && !hasChildren){
 
                     target.textContent=newText
                     oldChild.text=newText

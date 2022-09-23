@@ -4106,7 +4106,7 @@ function attributeDiffing(target, oldAttributes, newAttributes){
 
         const oldAttr=_old[i],
               newAttr=_new[i];
-         
+              
          if(!(oldAttr in newAttributes) || !isDefined(newAttributes[oldAttr]) || isFalse(newAttributes[oldAttr])){
 
             target.removeAttribute(oldAttr);
@@ -4260,6 +4260,7 @@ function diffingChildren(__new, __old, realParent){
 
         const newChild=_new[i],
               oldChild=_old[i];
+        let hasChildren = false;      
               
 
     
@@ -4416,15 +4417,15 @@ function diffingChildren(__new, __old, realParent){
                 if(newChildren.length==oldChildren.length && newChildren.length!==0){
 
                     
-
+                    hasChildren = true; 
                     diffingChildren(newChildren, oldChildren, target);
 
-                    continue;
+                    
 
                 }
 
                 
-                if(oldText!==newText && target){
+                if(oldText!==newText && target && !hasChildren){
 
                     target.textContent=newText
                     oldChild.text=newText
@@ -4434,12 +4435,13 @@ function diffingChildren(__new, __old, realParent){
                 }
 
                 
-
+              
 
                 Object.assign(oldChild, newChild)
                 oldChild.tag=oldTag
                 
-               if(target){                
+               if(target){ 
+                        
                 attributeDiffing(target, oldAttrs, newAttrs);
                 styleDiffing(target, oldStyles, newStyles);
                 eventDeffing(target, oldEvents, newEvents);
