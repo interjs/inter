@@ -14,6 +14,7 @@ import {
   isDefined,
 } from "./helpers.js";
 
+
 function getChildNodes(root) {
   const nodes = new Array();
 
