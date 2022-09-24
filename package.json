@@ -5,10 +5,27 @@
   "author": "Denis Power",
   "license": "MIT",
   "jsdelivr": "inter.min.js",
-  "repository": "github:interjs/inter",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/interjs/inter.git"
+  },
   "homepage": "https://interjs.github.io",
-  "devDependencies":{
-  "node":">=14.18.0"
-    
-  }
-  }
+  "devDependencies": {
+    "node": "^14.18.0",
+    "prettier": "2.7.1"
+  },
+  "dependencies": {
+    "eslint": "^8.24.0"
+  },
+  "bugs": {
+    "url": "https://github.com/interjs/inter/issues"
+  },
+  "main": "inter.js",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "interjs",
+    "inter"
+  ]
+}

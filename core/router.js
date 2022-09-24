@@ -1,635 +1,418 @@
-import {
+import { syErr, err, consW, isCallable } from "./helpers.js";
 
-    syErr,
-    err,
-    consW,
-    isCallable
+function extractVarsFromUrl(parsedUrl, dynamicPaths) {
+  const varObject = Object.create(null);
+  let index = -1;
 
-} from "./helpers.js"
+  parsedUrl.replace(/(\w+|\d+|[a-z]+)/g, (pathName) => {
+    index++;
 
-
-  function extractVarsFromUrl(parsedUrl, dynamicPaths){
-
-
-  const varObject=Object.create(null);
-  let index=-1;          
-        
-   parsedUrl.replace(/(\w+|\d+|[a-z]+)/g ,(pathName)=>{
-          
-   index++;
-             
-   if(pathName.includes("mmmmmm")){
-
-    pathName=pathName.replace(/mmmmmm/g, "-");
-
+    if (pathName.includes("mmmmmm")) {
+      pathName = pathName.replace(/mmmmmm/g, "-");
     }
 
-   if(pathName.includes("dddd")){
+    if (pathName.includes("dddd")) {
+      pathName = pathName.replace(/dddd/g, "_");
+    }
 
-     pathName=pathName.replace(/dddd/g, "_")
+    if (pathName.includes("ppppp")) {
+      pathName = pathName.replace(/ppppp/g, ".");
+    }
 
-  
-   }
+    varObject[dynamicPaths[index]] = pathName;
+  });
 
-  if(pathName.includes("ppppp")){
+  return Object.freeze(varObject);
+}
 
-   pathName=pathName.replace(/ppppp/g, ".")
-
-
+class UrlParser {
+  get url() {
+    return UrlInfo.get("path").replace(/\s/g, "");
   }
 
-     varObject[dynamicPaths[index]]=pathName
-            
-            
-    })
+  static getVar(path) {
+    const staticPaths = new Array();
+    const dynamicPaths = new Array();
 
+    path.replace(/\/(:?[a-z]+)\/|\/(\d+)/g, (match) => {
+      staticPaths.push(match);
+    });
 
-    return Object.freeze(varObject);
+    path.replace(/\((:?[a-z]+)\)/g, (plainMatch, varName) => {
+      dynamicPaths.push(varName);
+    });
 
+    const parsedUrl = this.prototype.url.replace(/-|_|\./g, (match) => {
+      if (match === "_") {
+        return "d".repeat("down".length);
+      }
 
+      if (match === "-") {
+        return "m".repeat("middle".length);
+      }
+
+      if (match === ".") {
+        return "p".repeat("point".length);
+      }
+    });
+
+    const varObject = extractVarsFromUrl(parsedUrl, dynamicPaths);
+
+    return varObject;
+  }
 }
 
+function _setPath(path, hash) {
+  if (hash) {
+    const hasHash = window.location.hash;
 
- class UrlParser{
-  
-    get url(){
-       
-        return UrlInfo.get("path").replace(/\s/g, "");
+    if (hasHash) {
+      const unhash = hasHash.replace(/#/g, "");
+      if (unhash == "") {
+        //path is "/".
+
+        window.history.pushState(null, null, `#${path}`);
+      } else {
+        window.history.replaceState(null, null, `#${path}`);
+      }
+    } else {
+      const ACT_PATH = window.location.pathname;
+
+      if (ACT_PATH == "/") {
+        window.history.pushState(null, null, `#${path}`);
+      } else {
+        window.history.replaceState(null, null, `#${path}`);
+      }
     }
+  } else {
+    const ACT_PATH = window.location.pathname;
 
-
-    static getVar(path){
-
-        const staticPaths=new Array();
-        const dynamicPaths=new Array();
-
-
-        path.replace(/\/(:?[a-z]+)\/|\/(\d+)/g, (match)=>{
-
-          staticPaths.push(match);
-
-        })
-
-        path.replace(/\((:?[a-z]+)\)/g, (plainMatch, varName)=>{
-
-         dynamicPaths.push(varName)
-         
-        
-        })
-      
-      
-        
-
-        let parsedUrl=this.prototype.url.replace(/-|_|\./g, (match)=>{
-       
-            if(match==="_"){
-                
-                return "d".repeat("down".length); 
-            }
-
-            if(match==="-"){
-
-                return "m".repeat("middle".length);
-
-            }
-
-            if(match==="."){
-
-                return "p".repeat("point".length);
-
-            }
-            
-        });
-
-      
-
-    const varObject=extractVarsFromUrl(parsedUrl, dynamicPaths)
-   
-     return varObject;
-
-        
+    if (ACT_PATH == "/") {
+      window.history.pushState(null, null, path);
+    } else {
+      window.history.replaceState(null, null, path);
     }
-
-
-
- }
-
-
-function _setPath(path, hash){
-
-    if(hash){
-
-       const hasHash=window.location.hash
-
-        if(hasHash){
-            
-            const unhash=hasHash.replace(/#/g,"");
-            if(unhash==""){
-
-                //path is "/".
-
-                window.history.pushState(null,null,`#${path}`);
-            }else{
-                window.history.replaceState(null,null,`#${path}`);
-            }
-        }
-    
-        else{
-            const ACT_PATH=window.location.pathname;
-
-            if(ACT_PATH=="/"){
-              
-                window.history.pushState(null,null,`#${path}`)
-
-            }else{
-
-                window.history.replaceState(null,null,`#${path}`);
-            }
-        }
-
-    }else{
-       
-        const ACT_PATH=window.location.pathname;
-
-        if(ACT_PATH=="/"){
-          
-            window.history.pushState(null,null,path)
-
-        }else{
-
-            window.history.replaceState(null,null,path);
-        }
-
-    }
-
-
+  }
 }
 
+const UrlInfo = new Map();
 
-
-
-const UrlInfo=new Map();
-
-
-const call=Symbol.for("callBack");
+const call = Symbol.for("callBack");
 
 // The request object.
 
- const req={
+const req = {
+  [call]: void 0,
 
-     [call]:void 0,
+  get url() {
+    return UrlInfo.get("path");
+  },
 
-    get url(){
+  has(route) {
+    const reg = /\((:?[\s\S]+)\)|\*/g;
 
-        return UrlInfo.get("path");
+    return reg.test(route);
+  },
 
-    },
+  is(pathWithVar) {
+    // For example.
+    // pathWithVar - /profile/(id)/
 
-    has(route){
+    const urlSetted = this.url;
+    const path = pathWithVar.replace(/\((:?[\s\S]+)\)|\*/g, "[\\s\\S]");
 
-      
-        const reg=/\((:?[\s\S]+)\)|\*/g
+    const reg = new RegExp();
 
-         return reg.test(route);
+    return reg.compile(path).test(urlSetted);
+  },
 
-    },
-    
+  getVar(path) {
+    return UrlParser.getVar(path);
+  },
+};
 
-     is(pathWithVar){
-     
-      // For example.  
-     // pathWithVar - /profile/(id)/   
+Object.preventExtensions(req);
 
-      
-          const urlSetted=this.url;
-          const path=pathWithVar.replace(
-              /\((:?[\s\S]+)\)|\*/g, "[\\s\\S]"
-          )
-       
-          const reg=new RegExp();
-   
-           return reg.compile(path).test(urlSetted) 
-   
-      
-     
+function RoutingSystem() {}
 
-     },
-     
-     getVar(path){
-        
-      
-      return UrlParser.getVar(path);
-      
+function runIterator(iterator, obj) {
+  const next = iterator.next();
+  const arr = next.value;
 
-     }
- 
-    
- }
+  if (!next.done) {
+    Object.defineProperty(obj, arr[0], {
+      get() {
+        return arr[1];
+      },
+      configurable: !0,
+    });
 
-
- Object.preventExtensions(req);
- 
-
-  function RoutingSystem(){}
-
-
-function runIterator(iterator,obj){
-
-    const next=iterator.next()
-    const arr=next.value;
-    
-    if(!next.done){
-
-    Object.defineProperty(obj, arr[0],{
-
-        get(){
-
-            return arr[1];
-
-        },
-        configurable:!0
-
-    }) 
-        
-        runIterator(inte,obj)
-
-    }
-
-
+    runIterator(iterator, obj);
+  }
 }
 
-const handler=Object.create(null);
-const notFound=new Map();
-let started=false;
+const handler = Object.create(null);
+const notFound = new Map();
+let started = false;
 
-
-    function start(hand=()=>{}){
-
-        if(started){
-
-            consW( `
+function start(hand = () => {}) {
+  if (started) {
+    consW(`
             
             The router was already started.
 
-            `)
+            `);
 
-            return false;
+    return false;
+  }
 
-        }
+  const canStart = Object.keys(handler).length > 0;
 
-        const canStart=Object.keys(handler).length>0;
+  if (canStart) {
+    started = true;
 
-        if(canStart){
+    const inst = new RoutingSystem();
 
-            started=true;
+    inst.createRouter((req) => {
+      let found = false;
 
-            const inst=new RoutingSystem();
+      if (isCallable(hand)) {
+        hand(req.url);
+      }
 
-            inst.createRouter((req)=>{
+      for (const [route, _handler] of Object.entries(handler)) {
+        if (req.url == route) {
+          const varsAndParams = Object.freeze({
+            vars: Object.create(null),
+            params: Object.create(null),
+            url: req.url,
+          });
 
-                let found=false;
+          _handler(varsAndParams);
 
-                if(isCallable(hand)){      
+          found = true;
 
-                 hand(req.url);
-         
+          break;
+        } else {
+          if (req.has(route)) {
+            if (req.is(route)) {
+              const search = window.location.search;
+              found = true;
+
+              if (search) {
+                const searchParams = new URLSearchParams(search);
+                const requestObject = Object.create(null);
+
+                runIterator(searchParams.entries(), requestObject);
+
+                const varsAndParams = Object.freeze({
+                  vars: req.getVar(route),
+                  params: requestObject,
+                  url: req.url,
+                });
+
+                _handler(varsAndParams);
+              } else {
+                const varsAndParams = {
+                  vars: req.getVar(route),
+                  params: Object.create(null),
+                  url: req.url,
+                };
+
+                _handler(varsAndParams);
+              }
             }
-                
-
-                for(const [route,_handler] of Object.entries(handler)){
-                    
-            
-                    if(req.url==route){
-
-                        const varsAndParams=Object.freeze({
-                            vars:Object.create(null),
-                            params:Object.create(null),
-                            url:req.url
-                        })
-
-                        _handler(varsAndParams);
-
-                        found=true;
-
-                        break;
-                    
-                    }else{
-
-                        if(req.has(route)){
-
-
-                        if(req.is(route)){
-                                
-                          const search=window.location.search;
-                          found=true;
-
-                           if(search){
-
-                            const searchParams=new URLSearchParams(search);
-                            const requestObject=Object.create(null);
-
-                            runIterator(searchParams.entries(), requestObject);
-                      
-                            const varsAndParams=Object.freeze({
-                                vars:req.getVar(route),
-                                params:requestObject,
-                                url:req.url
-
-                            })
-
-                            _handler(varsAndParams);
-                           
-
-
-                           }else{
-
-
-                            const varsAndParams={
-                                vars:req.getVar(route),
-                                params:Object.create(null),
-                                url:req.url
-                            }
-                            
-
-                            _handler(varsAndParams);
-                            
-
-                           }     
-                        
-
-                            }
-
-
-
-
-                    }
-
-                }
-
-
-                }
-
-                if(!found && notFound.has("notfound")){
-                     
-                    const nf=notFound.get("notfound");
-
-                    nf(req.url);
-
-                }
-
-
-            })
-         
-
-            
-
+          }
         }
+      }
 
-        
+      if (!found && notFound.has("notfound")) {
+        const nf = notFound.get("notfound");
 
-        if(!canStart){
+        nf(req.url);
+      }
+    });
+  }
 
-          err( `
+  if (!canStart) {
+    err(`
           
           The router can not start, because you did not
           register any route.
           
-          `)
+          `);
+  }
+}
 
-        }
+/**
+ *
+ * This method is used to
+ * to register a router.
+ *
+ */
 
-
-     }
-
-     /**
-      * 
-      * This method is used to
-      * to register a router.
-      * 
-      */
-
-    function route(routeName,routeHandler){
-      
-        if(started){
-
-            consW( `
+function route(routeName, routeHandler) {
+  if (started) {
+    consW(`
             
             You already started the router, you
             can not add more routes to it.
             
-            `)
+            `);
 
-            return false;
+    return false;
+  }
 
-        }
-        
+  const isTring = typeof routeName == "string";
 
-        const isTring=typeof routeName == "string";
-
-        if(arguments.length<2){
-
-            syErr( `
+  if (arguments.length < 2) {
+    syErr(`
             
             [Router instance].route() method accepts two arguments,
             and you defined: ${arguments.length}.
 
 
-            `)
+            `);
+  }
 
-        }
-
-        if(!isTring){
-
-        syErr( `
+  if (!isTring) {
+    syErr(`
             
             The first argument of [Router instance].route()
             must be a string.
 
             [INTERFY INSTANCE].route("/routename", ()=>{})
 
-            `)
+            `);
+  }
 
-        }
-
-        if(!isCallable(routeHandler)){
-
-            syErr( `
+  if (!isCallable(routeHandler)) {
+    syErr(`
             
             
             The second argument of [Router instance].route()
             must be a function.
 
-            `)
-
-        }
-        if(!routeName.startsWith("/") && routeName!=="*"){
-
-
-            syErr( `
+            `);
+  }
+  if (!routeName.startsWith("/") && routeName !== "*") {
+    syErr(`
             
             Routes must starts with slash(/).
             it must be "/${routeName}" instead of "${routeName}".
 
-            `)
+            `);
+  } else {
+    if (routeName == "*") {
+      if (!notFound.has("notfound")) {
+        notFound.set("notfound", routeHandler);
 
-        }
-        
-        else{
-
-            if(routeName=="*"){
-
-                if(!notFound.has("notfound")){
-
-                    notFound.set("notfound",routeHandler);
-
-                    return false;
-
-                }
-
-            }
-
-            if(!(routeName in handler)){
-
-                handler[routeName]=routeHandler;
-
-            }
-
-
-        }
-
-
+        return false;
+      }
     }
 
-
-
-let created=false;
-
-
- // The internal RoutingSystem prototype.
-
-RoutingSystem.prototype={
-
-createRouter(callBack){
- 
-    if(!created){
-    
-    created=true;
-
-    
-    req[call]=callBack;
-    const hash=window.location.hash;
-    
-    if(hash){
-
-      const remove_hash=window.location.hash.replace(/#/g,"");
-       UrlInfo.set("path", remove_hash);   
-      
-       req[call](req);
-
-    }else{
-
-        UrlInfo.set("path", window.location.pathname)
-        req[call](req)
-    
-
+    if (!(routeName in handler)) {
+      handler[routeName] = routeHandler;
+    }
+  }
 }
 
-}
+let created = false;
 
-}
+// The internal RoutingSystem prototype.
 
+RoutingSystem.prototype = {
+  createRouter(callBack) {
+    if (!created) {
+      created = true;
 
-}
+      req[call] = callBack;
+      const hash = window.location.hash;
 
-     /**
-      * Used to change the url.
-      * 
-      * 
-      */
+      if (hash) {
+        const removeHash = window.location.hash.replace(/#/g, "");
+        UrlInfo.set("path", removeHash);
 
-   function setPath(pathName){
+        req[call](req);
+      } else {
+        UrlInfo.set("path", window.location.pathname);
+        req[call](req);
+      }
+    }
+  },
+};
 
-        if(!started){
+/**
+ * Used to change the url.
+ *
+ *
+ */
 
-            err(`
+function setPath(pathName) {
+  if (!started) {
+    err(`
             
             The router was not started yet, start it firt.
 
-            `)
+            `);
+  }
 
-        }
+  const isTring = typeof pathName === "string";
 
-        const isTring=typeof pathName==="string";
-
-        if(!isTring){
-        
-            syErr( `
+  if (!isTring) {
+    syErr(`
         
         The pathName in [ Router instance ].setPath(pathName)
          must be a string.
         
-        `)
-    
-        }
-    
-     
-    
-    
-      if(!pathName.startsWith("/")){
-    
-        syErr(`
+        `);
+  }
+
+  if (!pathName.startsWith("/")) {
+    syErr(`
         A pathName must start with a slash(/).
     
          You used:
        
          [INTERFY INSTANCE ].setPath("${pathName}")    
        
-         `)
-    
-      }
-    
-      _setPath(pathName);
-    
-      UrlInfo.set("path", pathName);
-      
-       
-      req[call](req);
-    
-    };
-    
-    /**
-     * Used to change the url.
-     * 
-     */
+         `);
+  }
 
-   function setPathWIthHash(pathName){
+  _setPath(pathName);
 
-    if(!started){
+  UrlInfo.set("path", pathName);
 
-            err( `
+  req[call](req);
+}
+
+/**
+ * Used to change the url.
+ *
+ */
+
+function setPathWIthHash(pathName) {
+  if (!started) {
+    err(`
             
             The router was not started yet, start it first.
 
-            `)
+            `);
+  }
 
-        }
-    
-        const isTring=typeof pathName==="string";
+  const isTring = typeof pathName === "string";
 
-     if(!isTring){
-    
+  if (!isTring) {
     consW(`
         
         The pathName in [ Router instance ].setPathWIthHash(pathName)
          must be a string.
         
-        `)
-    
-     }
-    
-        if(!pathName.startsWith("/")){
-    
-            syErr(`
+        `);
+  }
+
+  if (!pathName.startsWith("/")) {
+    syErr(`
 
             A pathName must start with a slash(/).
         
@@ -637,79 +420,57 @@ createRouter(callBack){
            
               [ Router instance ].setPathWithHash(${pathName})    
            
-             `)
-        
-          }
-    
-          _setPath(pathName,true);
-        
-          UrlInfo.set("path", pathName);
-           
-          req[call](req);
-    
-    };
+             `);
+  }
 
+  _setPath(pathName, true);
 
-   window.onpopstate=function(){
+  UrlInfo.set("path", pathName);
 
-    const _Hash=this.location.hash;
-    const _search=this.location.search;
-
-    if(_search){
-
-        const thePath=`${this.location.pathname}${_search}`;
-
-        UrlInfo.set("path", thePath);
-
-        req[call](req);
-
-   
-
-    } else if(_Hash){
-
-        const thePath=_Hash.replace(/#/g,"");
-        
-         UrlInfo.set("path", thePath=="" ? "/" : thePath)
-
-         req[call](req);
-
-    }else{
-
-         const path=this.location.pathname;
-   
-         UrlInfo.set("path",path);
-          
-         req[call](req);
-    }
-
+  req[call](req);
 }
 
+window.onpopstate = function () {
+  const _Hash = this.location.hash;
+  const _search = this.location.search;
 
-export function Router(){
+  if (_search) {
+    const thePath = `${this.location.pathname}${_search}`;
 
-    if(new.target===void 0){
+    UrlInfo.set("path", thePath);
 
-        syErr(`
+    req[call](req);
+  } else if (_Hash) {
+    const thePath = _Hash.replace(/#/g, "");
+
+    UrlInfo.set("path", thePath == "" ? "/" : thePath);
+
+    req[call](req);
+  } else {
+    const path = this.location.pathname;
+
+    UrlInfo.set("path", path);
+
+    req[call](req);
+  }
+};
+
+export function Router() {
+  if (new.target === void 0) {
+    syErr(`
         
         Router is a constructor, call it only with
         the "new" keyword.
         
-        `)
-
-    };
-
+        `);
+  }
 }
 
-Router.prototype={
-    constructor:Router,
-    [Symbol.toStringTag]:()=> "InterRouter",
-    route:route,
-    start:start,
-    setPath:setPath,
-    setPathWIthHash:setPathWIthHash
-    
-
-
-
-}
-
+Router.prototype = {
+  constructor: Router,
+  [Symbol.toStringTag]: () => "InterRouter",
+  route: route,
+  start: start,
+  setPath: setPath,
+  setPathWIthHash: setPathWIthHash,
+};
