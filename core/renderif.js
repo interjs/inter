@@ -12,6 +12,7 @@ import {
   isBool,
   isTrue,
   isDefined,
+  isAtag,
 } from "./helpers.js";
 
 
@@ -120,10 +121,14 @@ export function renderIf(obj) {
           target: void 0,
           prop: void 0,
         },
+        conditionalProps: new Set(),
         rootElement: rootElement,
         set setOptions(obj) {
           for (const [option, value] of Object.entries(obj)) {
             this[option] = value;
+
+            if(option == "if" ) this.conditionalProps.add(value);
+
           }
         },
 
@@ -131,8 +136,22 @@ export function renderIf(obj) {
           return this.if || this.ifNot;
         },
 
-        addElseIf(elseIf) {
-          this.elseIfs.add(elseIf);
+        addElseIf(elseIfOptions) {
+          
+          const { elseIf: prop  } = elseIfOptions;
+
+          if(!this.elseIfs.has(prop)){
+          this.elseIfs.add(elseIfOptions);
+          this.conditionalProps.add(elseIfOptions.elseIf);
+          }else{
+
+            ParserWarning(`
+            Two elements with the "_elseIf" attribute can not have the same conditional property.
+            
+            Property: "${prop}"
+            `)
+
+          }
         },
 
         deleteData() {
@@ -278,14 +297,14 @@ export function renderIf(obj) {
 
         if (isTheLastIteration && parserOptions.canCache())
           cacheParserOptions();
-        console.log(isTheLastIteration);
+        
       }
     }
 
     if (!(typeof IN === "string")) {
       syErr(`
 
-            The value of the "in" property in renderIf function must be a string.
+            The value of the "in" property on the renderIf function must be a string.
             
             `);
     }
@@ -293,7 +312,7 @@ export function renderIf(obj) {
     if (!isObj(data)) {
       syErr(`
 
-            The value of the "data" property in renderIf function must be a plain Javascript object.
+            The value of the "data" property on the renderIf function must be a plain Javascript object.
 
             `);
     }
@@ -331,7 +350,23 @@ function runRenderingSystem(cache /*Set*/, data) {
   const ArrayOfOptions = Array.from(cache);
   let proxySource;
 
-  function renderElseIf(elseIfs /*Set*/, options) {
+  function falsefyProps(conditionalProps, changedProp){
+
+    for(const prop of conditionalProps){
+
+      const hasTrueValue = isTrue(proxyTarget[prop])
+      console.log(hasTrueValue, prop)
+     if(hasTrueValue && prop !== changedProp){
+
+        proxyTarget[prop] = false;
+
+      }
+
+    }
+
+  }
+
+  function renderElseIf(elseIfs, options) {
     function lastRenderedHasParent() {
       return options.lastRendered.target.parentNode != null;
     }
@@ -340,6 +375,7 @@ function runRenderingSystem(cache /*Set*/, data) {
 
     for (const { target, elseIf } of elseIfs) {
       const lastRendered = options.lastRendered;
+      console.log(target)
 
       if (lastRendered.target && isTrue(proxySource[lastRendered.prop])) break;
 
@@ -350,6 +386,8 @@ function runRenderingSystem(cache /*Set*/, data) {
       ) {
         options.rootElement.removeChild(lastRendered.target);
         options.lastRendered = { prop: void 0, target: void 0 };
+
+
       }
 
       if (
@@ -377,7 +415,7 @@ function runRenderingSystem(cache /*Set*/, data) {
     return rendered;
   }
 
-  function run(source) {
+  function run(source, changedProp) {
     proxySource = source;
 
     for (const options of ArrayOfOptions) {
@@ -390,7 +428,10 @@ function runRenderingSystem(cache /*Set*/, data) {
         index,
         rootElement,
       } = options;
-      const currentNode = getChildNodes(rootElement)[index];
+     const conditionalProps =  Array.from(options.conditionalProps)
+     const currentNode = getChildNodes(rootElement)[index];
+
+     if(isDefined(changedProp)) falsefyProps(conditionalProps, changedProp);
 
       if (ifNot) {
         if (isFalse(source[ifNot]) && !target.isSameNode(currentNode)) {
@@ -420,6 +461,9 @@ function runRenderingSystem(cache /*Set*/, data) {
               target: ELSE,
               prop: void 0,
             };
+
+            
+
           }
         }
       } else if (isTrue(source[IF])) {
@@ -434,10 +478,20 @@ function runRenderingSystem(cache /*Set*/, data) {
           insertBefore(rootElement, target);
         }
 
+        const { target: _target } = options.lastRendered
+
+        if(isAtag(_target) && _target.parentNode != null && !_target.isSameNode(target)){
+
+          _target.parentNode.removeChild(_target);
+
+        }
+
         options.lastRendered = {
           target: target,
           prop: IF,
         };
+
+        
       }
     }
   }
@@ -493,7 +547,7 @@ function runRenderingSystem(cache /*Set*/, data) {
       Reflect.set(target, prop, value);
 
       if (!reservedProps.has(prop)) {
-        run(proxyTarget);
+        run(proxyTarget, prop);
 
         if (observer.size == 1) {
           const callBack = observer.get("callBack");
