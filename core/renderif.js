@@ -13,8 +13,8 @@ import {
   isTrue,
   isDefined,
   isAtag,
+  hasOwnProperty,
 } from "./helpers.js";
-
 
 function getChildNodes(root) {
   const nodes = new Array();
@@ -127,30 +127,26 @@ export function renderIf(obj) {
           for (const [option, value] of Object.entries(obj)) {
             this[option] = value;
 
-            if(option == "if" ) this.conditionalProps.add(value);
-
+            if (option == "if") this.conditionalProps.add(value);
           }
         },
 
         canCache() {
-          return this.if || this.ifNot;
+          return this.if != void 0;
         },
 
         addElseIf(elseIfOptions) {
-          
-          const { elseIf: prop  } = elseIfOptions;
+          const { elseIf: prop } = elseIfOptions;
 
-          if(!this.elseIfs.has(prop)){
-          this.elseIfs.add(elseIfOptions);
-          this.conditionalProps.add(elseIfOptions.elseIf);
-          }else{
-
+          if (!this.conditionalProps.has(prop)) {
+            this.elseIfs.add(elseIfOptions);
+            this.conditionalProps.add(prop);
+          } else {
             ParserWarning(`
             Two elements with the "_elseIf" attribute can not have the same conditional property.
             
             Property: "${prop}"
-            `)
-
+            `);
           }
         },
 
@@ -184,9 +180,12 @@ export function renderIf(obj) {
         child.index = index;
         const isTheLastIteration =
           rootElementInitialLength == index + deletedElementsCount;
-        console.log(index + deletedElementsCount, true);
 
-        if (child.nodeType == 3) continue;
+        if (child.nodeType == 3) {
+          if (parserOptions.canCache()) cacheParserOptions();
+
+          continue;
+        }
 
         if (child.children.length > 0) {
           parseAttrs(child);
@@ -214,8 +213,10 @@ export function renderIf(obj) {
         if (child.hasAttribute("_ifNot")) {
           const _ifNot = child.getAttribute("_ifNot");
 
-          if (_ifNot in data) {
+          if (hasOwnProperty(data, _ifNot)) {
             child.removeAttribute("_ifNot");
+
+            if (parserOptions.canCache()) cacheParserOptions();
 
             parserOptions.setOptions = {
               ifNot: _ifNot,
@@ -224,12 +225,14 @@ export function renderIf(obj) {
             };
 
             cacheParserOptions();
+
+            continue;
           } else {
             ParserWarning(`
                   
                   The conditional rendering parser found
-                  an element with the _ifNot attribute and the value
-                  of this attribute is not a conditional property in the data object.
+                  an element with the "_ifNot" attribute and the value
+                  of this attribute is not a conditional property.
 
                   {
                       element: ${child.nodeName.toLowerCase()},
@@ -244,25 +247,37 @@ export function renderIf(obj) {
             ParserWarning(`
                               
               The parser found an element with the "_else" attribute,
-              but there is not an element with "_if" or "_elseIf" attribute before it.
+              but there is not an element with "_if" or valid "_elseIf" attribute before it.
 
               `);
           } else {
             parserOptions.else = child;
+            child.removeAttribute("_else");
             conditionalRenderingCache.add(parserOptions);
           }
         } else if (child.hasAttribute("_elseIf")) {
+          const elseIf = child.getAttribute("_elseIf");
+          child.removeAttribute("_elseIf");
+
           if (!parserOptions.if) {
             ParserWarning(`
           a/an "${getTagName(child)}" element has the "_elseIf" attribute,
-          but it does not come after an element with the "_if" or "_elseIf" attribute.
+          but it does not come after an element with the "_if" or a valid "_elseIf" attribute.
           
           `);
+          } else if (!hasOwnProperty(data, elseIf)) {
+            ParserWarning(`
+            
+            The conditional rendering parser found an element which has the "_elseIf" conditional property and
+            whose its value is: "${elseIf}", but you did not define any conditional property
+            with that name.
+
+            `);
           } else {
             parserOptions.addElseIf({
               target: child,
               index: index,
-              elseIf: child.getAttribute("_elseIf"),
+              elseIf: elseIf,
             });
           }
         } else if (child.hasAttribute("_if")) {
@@ -270,12 +285,14 @@ export function renderIf(obj) {
 
           const _if = child.getAttribute("_if");
 
-          if (!(_if in data)) {
+          child.removeAttribute("_if");
+
+          if (!hasOwnProperty(data, _if)) {
             ParserWarning(`
                   
                   The conditional rendering parser found
-                  an element with the _if attribute and the value
-                  of this attribute is not a conditional property in data object.
+                  an element wich has the "_if" attribute and the value
+                  of this attribute is not a conditional property.
 
                   {
                       element: ${child.nodeName.toLowerCase()},
@@ -297,7 +314,6 @@ export function renderIf(obj) {
 
         if (isTheLastIteration && parserOptions.canCache())
           cacheParserOptions();
-        
       }
     }
 
@@ -338,7 +354,6 @@ export function renderIf(obj) {
       data[prop] = value;
     }
 
-
     parseAttrs(theContainer);
 
     const reactor = runRenderingSystem(conditionalRenderingCache, data);
@@ -350,20 +365,14 @@ function runRenderingSystem(cache /*Set*/, data) {
   const ArrayOfOptions = Array.from(cache);
   let proxySource;
 
-  function falsefyProps(conditionalProps, changedProp){
+  function falsefyProps(conditionalProps, changedProp) {
+    for (const prop of conditionalProps) {
+      const hasTrueValue = isTrue(proxyTarget[prop]);
 
-    for(const prop of conditionalProps){
-
-      const hasTrueValue = isTrue(proxyTarget[prop])
-      console.log(hasTrueValue, prop)
-     if(hasTrueValue && prop !== changedProp){
-
+      if (hasTrueValue && prop !== changedProp) {
         proxyTarget[prop] = false;
-
       }
-
     }
-
   }
 
   function renderElseIf(elseIfs, options) {
@@ -375,9 +384,12 @@ function runRenderingSystem(cache /*Set*/, data) {
 
     for (const { target, elseIf } of elseIfs) {
       const lastRendered = options.lastRendered;
-      console.log(target)
 
-      if (lastRendered.target && isTrue(proxySource[lastRendered.prop])) break;
+      if (lastRendered.target && isTrue(proxySource[lastRendered.prop])) {
+        rendered = true;
+
+        break;
+      }
 
       if (
         lastRendered.target &&
@@ -386,8 +398,6 @@ function runRenderingSystem(cache /*Set*/, data) {
       ) {
         options.rootElement.removeChild(lastRendered.target);
         options.lastRendered = { prop: void 0, target: void 0 };
-
-
       }
 
       if (
@@ -415,7 +425,7 @@ function runRenderingSystem(cache /*Set*/, data) {
     return rendered;
   }
 
-  function run(source, changedProp) {
+  function checkWhatToRender(source, changedProp) {
     proxySource = source;
 
     for (const options of ArrayOfOptions) {
@@ -428,17 +438,14 @@ function runRenderingSystem(cache /*Set*/, data) {
         index,
         rootElement,
       } = options;
-     const conditionalProps =  Array.from(options.conditionalProps)
-     const currentNode = getChildNodes(rootElement)[index];
+      const conditionalProps = Array.from(options.conditionalProps);
+      const currentNode = getChildNodes(rootElement)[index];
 
-     if(isDefined(changedProp)) falsefyProps(conditionalProps, changedProp);
+      if (isDefined(changedProp)) falsefyProps(conditionalProps, changedProp);
 
       if (ifNot) {
         if (isFalse(source[ifNot]) && !target.isSameNode(currentNode)) {
-          if (
-            isANode(currentNode) ||
-            rootElement.textContent.trim().length !== 0
-          ) {
+          if (isANode(currentNode) || rootElement.textContent.trim() > 0) {
             insertBefore(rootElement, target);
           } else {
             rootElement.appendChild(target);
@@ -451,6 +458,7 @@ function runRenderingSystem(cache /*Set*/, data) {
       } else if (isFalse(source[IF])) {
         if (target.parentNode == rootElement && !ELSE) {
           rootElement.removeChild(target);
+          renderElseIf(elseIfs, options);
         } else if (ELSE || elseIfs.length > 0) {
           const rendered = renderElseIf(elseIfs, options);
 
@@ -461,9 +469,6 @@ function runRenderingSystem(cache /*Set*/, data) {
               target: ELSE,
               prop: void 0,
             };
-
-            
-
           }
         }
       } else if (isTrue(source[IF])) {
@@ -478,20 +483,20 @@ function runRenderingSystem(cache /*Set*/, data) {
           insertBefore(rootElement, target);
         }
 
-        const { target: _target } = options.lastRendered
+        const { target: _target } = options.lastRendered;
 
-        if(isAtag(_target) && _target.parentNode != null && !_target.isSameNode(target)){
-
+        if (
+          isAtag(_target) &&
+          _target.parentNode != null &&
+          !_target.isSameNode(target)
+        ) {
           _target.parentNode.removeChild(_target);
-
         }
 
         options.lastRendered = {
           target: target,
           prop: IF,
         };
-
-        
       }
     }
   }
@@ -500,7 +505,7 @@ function runRenderingSystem(cache /*Set*/, data) {
     const children = getChildNodes(root),
       lastChild = children[children.length - 1];
 
-    if (target.parentNode == null) {
+    if (target && target.parentNode == null) {
       if (lastChild && lastChild.index > target.index) {
         for (const child of children) {
           if (child.index > target.index) {
@@ -519,7 +524,7 @@ function runRenderingSystem(cache /*Set*/, data) {
   const observer = new Map();
   const proxyTarget = Object.assign({}, data);
 
-  run(proxyTarget);
+  checkWhatToRender(proxyTarget);
 
   const reactor = new Proxy(proxyTarget, {
     set(target, prop, value) {
@@ -547,7 +552,7 @@ function runRenderingSystem(cache /*Set*/, data) {
       Reflect.set(target, prop, value);
 
       if (!reservedProps.has(prop)) {
-        run(proxyTarget, prop);
+        checkWhatToRender(proxyTarget, prop);
 
         if (observer.size == 1) {
           const callBack = observer.get("callBack");
@@ -599,7 +604,6 @@ function runRenderingSystem(cache /*Set*/, data) {
                 `);
         }
 
-        
         // eslint-disable-next-line prefer-const
         for (let [prop, cond] of Object.entries(conditions)) {
           if (reservedProps.has(prop)) {
@@ -618,18 +622,14 @@ function runRenderingSystem(cache /*Set*/, data) {
                 `);
           }
 
-          if (!(prop in this)) {
-            consW(`
-                    
-                    "${prop}" was not defined as conditional property.
-                    
-                    `);
+          if (!hasOwnProperty(this, prop)) {
+            consW(`"${prop}" was not defined as conditional property.`);
           }
 
           proxyTarget[prop] = cond;
         }
 
-        run(proxyTarget);
+        checkWhatToRender(proxyTarget);
       },
       enumerable: !1,
     },
