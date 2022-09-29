@@ -8,7 +8,7 @@ import {
 } from "./helpers.js";
 
 function runReservedRefNameWarning(refName) {
-  consW(`${refName} is a reserved reference name, use others names.`);
+  consW(`"${refName}" is a reserved reference name, use others names.`);
 }
 
 function hasProp(object) {
@@ -73,7 +73,7 @@ function runRefParsing(rootElement, refs, refCache) {
   const children = rootElement.getElementsByTagName("*");
 
   function runTextRefParsing(parentNode) {
-    function parseRefsOnText(node) {
+    function parseRefsInText(node) {
       for (const ref in refs) {
         const pattern = new RegExp(`{\\s*${ref}\\s*}`);
 
@@ -100,18 +100,18 @@ function runRefParsing(rootElement, refs, refCache) {
           continue;
         }
 
-        parseRefsOnText(node);
+        parseRefsInText(node);
       }
     } else if (parentNode.nodeType == 3) {
       // Parsing the references
       // in the main container
       // text nodes.
 
-      parseRefsOnText(parentNode);
+      parseRefsInText(parentNode);
     }
   }
 
-  function parseRefsOnAttrs(elementNode) {
+  function parseRefsInAttrs(elementNode) {
     const setting = {
       target: elementNode,
       attrs: Object.create(null),
@@ -159,7 +159,7 @@ function runRefParsing(rootElement, refs, refCache) {
 
   for (const child of children) {
     runTextRefParsing(child);
-    parseRefsOnAttrs(child);
+    parseRefsInAttrs(child);
   }
 
   refCache.updateRefs();
@@ -168,19 +168,21 @@ export function Ref(obj) {
   if (new.target != void 0) {
     syErr("Do not call the Ref function with the new keyword.");
   } else if (!isObj(obj)) {
-    syErr("The argument of Ref must be a plain object.");
+    syErr(
+      "The argument of the Ref function must be a plain Javascript object."
+    );
   } else {
     const { in: IN, data } = obj;
 
     if (!(typeof IN === "string")) {
       syErr(
-        "The value of the 'in' property in the Ref function must be a string."
+        "The value of the 'in' property on the Ref function must be a string."
       );
     }
 
     if (!isObj(data)) {
       syErr(
-        "The value of the 'data' property in the Ref funtion must be a plain Javascript object."
+        "The value of the 'data' property on the Ref function must be a plain Javascript object. "
       );
     }
 
@@ -230,7 +232,7 @@ export function Ref(obj) {
             const pattern = new RegExp(`{\\s*(:?${ref})\\s*}`, "g");
             attrValue = attrValue.replace(pattern, this.refs[ref]);
           }
-          
+
           target[attrName] = attrValue;
         }
       },
@@ -349,13 +351,11 @@ export function Ref(obj) {
                 callBack(refName, refValue, oldRefValue);
               }
             }
-
-            refParser.updateRefs();
           } else {
-            syErr(` "${valueType(
+            syErr(`"${valueType(
               o
             )}" is not a valid value for the "setRefs" property.
-                        The value of the setRefs property must be a plain Javascript object.`);
+                    The value of the setRefs property must be a plain Javascript object.`);
           }
         },
         enumerable: !1,
