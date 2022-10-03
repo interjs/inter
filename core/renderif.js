@@ -7,7 +7,6 @@ import {
   consW,
   err,
   isCallable,
-  isANode,
   valueType,
   isBool,
   isTrue,
@@ -127,11 +126,12 @@ export function renderIf(obj) {
           for (const [option, value] of Object.entries(obj)) {
             this[option] = value;
 
-            if (option == "if") this.conditionalProps.add(value);
+            if (option == "if" && isDefined(value)) this.conditionalProps.add(value);
           }
         },
 
         canCache() {
+          
           return this.if != void 0;
         },
 
@@ -155,31 +155,40 @@ export function renderIf(obj) {
             target: void 0,
             if: void 0,
             else: void 0,
+            ifNot: void 0,
             index: void 0,
           };
 
           this.elseIfs.clear();
+          this.conditionalProps.clear();
         },
 
         getOptions() {
           const options = Object.assign({}, this);
           options.elseIfs = Array.from(this.elseIfs);
-
+          options.conditionalProps = Array.from(this.conditionalProps);
+         
           this.deleteData();
 
           return options;
         },
+
+        
       };
 
-      const cacheParserOptions = () =>
+      const cacheParserOptions = () =>{
+       
         conditionalRenderingCache.add(parserOptions.getOptions());
-      let deletedElementsCount = 0;
-      const rootElementInitialLength = rootElement.childNodes.length - 2;
-      for (const child of rootElement.childNodes) {
+
+      }
+
+      const rootElementChildNodes = getChildNodes(rootElement);
+      const rootElementInitialLength = rootElementChildNodes.length;
+      for (const child of rootElementChildNodes) {
         index++;
         child.index = index;
-        const isTheLastIteration =
-          rootElementInitialLength == index + deletedElementsCount;
+
+        const isTheLastIteration = rootElementInitialLength - 1 == index;
 
         if (child.nodeType == 3) {
           if (parserOptions.canCache()) cacheParserOptions();
@@ -208,7 +217,6 @@ export function renderIf(obj) {
         }
 
         rootElement.removeChild(child);
-        deletedElementsCount++;
 
         if (child.hasAttribute("_ifNot")) {
           const _ifNot = child.getAttribute("_ifNot");
@@ -243,17 +251,17 @@ export function renderIf(obj) {
                   `);
           }
         } else if (child.hasAttribute("_else")) {
-          if (!parserOptions.if || parserOptions.elseIfs.size == 0) {
+          if (!parserOptions.if) {
             ParserWarning(`
                               
               The parser found an element with the "_else" attribute,
-              but there is not an element with "_if" or valid "_elseIf" attribute before it.
+              but there is not an element with "_if" or a valid "_elseIf" attribute before it.
 
               `);
           } else {
             parserOptions.else = child;
             child.removeAttribute("_else");
-            conditionalRenderingCache.add(parserOptions);
+            cacheParserOptions();
           }
         } else if (child.hasAttribute("_elseIf")) {
           const elseIf = child.getAttribute("_elseIf");
@@ -312,10 +320,12 @@ export function renderIf(obj) {
           };
         }
 
+        
         if (isTheLastIteration && parserOptions.canCache())
           cacheParserOptions();
       }
     }
+
 
     if (!(typeof IN === "string")) {
       syErr(`
@@ -364,8 +374,11 @@ export function renderIf(obj) {
 function runRenderingSystem(cache /*Set*/, data) {
   const ArrayOfOptions = Array.from(cache);
   let proxySource;
-
+  
   function falsefyProps(conditionalProps, changedProp) {
+    if (isFalse(proxySource[changedProp]) || conditionalProps.length < 2)
+      return;
+
     for (const prop of conditionalProps) {
       const hasTrueValue = isTrue(proxyTarget[prop]);
 
@@ -373,6 +386,8 @@ function runRenderingSystem(cache /*Set*/, data) {
         proxyTarget[prop] = false;
       }
     }
+
+    
   }
 
   function renderElseIf(elseIfs, options) {
@@ -385,6 +400,17 @@ function runRenderingSystem(cache /*Set*/, data) {
     for (const { target, elseIf } of elseIfs) {
       const lastRendered = options.lastRendered;
 
+      if (
+        lastRendered.target &&
+        !isDefined(lastRendered.prop) &&
+        lastRenderedHasParent()
+      ) {
+        /*The last rendered element was the one with the _elseIf attribute*/
+
+        options.rootElement.removeChild(lastRendered.target);
+        
+      }
+     
       if (lastRendered.target && isTrue(proxySource[lastRendered.prop])) {
         rendered = true;
 
@@ -400,15 +426,7 @@ function runRenderingSystem(cache /*Set*/, data) {
         options.lastRendered = { prop: void 0, target: void 0 };
       }
 
-      if (
-        lastRendered.target &&
-        !isDefined(lastRendered.prop) &&
-        lastRenderedHasParent()
-      ) {
-        /*The last rendered element was the one with the _elseIf attribute*/
-
-        options.rootElement.removeChild(lastRendered.target);
-      } else if (isTrue(proxySource[elseIf])) {
+       else if (isTrue(proxySource[elseIf])) {
         insertBefore(options.rootElement, target);
 
         options.lastRendered = {
@@ -435,17 +453,15 @@ function runRenderingSystem(cache /*Set*/, data) {
         elseIfs,
         else: ELSE,
         ifNot,
-        index,
         rootElement,
       } = options;
       const conditionalProps = Array.from(options.conditionalProps);
-      const currentNode = getChildNodes(rootElement)[index];
-
+      
       if (isDefined(changedProp)) falsefyProps(conditionalProps, changedProp);
 
       if (ifNot) {
-        if (isFalse(source[ifNot]) && !target.isSameNode(currentNode)) {
-          if (isANode(currentNode) || rootElement.textContent.trim() > 0) {
+        if (isFalse(source[ifNot]) && target.parentNode == null) {
+          if (rootElement.textContent.trim().length > 0) {
             insertBefore(rootElement, target);
           } else {
             rootElement.appendChild(target);
@@ -456,14 +472,18 @@ function runRenderingSystem(cache /*Set*/, data) {
           }
         }
       } else if (isFalse(source[IF])) {
+        
         if (target.parentNode == rootElement && !ELSE) {
           rootElement.removeChild(target);
           renderElseIf(elseIfs, options);
+          
         } else if (ELSE || elseIfs.length > 0) {
           const rendered = renderElseIf(elseIfs, options);
 
-          if (!rendered) {
-            if (target.parentNode != null) rootElement.removeChild(target);
+          if (target.parentNode != null) rootElement.removeChild(target);
+          console.log(ELSE.parentNode, ELSE.tagName)
+          if (!rendered && ELSE.parentNode == null) {
+          
             insertBefore(rootElement, ELSE);
             options.lastRendered = {
               target: ELSE,
@@ -472,35 +492,32 @@ function runRenderingSystem(cache /*Set*/, data) {
           }
         }
       } else if (isTrue(source[IF])) {
-        if (currentNode && currentNode.isSameNode(target)) {
+        if (target.parentNode == null) {
           if (ELSE && ELSE.parentNode != null) {
             rootElement.removeChild(ELSE);
+            insertBefore(rootElement, target);
+          } else {
+            insertBefore(rootElement, target);
           }
-        } else if (ELSE && ELSE.parentNode != null) {
-          rootElement.removeChild(ELSE);
-          insertBefore(rootElement, target);
-        } else {
-          insertBefore(rootElement, target);
+
+          const { target: _target } = options.lastRendered;
+
+          if (
+            isAtag(_target) &&
+            _target.parentNode != null &&
+            !_target.isSameNode(target)
+          ) {
+            _target.parentNode.removeChild(_target);
+          }
+
+          options.lastRendered = {
+            target: target,
+            prop: IF,
+          };
         }
-
-        const { target: _target } = options.lastRendered;
-
-        if (
-          isAtag(_target) &&
-          _target.parentNode != null &&
-          !_target.isSameNode(target)
-        ) {
-          _target.parentNode.removeChild(_target);
-        }
-
-        options.lastRendered = {
-          target: target,
-          prop: IF,
-        };
       }
     }
   }
-
   function insertBefore(root, target) {
     const children = getChildNodes(root),
       lastChild = children[children.length - 1];

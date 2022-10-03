@@ -25,6 +25,11 @@ export function isObj(arg) {
   return Object.prototype.toString.apply(arg, void 0) == "[object Object]";
 }
 
+export function getTagName(elementNode) {
+  return elementNode.nodeName.toLowerCase();
+}
+
+
 export function isSet(arg) {
   return arg instanceof Set;
 }
