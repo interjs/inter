@@ -42,6 +42,12 @@ function getRefs(text) {
   return Array.from(refs);
 }
 
+function hasRefNamed(text, refName) {
+  const pattern = new RegExp(`{\\s*${refName}\\s*}`);
+
+  return pattern.test(text);
+}
+
 /**
  *
  * We are considering them as specials attributes
@@ -75,11 +81,9 @@ function runRefParsing(rootElement, refs, refCache) {
   function runTextRefParsing(parentNode) {
     function parseRefsInText(node) {
       for (const ref in refs) {
-        const pattern = new RegExp(`{\\s*${ref}\\s*}`);
-
         if (
           node.textContent.trim().length > 0 &&
-          pattern.test(node.textContent)
+          hasRefNamed(node.textContent, ref)
         ) {
           const setting = {
             target: node,
@@ -120,8 +124,7 @@ function runRefParsing(rootElement, refs, refCache) {
 
     for (const attr of elementNode.attributes) {
       for (const ref in refs) {
-        const pattern = new RegExp(`{\\s*${ref}\\s*}`);
-        if (pattern.test(attr.value)) {
+        if (hasRefNamed(attr.value, ref)) {
           if (!specialsAttrs.has(attr.name)) {
             setting.attrs[attr.name] = attr.value;
           } else {
@@ -145,7 +148,7 @@ function runRefParsing(rootElement, refs, refCache) {
       // to register the reference as an attribute reference.
       refCache.add(setting, true);
 
-      elementNode.attrRef = true;
+      
     }
   }
 
@@ -231,6 +234,8 @@ export function Ref(obj) {
           for (const ref of refs) {
             const pattern = new RegExp(`{\\s*(:?${ref})\\s*}`, "g");
             attrValue = attrValue.replace(pattern, this.refs[ref]);
+
+            if (!hasRefs(attrValue)) break;
           }
 
           target[attrName] = attrValue;
@@ -249,6 +254,8 @@ export function Ref(obj) {
                 const pattern = new RegExp(`{\\s*(:?${refName})\\s*}`, "g");
 
                 value = value.replace(pattern, this.refs[refName]);
+
+                if (!hasRefs(value)) break;
               }
             }
 
@@ -273,6 +280,8 @@ export function Ref(obj) {
                 const pattern = new RegExp(`{\\s*(:?${refName})\\s*}`, "g");
 
                 text = text.replace(pattern, this.refs[refName]);
+
+                if (!hasRefs(text)) break;
               }
             }
 
