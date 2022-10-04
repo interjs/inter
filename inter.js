@@ -1,7 +1,7 @@
 (function () {
   /**
    * Interjs
-   * Version - 2.0.11
+   * Version - 2.0.12
    * MIT LICENSED BY - Denis Power
    * Repo - https://github.com/interjs/inter
    * 2021-2022
@@ -836,7 +836,7 @@
           if (child.hasAttribute("_ifNot")) {
             if (child.hasAttribute("_if") && child.hasAttribute("_else")) {
               ParserWarning(`
-                    The parser found an element with _ifNot attribute and one more conditional attribute,
+                    The parser found an element with the _ifNot attribute and one more conditional attribute,
                     it's forbidden.
                     
                     `);
@@ -865,12 +865,12 @@
             }
           } else if (
             child.hasAttribute("_else") &&
-            !previous.hasAttribute("_if")
+            (!previous || !previous.if)
           ) {
             ParserWarning(`
                                 
                 The parser found an element with an "_else" attribute,
-                but there is not an element with attribute "_if" before it.
+                but there is not an element with "_if" attribute before it.
 
                 `);
 
@@ -881,7 +881,7 @@
             if (child.hasAttribute("_else")) {
               ParserWarning(`
                     
-                    The parser found an element which has simultaneousilly
+                    The parser found an element which has simultaneousylly
                     the "_if" and "_else" attribute. It's forbidden.
                     
                     `);
@@ -891,6 +891,7 @@
 
             setting.if = child.getAttribute("_if");
             child.removeAttribute("_if");
+            child.if = true;
 
             if (!(setting.if in data)) {
               ParserWarning(`
@@ -1404,6 +1405,13 @@
     }
   }
 
+  function runInvalidStyleValue(name, value) {
+    ParserWarning(`
+	  "${value}" is an invalid value for the "${name}" property in the
+	  "styles" object(template function).
+	  `);
+  }
+
   function toDOM(obj, isChild, index) {
     let {
       tag,
@@ -1434,7 +1442,7 @@
                 
                 "${valueType(
                   tag
-                )}" is an invalid tag's name, in template function.
+                )}" is an invalid tag name, in template function.
                 
                 `);
     }
@@ -1464,8 +1472,14 @@
       let [name, value] = attr;
 
       const setAttr = (attrValue) => {
+        const isPecialAttr = () => {
+          const specialAttrs = new Set(["value", "currentTime"]);
+
+          return specialAttrs.has(name);
+        };
+
         if (isDefined(attrValue) && !isFalse(attrValue)) {
-          if (name !== "value") {
+          if (!isPecialAttr()) {
             container.setAttribute(name, attrValue);
           } else {
             container[name] = attrValue;
@@ -1491,12 +1505,13 @@
         if (isCallable(handler)) {
           container[name] = handler;
         } else {
-          ParserWarning(`
-                            
-                            The "${name}" event was not created because
-                            its handler is not a function, in tempate function.
-                            
-                            `);
+          consW(`
+		  The "${name}" event was not created, because its handler
+		  is not a function.
+		  
+		  You defined "${handler}" as the value 
+		  of the "${name}" event.
+		  `);
         }
       } else {
         ParserWarning(`
@@ -1515,8 +1530,12 @@
 
         if (isDefined(styleValue)) {
           container.style[name] = styleValue;
-          container.template.styles[name] = styleValue;
         }
+
+        if (container.style[name] !== styleValue && isDefined(styleValue))
+          runInvalidStyleValue(name, styleValue);
+
+        container.template.styles[name] = styleValue;
       } else {
         ParserWarning(`
                     
@@ -1576,7 +1595,7 @@
       if (isDefined(renderIf) && !isBool(renderIf)) {
         consW(`
             
-            The value of the renderIf property must be only boolean(true/false) in template 
+            The value of the renderIf property must be only boolean(true/false), in template 
             function.
             
             `);
@@ -1610,9 +1629,16 @@
 
       Object.entries(attrs).forEach((attr) => {
         let [name, value] = attr;
+
         const setAttr = (attrValue) => {
+          const isPecialAttr = () => {
+            const specialAttrs = new Set(["value", "currentTime"]);
+
+            return specialAttrs.has(name);
+          };
+
           if (isDefined(attrValue) && !isFalse(attrValue)) {
-            if (name !== "value") {
+            if (!isPecialAttr()) {
               container.setAttribute(name, attrValue);
             } else {
               container[name] = attrValue;
@@ -1638,12 +1664,13 @@
           if (isCallable(handler)) {
             container[name] = handler;
           } else {
-            ParserWarning(`
-                        
-                        The "${name}" event was not created because
-                        its handler is not a function, in tempate function.
-                        
-                        `);
+            consW(`
+		  The "${name}" event was not created, because its handler
+		  is not a function.
+		  
+		  You defined "${handler}" as the value 
+		  of the "${name}" event.
+		  `);
           }
         } else {
           ParserWarning(`
@@ -1664,7 +1691,10 @@
             container.style[name] = styleValue;
           }
 
-          container.template.styles[name] = value;
+          if (container.style[name] !== styleValue && isDefined(styleValue))
+            runInvalidStyleValue(name, styleValue);
+
+          container.template.styles[name] = styleValue;
         } else {
           ParserWarning(`
                 
@@ -2642,9 +2672,20 @@
   }
 
   function attributeDiffing(target, oldAttributes, newAttributes) {
+    function removeAttr(attr) {
+      if (target.hasAttribute(attr)) {
+        target.removeAttribute(attr);
+      } else if (specialAttrs.has(attr)) {
+        target[attr] = "";
+      }
+
+      if (attr == "checked" && target.checked) target.checked = false;
+    }
+
     const _old = Object.keys(oldAttributes),
       _new = Object.keys(newAttributes),
-      _greater = getGreater(_old, _new);
+      _greater = getGreater(_old, _new),
+      specialsAttrs = new Set(["value", "current"]);
 
     for (let i = 0; _greater.length > i; i++) {
       const oldAttr = _old[i],
@@ -2653,20 +2694,19 @@
         newAttrValue = getValue(newAttributes[newAttr]);
 
       if (!(oldAttr in newAttributes)) {
-        if (target.hasAttribute(oldAttr)) {
-          target.removeAttribute(oldAttr);
-        }
+        removeAttr(oldAttr);
       } else if (!isDefined(newAttrValue) || isFalse(newAttrValue)) {
-        if (target.hasAttribute(oldAttr)) {
-          target.removeAttribute(oldAttr);
-
-          oldAttributes[oldAttr] = newAttrValue;
-        }
+        removeAttr(newAttr);
       } else if (isDefined(newAttrValue) && !isFalse(newAttrValue)) {
         if (newAttrValue !== oldAttrValue) {
-          target.setAttribute(newAttr, newAttrValue);
+          if (specialAttrs.has(newAttr)) target[newAttr] = newAttrValue;
+          else target.setAttribute(newAttr, newAttrValue);
+
+          if (newAttr == "checked" && !target.checked) target.checked = true;
         }
       }
+
+      oldAttributes[oldAttr] = newAttrValue;
     }
   }
 
@@ -2678,22 +2718,25 @@
     for (let i = 0; _greater.length > i; i++) {
       const oldStyle = _old[i],
         newStyle = _new[i],
-        oldStyleValue = getValue(oldStyle[oldStyle]),
+        oldStyleValue = getValue(oldStyles[oldStyle]),
         newStyleValue = getValue(newStyles[newStyle]);
 
-      if (!(oldStyle in newStyles) || !isDefined(oldStyleValue)) {
-        target.style.removeProperty(oldStyle);
-        _new.splice(i, 1);
-        if (_new.length == 0) {
+      if (!(oldStyle in newStyles) || !isDefined(newStyleValue)) {
+        const styleV = target.style[oldStyle];
+        if (isDefined(styleV) && styleV.trim().length !== 0) {
+          target.style[oldStyle] = null;
+        }
+
+        if (target.getAttribute("style").trim().length == 0) {
           target.removeAttribute("style");
         }
-      }
-
-      if (isDefined(newStyleValue)) {
+      } else if (isDefined(newStyleValue)) {
         if (newStyleValue !== oldStyleValue) {
           if (validStyleName(newStyle)) {
             target.style[newStyle] = newStyleValue;
-            oldStyle[oldStyle] = newStyleValue;
+
+            if (target.style[newStyle] !== newStyleValue)
+              runInvalidStyleValue(newStyle, newStyleValue);
           } else {
             ParserWarning(`
         
@@ -2703,6 +2746,8 @@
           }
         }
       }
+
+      oldStyles[oldStyle] = newStyleValue;
     }
   }
 
@@ -2717,6 +2762,19 @@
 
       if (!(oldEvent in newEvents) || !isDefined(newEvents[oldEvent])) {
         target[oldEvent] = void 0;
+      }
+
+      if (!isCallable(newEvents[newEvent]) && validDomEvent(newEvent)) {
+        target[oldEvent] = void 0;
+        consW(`
+		  The "${newEvent}" event was not created, because its handler
+		  is not a function.
+		  
+		  You defined "${newEvents[newEvent]}" as the value 
+		  of the "${newEvent}" event.
+		  `);
+
+        continue;
       }
 
       if (isDefined(newEvents[newEvent])) {
@@ -2874,7 +2932,6 @@
           attributeDiffing(target, oldAttrs, newAttrs);
           styleDiffing(target, oldStyles, newStyles);
           eventDeffing(target, oldEvents, newEvents);
-          shareProps(oldEvents, newEvents);
         }
       }
     }
@@ -3160,5 +3217,5 @@
   window.template = template;
   window.Backend = Backend;
 
-  console.log("The global version 2.0.11 of Inter was successfully loaded.");
+  console.log("The global version 2.0.12 of Inter was successfully loaded.");
 })();
