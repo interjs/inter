@@ -13,6 +13,7 @@ import {
   isDefined,
   isAtag,
   hasOwnProperty,
+  getTagName,
 } from "./helpers.js";
 
 function getChildNodes(root) {
@@ -52,10 +53,6 @@ const conditionalAttributeCounter = {
     return size;
   },
 };
-
-function getTagName(elementNode) {
-  return elementNode.nodeName.toLowerCase();
-}
 
 function hasMoreThanOneConditionalAttribute(elementNode) {
   const _ifAttrValue = elementNode.getAttribute("_if"),
@@ -126,12 +123,12 @@ export function renderIf(obj) {
           for (const [option, value] of Object.entries(obj)) {
             this[option] = value;
 
-            if (option == "if" && isDefined(value)) this.conditionalProps.add(value);
+            if (option == "if" && isDefined(value))
+              this.conditionalProps.add(value);
           }
         },
 
         canCache() {
-          
           return this.if != void 0;
         },
 
@@ -167,20 +164,16 @@ export function renderIf(obj) {
           const options = Object.assign({}, this);
           options.elseIfs = Array.from(this.elseIfs);
           options.conditionalProps = Array.from(this.conditionalProps);
-         
+
           this.deleteData();
 
           return options;
         },
-
-        
       };
 
-      const cacheParserOptions = () =>{
-       
+      const cacheParserOptions = () => {
         conditionalRenderingCache.add(parserOptions.getOptions());
-
-      }
+      };
 
       const rootElementChildNodes = getChildNodes(rootElement);
       const rootElementInitialLength = rootElementChildNodes.length;
@@ -320,12 +313,10 @@ export function renderIf(obj) {
           };
         }
 
-        
         if (isTheLastIteration && parserOptions.canCache())
           cacheParserOptions();
       }
     }
-
 
     if (!(typeof IN === "string")) {
       syErr(`
@@ -373,10 +364,9 @@ export function renderIf(obj) {
 
 function runRenderingSystem(cache /*Set*/, data) {
   const ArrayOfOptions = Array.from(cache);
-  let proxySource;
-  
+
   function falsefyProps(conditionalProps, changedProp) {
-    if (isFalse(proxySource[changedProp]) || conditionalProps.length < 2)
+    if (isFalse(proxyTarget[changedProp]) || conditionalProps.length < 2)
       return;
 
     for (const prop of conditionalProps) {
@@ -386,8 +376,6 @@ function runRenderingSystem(cache /*Set*/, data) {
         proxyTarget[prop] = false;
       }
     }
-
-    
   }
 
   function renderElseIf(elseIfs, options) {
@@ -400,18 +388,7 @@ function runRenderingSystem(cache /*Set*/, data) {
     for (const { target, elseIf } of elseIfs) {
       const lastRendered = options.lastRendered;
 
-      if (
-        lastRendered.target &&
-        !isDefined(lastRendered.prop) &&
-        lastRenderedHasParent()
-      ) {
-        /*The last rendered element was the one with the _elseIf attribute*/
-
-        options.rootElement.removeChild(lastRendered.target);
-        
-      }
-     
-      if (lastRendered.target && isTrue(proxySource[lastRendered.prop])) {
+      if (lastRendered.target && isTrue(proxyTarget[lastRendered.prop])) {
         rendered = true;
 
         break;
@@ -419,14 +396,14 @@ function runRenderingSystem(cache /*Set*/, data) {
 
       if (
         lastRendered.target &&
-        isFalse(proxySource[lastRendered.prop]) &&
+        isFalse(proxyTarget[lastRendered.prop]) &&
         lastRenderedHasParent()
       ) {
         options.rootElement.removeChild(lastRendered.target);
         options.lastRendered = { prop: void 0, target: void 0 };
       }
 
-       else if (isTrue(proxySource[elseIf])) {
+      if (isTrue(proxyTarget[elseIf])) {
         insertBefore(options.rootElement, target);
 
         options.lastRendered = {
@@ -435,8 +412,15 @@ function runRenderingSystem(cache /*Set*/, data) {
         };
 
         rendered = true;
+        if (
+          lastRendered.target &&
+          !isDefined(lastRendered.prop) &&
+          lastRenderedHasParent()
+        ) {
+          /*The last rendered element was the one with the _else attribute*/
 
-        break;
+          options.rootElement.removeChild(lastRendered.target);
+        }
       }
     }
 
@@ -444,8 +428,6 @@ function runRenderingSystem(cache /*Set*/, data) {
   }
 
   function checkWhatToRender(source, changedProp) {
-    proxySource = source;
-
     for (const options of ArrayOfOptions) {
       const {
         target,
@@ -456,7 +438,7 @@ function runRenderingSystem(cache /*Set*/, data) {
         rootElement,
       } = options;
       const conditionalProps = Array.from(options.conditionalProps);
-      
+
       if (isDefined(changedProp)) falsefyProps(conditionalProps, changedProp);
 
       if (ifNot) {
@@ -472,18 +454,15 @@ function runRenderingSystem(cache /*Set*/, data) {
           }
         }
       } else if (isFalse(source[IF])) {
-        
         if (target.parentNode == rootElement && !ELSE) {
           rootElement.removeChild(target);
           renderElseIf(elseIfs, options);
-          
         } else if (ELSE || elseIfs.length > 0) {
           const rendered = renderElseIf(elseIfs, options);
 
           if (target.parentNode != null) rootElement.removeChild(target);
-          console.log(ELSE.parentNode, ELSE.tagName)
-          if (!rendered && ELSE.parentNode == null) {
-          
+
+          if (!rendered && ELSE && ELSE.parentNode == null) {
             insertBefore(rootElement, ELSE);
             options.lastRendered = {
               target: ELSE,
