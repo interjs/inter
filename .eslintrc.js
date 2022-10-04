@@ -11,7 +11,6 @@ module.exports = {
 		"quotes": ["warn", "double"],
 		"no-var": "error",
 		"no-alert": "error",
-		"no-console": "error",
 		"camelcase": "error",
 		"prefer-const": "warn",
 		"prefer-template": "error",
