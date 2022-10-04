@@ -4,6 +4,5 @@ inter.js
 inter.min.js
 inter-test.js
 test.js
-.prettierignore
 node_modules
 .vscode

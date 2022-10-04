@@ -3,6 +3,7 @@ module.exports = {
 	env: {
 		browser: true,
 		es6: true,
+		node: true
 	},
 	extends: "eslint:recommended",
 	rules: {
@@ -10,12 +11,11 @@ module.exports = {
 		"quotes": ["warn", "double"],
 		"no-var": "error",
 		"no-alert": "error",
-		"no-console" : "error",
+		"no-console": "error",
 		"camelcase": "error",
 		"prefer-const": "warn",
 		"prefer-template": "error",
-		"getter-return": "error",
-		
+		"getter-return": "error",	
 	
 		},
 	parserOptions: {
@@ -25,5 +25,3 @@ module.exports = {
 	}
 	
 };
-
-
