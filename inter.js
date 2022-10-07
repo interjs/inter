@@ -1,7 +1,7 @@
 (function () {
   /**
    * Interjs
-   * Version - 2.0.12
+   * Version - 2.0.13
    * MIT LICENSED BY - Denis Power
    * Repo - https://github.com/interjs/inter
    * 2021-2022
@@ -2723,11 +2723,12 @@
 
       if (!(oldStyle in newStyles) || !isDefined(newStyleValue)) {
         const styleV = target.style[oldStyle];
+		const styleAttr = target.getAttribute("style");
         if (isDefined(styleV) && styleV.trim().length !== 0) {
           target.style[oldStyle] = null;
         }
 
-        if (target.getAttribute("style").trim().length == 0) {
+        if (styleAttr && styleAttr.trim().length == 0) {
           target.removeAttribute("style");
         }
       } else if (isDefined(newStyleValue)) {
@@ -3217,5 +3218,5 @@
   window.template = template;
   window.Backend = Backend;
 
-  console.log("The global version 2.0.12 of Inter was successfully loaded.");
+  console.log("The global version 2.0.13 of Inter was successfully loaded.");
 })();
