@@ -1,403 +1,194 @@
 import {
-  syErr,
-  isObj,
-  getId,
   consW,
-  isCallable,
-  validDomEvent,
-  ParserWarning,
-  defineReactorNameInToString,
-  validStyleName,
-  err,
+  getId,
   hasOwnProperty,
+  isCallable,
+  isDefined,
+  isObj,
+  ParserWarning,
+  syErr,
+  validDomEvent,
+  valueType,
 } from "./helpers.js";
 
-function runReservedAttrNameWarning(attrName) {
-  consW(`${attrName} is a reserved Attribute's name.`);
+function isNull(value) {
+  return value == null;
 }
 
-/**
- * We must not use the Object.assign method if we
- * won't to loose the reactivity of the sourceObject property.
- *
- */
+function getManagerName(attr) {
+  const name = attr.replace("{...", "").replace("}", "");
 
-function addPropOf(sourceObject) {
-  const theFirstKey = Object.keys(sourceObject)[0]; /* The reactor name */
-  const theValueOfTheKey =
-    Object.values(sourceObject)[0]; /*  The reactor object */
-
-  const handler = {
-    to(targetObject) {
-      targetObject[theFirstKey] = theValueOfTheKey;
-
-      defineReactorNameInToString(theValueOfTheKey, "AttrsManager_Reactor");
-    },
-  };
-
-  return handler;
+  return name;
 }
 
-function isDifferent(targetEl, attrName, newAttrValue) {
-  const oldAttrValue = targetEl.getAttribute(attrName);
-
-  return !Object.is(newAttrValue, oldAttrValue);
+function isADefinedManager(dataObject, manager) {
+  return hasOwnProperty(dataObject, manager);
 }
 
-function spreadStyleAttrs(target, styleObj) {
-  for (const [prop, value] of Object.entries(styleObj)) {
-    if (validStyleName(prop)) {
-      target.style[prop] = value;
+function isAValidAttrManagerSyntax(attr) {
+  const pattern = /{(:?\.){3}(:?\S+)}/;
 
-      defineReactiveStyleProp(styleObj, prop, target);
-    } else {
-      consW(`"${prop}" is not a valid style's name.`);
-      delete styleObj[prop];
-    }
-  }
-
-  defineSetStylesProp(styleObj, target);
+  return pattern.test(attr);
 }
 
-function defineReactiveStyleProp(styleObj, styleProp, target) {
-  Object.defineProperty(styleObj, styleProp, {
-    get() {
-      return target.style[styleProp];
-    },
-    set(value) {
-      if (value !== target.style[styleProp]) {
-        target.style[styleProp] = value;
-      }
-    },
-  });
+function mayBeAnAttrManager(attr) {
+  const pattern = /{(:?[\s\S]+)}/;
+
+  return pattern.test(attr);
 }
 
-function defineSetStylesProp(styleObj, target) {
-  Object.defineProperty(styleObj, "setStyles", {
-    set(o) {
-      if (!isObj(o)) {
-        syErr(
-          "The value of the 'setStyles' property must be a plain javascript object."
-        );
-      }
-
-      for (const [styleName, styleValue] of Object.entries(o)) {
-        if (!validStyleName(styleName)) {
-          consW(`"${styleName}" is not a valid styles' name.`);
-          continue;
-        }
-
-        setStyle(target, styleName, styleValue);
-      }
-    },
-  });
+function runNotDefinedManagerError(name) {
+  ParserWarning(`
+  The attribute manager parser found an attribute manager
+  named "${name}", but you did not define it in the "data" object.
+  `);
 }
 
-function setStyle(target, styleName, styleValue) {
-  if (styleValue != void 0) {
-    target.style[styleName] = styleValue;
-  } else {
-    target.style[styleValue] = null;
-  }
+function runInvalidEventHandlerError(name, handler) {
+  syErr(`
+  "${valueType(handler)}" is an invalid
+   handler for the "${name}" event, you must
+   define only a function as the handler of a dom event.
+  `);
 }
 
-function runStyleImmutabilityError() {
-  err(`
-                
-    When you define a plain Javascript object as the value of the "style" property, it becomes
-    immutable, it means that you can not delete or change this property directly, you must work with
-    its properties.
-    
-    `);
+function runCanNotGetTheValueOfAnEventWarning(name) {
+  consW(`
+   you are trying to get the value of "${name}",
+   it's an event, and you can not get the value of an event.
+  `);
 }
 
-function runCanNotRedifineStylePropAsObjError() {
-  err(`
-    
-      You can not redifine the "style" property's value as plain Javascript object.
-    
-    `);
+function runInvalidSettAttrsValueError(props) {
+  syErr(`
+  "${valueType(props)}" is an invalid value for the "setAttrs" property.
+  The "setAttrs" property only accepts a plain Javascript object as its
+  value.
+  `);
 }
 
-export function toAttrs(obj) {
-  if (new.target !== void 0) {
-    syErr(`
-        toAttrs is not a constructor,
-        do not call it with the "new" keyword.
-        `);
-  }
-
-  if (!isObj(obj)) {
-    syErr(`
-        The argument of "toAttrs()" function must be an object.
-        `);
-  }
-
-  const { in: IN, data } = obj;
-
-  if (!(typeof IN == "string")) {
-    syErr(`
-    
-    The "in" property value in toAttrs() function must be a string.
-    
-    `);
-  }
-
-  if (!isObj(data)) {
-    syErr(`
-
-    The "data" property value in toAttrs() function must be an object.
-  
-    `);
-  }
-
-  const root = getId(IN);
-
-  return findAttrsManager(root, data);
+function runUnexpectedPropWarning(prop) {
+  consW(` 
+  The "${prop}" property was not defined in the manager object.
+  `);
 }
 
-function findAttrsManager(rootElem, attrsManagers) {
-  const keys = Object.getOwnPropertyNames(attrsManagers);
-  const children = rootElem.getElementsByTagName("*");
-  const reactors = Object.create(null);
+function parse(rootElement, dataObject) {
+  const children = rootElement.getElementsByTagName("*");
 
   for (const child of children) {
+    const { name: attr } = child.attributes[0];
+
     if (child.attributes.length == 1) {
-      const theAttr = child.attributes[0].name;
+      if (mayBeAnAttrManager(attr) && isAValidAttrManagerSyntax(attr)) {
+        const managerName = getManagerName(attr);
 
-      for (const key of keys) {
-        const pattern = new RegExp(`{...${key}}`);
+        child.removeAttribute(attr);
 
-        if (pattern.test(theAttr)) {
-          child.removeAttribute(theAttr);
-
-          const reactor = spread(child, key, attrsManagers[key], attrsManagers);
-
-          addPropOf(reactor).to(reactors);
-
-          break;
-        } else {
-          const isAnAttrsManager = /{(:?\.){3}(:?[\s\S]+)}/.test(theAttr);
-          const hasMoreThanThreeDots = /{(:?\.){4,}(:?[\s\S]+)}/.test(theAttr);
-          const attr = theAttr.replace(/{(:?\.){3}/, "").replace("}", "");
-
-          if (hasMoreThanThreeDots) {
-            ParserWarning(`
-                
-                "${theAttr}" is an invalid syntax for the attribute manager.
-                The attribute manager must have only three dots.
-
-                Ex: {...managername}
-                
-                `);
-          }
-          if (isAnAttrsManager && !hasOwnProperty(attrsManagers, attr)) {
-            // The attribute manager <key> was not defined on the toAttrs function,
-            // but there is a reference to it on the template.
-
-            ParserWarning(`
-            
-            The attribute manager parser found a manager named "${attr}" but
-            you did not defined it in the toAttrs function.
-            
-            `);
-          }
-        }
+        if (isADefinedManager(dataObject, managerName))
+          spreadAttrs(child, dataObject[managerName]);
+        else runNotDefinedManagerError(managerName);
       }
     }
   }
-
-  return reactors;
 }
 
-function spread(
-  el /*manager target*/,
-  attrsManager /*Manager name*/,
-  attrs /*Manager object*/,
-  attrsManagers /*data object*/
-) {
-  //We are considering them as specials
-  //because we can not reset them with the setAttribute function.
-  const specialAttrs = new Set(["value", "currentTime"]);
-  const reservedAttrsName = new Set(["setAttrs"]);
-  let immutableStyle = false;
+function spreadAttrs(Element, managerObject) {
+  const specials = new Set(["value", "currentTime"]);
+  const isNotSpecial = (name) => !specials.has(name);
+  const isAnEvent = (name) => name.startsWith("on") && validDomEvent(name);
+  const isSpecial = (name) => !isNotSpecial(name);
+  
 
-  function runUpdate(attrName, value) {
-    value = parseAttrValue(...arguments);
+  for (const [attrName, attrValue] of Object.entries(managerObject)) {
+    if (isNotSpecial(attrName) && !isAnEvent(attrName) && !isNull(attrValue))
+      setAttr(Element, attrName, attrValue);
+    else if (isSpecial(attrName) && !isNull(attrValue))
+      setSpecialAttr(Element, attrName, attrValue);
+    else if (isAnEvent(attrName) && !isNull(attrValue))
+      defineEvent(Element, attrName, attrValue, managerObject);
 
-    if (attrName === "style" && immutableStyle) {
-      runStyleImmutabilityError();
-    } else if (attrName === "style" && isObj(value) && !immutableStyle) {
-      runCanNotRedifineStylePropAsObjError();
-    } else if (value == void 0) {
-      if (!attrName.startsWith("on")) {
-        el.removeAttribute(attrName);
-      } else {
-        el[attrName] = void 0;
-      }
-    } else if (
-      !attrName.startsWith("on") &&
-      !specialAttrs.has(attrName) &&
-      isDifferent(el, attrName, value)
-    ) {
-      el.setAttribute(attrName, value);
-    } else if (specialAttrs.has(attrName)) {
-      /**
-       * Here in special attributes we must not check for difference,
-       * because even setting them with the same value can affect the interface.
-       */
-
-      el[attrName] = value;
-    } else {
-      if (attrName.startsWith("On")) {
-        if (validDomEvent(attrName)) {
-          if (!isCallable(value)) {
-            syErr(`
-                        The value of "${attrName}" event, must be a function.
-                        `);
-          }
-
-          definedomEvent(...arguments);
-        } else {
-          consW(`
-                    
-                    "${attrName}" doesn't seem to be a valid dom's event.
-                    
-                    `);
-        }
-      }
-    }
+    defineReactiveProp(managerObject, attrName, attrValue, Element);
   }
 
-  function definedomEvent(domEvent, callBack) {
-    el[domEvent] = (event) => callBack.call(attrs, event, attrsManagers);
-  }
+  definesetAttrsProp(managerObject);
+}
 
-  function defineReactivity(attrName) {
-    Object.defineProperty(attrs, attrName, {
-      set(value) {
-        runUpdate(attrName, value);
-      },
+function setAttr(Element, name, value) {
+  const hasTheAttr = () => Element.hasAttribute(name);
+  const attrValue = () => Element.getAttribute(name);
 
-      get() {
-        if (attrName.startsWith("on")) {
-          consW(`
-                       "${attrName}" seems to be a dom's event, 
-                       and you can not get the value of an event.
-                       `);
-        }
-        if (!specialAttrs.has(attrName)) {
-          return el.getAttribute(attrName);
-        } else {
-          return el[attrName];
-        }
-      },
-    });
-  }
+  if (!isNull(value) && value !== attrValue) Element.setAttribute(name, value);
+  else if (isNull(value) && hasTheAttr()) Element.removeAttribute(name);
+}
 
-  //<>//
+function setSpecialAttr(Element, name, value) {
+  if (isDefined(value)) Element[name] = value;
+  else if (isNull(value)) Element[name] = "";
+}
 
-  function parseAttrValue(attrName, attrValue) {
-    if (!attrName.startsWith("on") && isCallable(attrValue)) {
-      return attrValue.call(attrs, attrsManagers);
-    }
+function defineEvent(Element, eventName, handler, managerObject) {
+  if (isDefined(handler) && !isCallable(handler))
+    runInvalidEventHandlerError(eventName, handler);
+  else if (isNull(handler)) Element[eventName] = void 0;
+  else Element[eventName] = (event) => handler.call(managerObject, event);
+}
 
-    return attrValue;
-  }
+function defineReactiveProp(object, name, value, Element) {
+  const specials = new Set(["value", "currentTime", "checked"]);
+  const isNotSpecial = () => !specials.has(name);
+  const isAnEvent = () => name.startsWith("on") && validDomEvent(name);
+  const isSpecial = () => !isNotSpecial(name);
+  let propValue = value;
 
-  // Spreading the attributes.
+  Object.defineProperty(object, name, {
+    set(newValue) {
+      if (isAnEvent()) defineEvent(Element, name, newValue, this);
+      else if (isNotSpecial()) setAttr(Element, name, newValue);
+      else if (isSpecial()) setSpecialAttr(Element, name, newValue);
+      propValue = newValue;
+    },
 
-  function spreadAttrs(attrName, attrValue) {
-    if (reservedAttrsName.has(attrName)) {
-      runReservedAttrNameWarning(attrName);
+    get() {
+      if (isSpecial()) return Element[name];
+      if (!isAnEvent()) return propValue;
+      else runCanNotGetTheValueOfAnEventWarning(name);
       return false;
-    }
+    },
+  });
+}
 
-    attrValue = parseAttrValue(...arguments);
+function definesetAttrsProp(object) {
+  Object.defineProperty(object, "setAttrs", {
+    set(props) {
+      if (!isObj(props)) runInvalidSettAttrsValueError(props);
 
-    if (
-      attrValue != void 0 &&
-      !specialAttrs.has(attrName) &&
-      !attrName.startsWith("on")
-    ) {
-      if (attrName === "style" && isObj(attrValue)) {
-        spreadStyleAttrs(el, attrValue);
-
-        /*The style property must not be changed directly, we must only change its property*/
-        immutableStyle = true;
-      } else {
-        el.setAttribute(attrName, attrValue);
-      }
-    } else if (attrValue != void 0 && specialAttrs.has(attrName)) {
-      el[attrName] = attrValue;
-    } else {
-      if (attrName.startsWith("on")) {
-        if (validDomEvent(attrName)) {
-          if (!isCallable(attrValue)) {
-            syErr(`
-                    
-                    The value of "${attrName}" must be a function.
-
-                    `);
-          }
-
-          definedomEvent(...arguments);
-        } else {
-          syErr(`
-                
-                "${attrName}" doesn't seem to be a valid dom's event.
-                
-                `);
-        }
-      }
-    }
-  }
-
-  for (const [attrName, attrValue] of Object.entries(attrs)) {
-    spreadAttrs(attrName, attrValue);
-    defineReactivity(attrName);
-  }
-
-  //</>//
-
-  Object.defineProperty(attrs, "setAttrs", {
-    set(__attrs) {
-      if (!isObj(__attrs)) {
-        syErr(`
-                    
-                    The argument of [Attribute manager].setAttrs
-                    must be an object.
-                    
-                    `);
-      }
-
-      for (const [attr, value] of Object.entries(__attrs)) {
-        if (!(attr in this)) {
-          consW(`
-                        
-                         The attribute manager "${attrsManager}" 
-                         does not manage an attribute named "${attr}",
-                         all the attributes must be defined in the attrsManager
-                         object.
-                        
-                        `);
-
+      for (const [prop, value] of Object.entries(props)) {
+        if (!hasOwnProperty(this, prop)) {
+          runUnexpectedPropWarning(prop);
           continue;
         }
 
-        if (reservedAttrsName.has(attr)) {
-          runReservedAttrNameWarning(attr);
-
-          continue;
-        }
-
-        this[attr] = value;
+        this[prop] = value;
       }
     },
-    enumerable: !1,
   });
+}
 
-  return {
-    [attrsManager]: attrs,
-  };
+export function toAttrs(options) {
+  if (new.target !== void 0) {
+    syErr(`the "toAttrs" function is not a constructor, do not call it with the
+    new keyword.`);
+  } else if (!isObj(options)) {
+    syErr(`"${valueType(options)}" is an invalid argument for
+    "toAttrs" function, the argument must be a plain Javascript object.`);
+  } else {
+    const { in: IN, data } = options;
+
+    const rootElement = getId(IN);
+
+    parse(rootElement, data);
+
+    return data;
+  }
 }
