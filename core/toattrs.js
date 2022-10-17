@@ -73,6 +73,11 @@ function runUnexpectedPropWarning(prop) {
   `);
 }
 
+function runNotCallebleError(arg) {
+  syErr(`The argument of the observe method must be a function,
+  and you defined ${valueType(arg)} as its argument.`);
+}
+
 function parse(rootElement, dataObject) {
   const children = rootElement.getElementsByTagName("*");
 
@@ -98,7 +103,7 @@ function spreadAttrs(Element, managerObject) {
   const isNotSpecial = (name) => !specials.has(name);
   const isAnEvent = (name) => name.startsWith("on") && validDomEvent(name);
   const isSpecial = (name) => !isNotSpecial(name);
-  
+  const observerCache = new Map();
 
   for (const [attrName, attrValue] of Object.entries(managerObject)) {
     if (isNotSpecial(attrName) && !isAnEvent(attrName) && !isNull(attrValue))
@@ -108,10 +113,17 @@ function spreadAttrs(Element, managerObject) {
     else if (isAnEvent(attrName) && !isNull(attrValue))
       defineEvent(Element, attrName, attrValue, managerObject);
 
-    defineReactiveProp(managerObject, attrName, attrValue, Element);
+    defineReactiveProp(
+      managerObject,
+      attrName,
+      attrValue,
+      Element,
+      observerCache
+    );
   }
 
   definesetAttrsProp(managerObject);
+  defineObserveProp(managerObject, observerCache);
 }
 
 function setAttr(Element, name, value) {
@@ -134,7 +146,7 @@ function defineEvent(Element, eventName, handler, managerObject) {
   else Element[eventName] = (event) => handler.call(managerObject, event);
 }
 
-function defineReactiveProp(object, name, value, Element) {
+function defineReactiveProp(object, name, value, Element, observerCache) {
   const specials = new Set(["value", "currentTime", "checked"]);
   const isNotSpecial = () => !specials.has(name);
   const isAnEvent = () => name.startsWith("on") && validDomEvent(name);
@@ -147,6 +159,9 @@ function defineReactiveProp(object, name, value, Element) {
       else if (isNotSpecial()) setAttr(Element, name, newValue);
       else if (isSpecial()) setSpecialAttr(Element, name, newValue);
       propValue = newValue;
+      const callBack = observerCache.get("observeCallBack");
+
+      if (observerCache.has("observeCallBack")) callBack(name, newValue);
     },
 
     get() {
@@ -171,6 +186,19 @@ function definesetAttrsProp(object) {
 
         this[prop] = value;
       }
+    },
+  });
+}
+
+function defineObserveProp(object, map) {
+  Object.defineProperty(object, "observe", {
+    value(callBack) {
+      if (map.size !== 0) return false;
+      if (!isCallable(callBack)) runNotCallebleError(callBack);
+
+      map.set("observeCallBack", callBack);
+
+      return true;
     },
   });
 }
