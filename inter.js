@@ -1,7 +1,7 @@
 (function () {
   /**
    * Interjs
-   * Version - 2.0.13
+   * Version - 2.0.14
    * MIT LICENSED BY - Denis Power
    * Repo - https://github.com/interjs/inter
    * 2021-2022
@@ -202,7 +202,7 @@
   function isBool(val) {
     /**
      *
-     * Don't use typeof val==="boolean"; due to 1 and 0.
+     * Don't use typeof val == "boolean"; due to 1 and 0.
      *
      */
 
@@ -273,8 +273,9 @@
 
   //</>
 
-  function runReservedRefNameWarning(refName) {
-    consW(`${refName} is a reserved reference's name, use others names.`);
+  function runReservedRefNameWarning(prop) {
+    consW(`"${prop}" is a reserved property you can not use it as a
+	reference name`);
   }
 
   function hasProp(object) {
@@ -369,7 +370,7 @@
         }
       } else if (parentNode.nodeType == 3) {
         // Parsing the references
-        // in the main container's
+        // in the main container
         // text nodes.
 
         runRef(parentNode);
@@ -585,8 +586,8 @@
               for (const t_r of Array.from(this.text)) {
                 let { target, text } = t_r;
 
-                // Returns the ref's Names
-                // in the string "text".
+                // Returns the refs names
+                // in the text string.
                 const refNames = getRefs(text);
 
                 for (const refName of refNames) {
@@ -745,7 +746,7 @@
 
   function runReservedPropWarning(prop) {
     consW(
-      `${prop} is a reserved property, you can not it use as a conditional property.`
+      `"${prop}" is a reserved property, you can not use it as a conditional property.`
     );
   }
 
@@ -834,7 +835,7 @@
           }
 
           if (child.hasAttribute("_ifNot")) {
-            if (child.hasAttribute("_if") && child.hasAttribute("_else")) {
+            if (child.hasAttribute("_if") || child.hasAttribute("_else")) {
               ParserWarning(`
                     The parser found an element with the _ifNot attribute and one more conditional attribute,
                     it's forbidden.
@@ -852,13 +853,13 @@
               ParserWarning(`
                     
                     The conditional rendering parser found
-                    an element with the _notIf attribute and the value
-                    of this attribute is not a conditional property in data object.
+                    an element with the _ifNot attribute and the value
+                    of this attribute is not a conditional property in the data object.
 
                     {
                         element: ${child.nodeName.toLowerCase()},
-                        _ifNot:${setting.ifNot},
-                        data:${Object.keys(data)}
+                        _ifNot: ${setting.ifNot},
+                        data: ${Object.keys(data)}
                     }
                     
                     `);
@@ -869,8 +870,8 @@
           ) {
             ParserWarning(`
                                 
-                The parser found an element with an "_else" attribute,
-                but there is not an element with "_if" attribute before it.
+                The parser found an element with the "_else" attribute,
+                but there is not an element with the "_if" attribute before it.
 
                 `);
 
@@ -881,7 +882,7 @@
             if (child.hasAttribute("_else")) {
               ParserWarning(`
                     
-                    The parser found an element which has simultaneousylly
+                    The parser found an element which has simultaneously
                     the "_if" and "_else" attribute. It's forbidden.
                     
                     `);
@@ -897,13 +898,13 @@
               ParserWarning(`
                     
                     The conditional rendering parser found
-                    an element with the _If attribute and the value
-                    of this attribute is not a conditional property in data object.
+                    an element with the _if attribute and the value
+                    of this attribute is not a conditional property in the data object.
 
                     {
                         element: ${child.nodeName.toLowerCase()},
-                        _if:${setting.if},
-                        data:${Object.keys(data)}
+                        _if: ${setting.if},
+                        data: ${Object.keys(data)}
                     }
                     
                     `);
@@ -915,7 +916,7 @@
             if (sibling.hasAttribute("_if")) {
               ParserWarning(`
                     
-                    The parser found an element which has simultaneousilly
+                    The parser found an element which has simultaneously
                     the "_if" and "_else" attribute. It's forbidden.
                     
                     `);
@@ -1079,7 +1080,7 @@
           if (!isObj(conditions)) {
             syErr(`
                 
-                The value of [renderIf reactor].setConds must be only
+                The value of [renderIf reactor].setConds must be
                 a Javascript object, and you defined ${valueType(conditions)}
                 as its value.
 
@@ -1124,7 +1125,7 @@
   }
 
   function runReservedAttrNameWarning(attrName) {
-    consW(`${attrName} is a reserved Attribute's name.`);
+    consW(`${attrName} is a reserved Attribute name.`);
   }
 
   function toAttrs(obj) {
@@ -1193,21 +1194,21 @@
             if (hasMoreThanThreeDots) {
               ParserWarning(`
                 
-                "${theAttr}" is an invalid syntax for attribute manager.
-                The attribute manager must have only three dots.
+                "${theAttr}" is an invalid syntax for attributes manager.
+                The attributes manager must have only three dots.
 
                 Ex: {...managername}
                 
                 `);
             }
             if (isAnAttrManager && !attrManagers.hasOwnProperty(attr)) {
-              // The attribute manager <key> was not defined in toAttrs function,
+              // The attributes manager <key> was not defined in toAttrs function,
               // but there is a reference to it in template.
 
               ParserWarning(`
             
-            The attribute manager parser found a manager named "${attr}" but
-            you did not defined it in the toAttrs function.
+            The attributes manager parser found a manager named "${attr}" but
+            you did not define it in the toAttrs function.
             
             `);
             }
@@ -1243,7 +1244,7 @@
           if (validDomEvent(attrName)) {
             if (!isCallable(value)) {
               syErr(`
-                        The value of the "${attrName}" event, must be a function.
+                        The value of the "${attrName}" event must be a function.
                         `);
             }
 
@@ -1345,7 +1346,7 @@
           if (!isObj(__attrs)) {
             syErr(`
                     
-                    The argument of [Attribute manager].setAttrs
+                    The value of [Attributes manager].setAttrs
                     must be an object.
                     
                     `);
@@ -1355,9 +1356,9 @@
             if (!(attr in this)) {
               consW(`
                         
-                         The attribute manager "${attrManager}" 
+                         The attributes manager "${attrManager}" 
                          does not manage an attribute named "${attr}",
-                         all the attributes must be defined in the attrManager manager
+                         all the attributes must be defined in the attrsManager manager
                          object.
                         
                         `);
@@ -1895,7 +1896,7 @@
       consW(`
         
         Inter fails to define reactivity
-        in a plain Javascript object because it is a non-configurable object.
+        in a plain Javascript object because it is a no-configurable object.
         
         `);
 
@@ -1937,7 +1938,7 @@
           if (!isObj(props)) {
             syErr(`
                     
-                    The value of [List reactor => Object.defineProps] must be
+                    The value of the [List reactor => Object.defineProps] must be
                     only a plain Javascript object, and you
                     defined "${valueType(props)}" as its value.
                     
@@ -1978,8 +1979,8 @@
           if (!isObj(props)) {
             syErr(`
                     
-                    The value of [Reactor].defineProps must be
-                    only a plain Javascript object, and you
+                    The value of the [list Reactor => object.setProps] must be
+                    a plain Javascript object, and you
                     defined ${valueType(props)} as its value.
                     
                     `);
@@ -2006,7 +2007,7 @@
           if (!isArray(props)) {
             syErr(`
                     
-                    The value of [List reactor => Object.deleteprops] must be 
+                    The value of the [List reactor => Object.deleteprops] must be 
                     an array, and you defined "${valueType(
                       props
                     )}" as its value.
@@ -3218,5 +3219,5 @@
   window.template = template;
   window.Backend = Backend;
 
-  console.log("The global version 2.0.13 of Inter was successfully loaded.");
+  console.log("The global version 2.0.14 of Inter was successfully loaded.");
 })();
