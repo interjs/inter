@@ -1,4 +1,4 @@
-import { syErr, err, consW, isCallable } from "./helpers.js";
+import { syErr, err, consW, isCallable } from "../helpers.js";
 
 function extractVarsFromUrl(parsedUrl, dynamicPaths) {
   const varObject = Object.create(null);

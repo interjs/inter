@@ -21,9 +21,9 @@ import {
   validDomEvent,
   ParserWarning,
   isValidTemplateReturn,
-} from "./helpers.js";
+} from "../helpers.js";
 
-import { toDOM } from "./template.js";
+import { toDOM } from "../template/index.js";
 
 /**
  *  Reactive system for listing.
@@ -550,7 +550,7 @@ function costumReactor(array, htmlEl, updateSystem, DO, pro) {
         Array.prototype.splice.apply(array, arguments);
 
         if (items.length == 0) {
-          let from = start;
+          const from = start;
           const to = deleteCount;
 
           /**
@@ -688,7 +688,7 @@ export function renderList(options) {
         set(value) {
           if (!isArray(value)) {
             syErr(
-              `The value of [List reactor].otherArray property must be an Array.`
+              "The value of [List reactor].otherArray property must be an Array."
             );
           }
 

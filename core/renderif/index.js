@@ -1,20 +1,33 @@
 import {
-  syErr,
-  ParserWarning,
   isFalse,
   isObj,
   getId,
   consW,
   err,
   isCallable,
-  valueType,
   isBool,
   isTrue,
   isDefined,
   isAtag,
   hasOwnProperty,
-  getTagName,
-} from "./helpers.js";
+} from "../helpers.js";
+
+import {
+  runHasMoreThanOneCondtionalAttributeError,
+  runInvalidConditionalPropValueError,
+  runInvalidElseAttributeError,
+  runInvalidElseIfAttributeError,
+  runInvalidRenderIfArgError,
+  runInvalidRenderIfDataOptionError,
+  runInvalidRenderIfInOptionError,
+  runInvalidRenderIfObserveArgumentError,
+  runInvalidSetCondsValueError,
+  runNotDefinedConditionalPropWarning,
+  runNotDefinedElseIfPropWarning,
+  runNotDefinedIfNotPropWarning,
+  runNotDefinedIfPropWarning,
+  runTwoElseIfElementsCanNotRefTheSamePropError,
+} from "./errors.js";
 
 function getChildNodes(root) {
   const nodes = new Array();
@@ -33,7 +46,7 @@ function getChildNodes(root) {
 
 function runReservedPropWarning(prop) {
   consW(
-    `${prop} is a reserved property, you can not use it as a conditional property.`
+    `"${prop}" is a reserved property, you can not use it as a conditional property.`
   );
 }
 
@@ -80,21 +93,11 @@ function hasNoConditionalAttr(elementNode) {
 }
 
 export function renderIf(obj) {
-  if (!isObj(obj)) {
-    syErr(`
-        
-        The argument of renderIf must be a  plain Javascript object.
-        
-        `);
-  }
+  if (!isObj(obj)) runInvalidRenderIfArgError();
 
   if (new.target !== void 0) {
-    syErr(`
-        
-        renderIf is not a constructor, do not call it with
-        the new keyword.
-        
-        `);
+    err(`renderIf is not a constructor, do not call it with
+        the new keyword.`);
   } else {
     const { in: IN, data } = obj;
 
@@ -138,13 +141,7 @@ export function renderIf(obj) {
           if (!this.conditionalProps.has(prop)) {
             this.elseIfs.add(elseIfOptions);
             this.conditionalProps.add(prop);
-          } else {
-            ParserWarning(`
-            Two elements with the "_elseIf" attribute can not have the same conditional property.
-            
-            Property: "${prop}"
-            `);
-          }
+          } else runTwoElseIfElementsCanNotRefTheSamePropError(prop);
         },
 
         deleteData() {
@@ -194,11 +191,7 @@ export function renderIf(obj) {
         }
 
         if (hasMoreThanOneConditionalAttribute(child)) {
-          ParserWarning(`
-              The conditional rendering parser found a/an "${getTagName(child)}"
-              element which has more than one conditional atribute, it's forbidden.
-
-              `);
+          runHasMoreThanOneCondtionalAttributeError(child);
 
           continue;
         }
@@ -228,30 +221,10 @@ export function renderIf(obj) {
             cacheParserOptions();
 
             continue;
-          } else {
-            ParserWarning(`
-                  
-                  The conditional rendering parser found
-                  an element with the "_ifNot" attribute and the value
-                  of this attribute is not a conditional property.
-
-                  {
-                      element: ${child.nodeName.toLowerCase()},
-                      _ifNot: ${_ifNot},
-                      data: ${Object.keys(data)}
-                  }
-                  
-                  `);
-          }
+          } else runNotDefinedIfNotPropWarning(child, _ifNot, data);
         } else if (child.hasAttribute("_else")) {
-          if (!parserOptions.if) {
-            ParserWarning(`
-                              
-              The parser found an element with the "_else" attribute,
-              but there is not an element with "_if" or a valid "_elseIf" attribute before it.
-
-              `);
-          } else {
+          if (!parserOptions.if) runInvalidElseAttributeError();
+          else {
             parserOptions.else = child;
             child.removeAttribute("_else");
             cacheParserOptions();
@@ -260,21 +233,10 @@ export function renderIf(obj) {
           const elseIf = child.getAttribute("_elseIf");
           child.removeAttribute("_elseIf");
 
-          if (!parserOptions.if) {
-            ParserWarning(`
-          a/an "${getTagName(child)}" element has the "_elseIf" attribute,
-          but it does not come after an element with the "_if" or a valid "_elseIf" attribute.
-          
-          `);
-          } else if (!hasOwnProperty(data, elseIf)) {
-            ParserWarning(`
-            
-            The conditional rendering parser found an element which has the "_elseIf" conditional property and
-            whose its value is: "${elseIf}", but you did not define any conditional property
-            with that name.
-
-            `);
-          } else {
+          if (!parserOptions.if) runInvalidElseIfAttributeError(child);
+          else if (!hasOwnProperty(data, elseIf))
+            runNotDefinedElseIfPropWarning(elseIf);
+          else {
             parserOptions.addElseIf({
               target: child,
               index: index,
@@ -289,19 +251,7 @@ export function renderIf(obj) {
           child.removeAttribute("_if");
 
           if (!hasOwnProperty(data, _if)) {
-            ParserWarning(`
-                  
-                  The conditional rendering parser found
-                  an element wich has the "_if" attribute and the value
-                  of this attribute is not a conditional property.
-
-                  {
-                      element: ${child.nodeName.toLowerCase()},
-                      _if: ${_if},
-                      data: ${Object.keys(data)}
-                  }
-                  
-                  `);
+            runNotDefinedIfPropWarning(_if, child, data);
 
             continue;
           }
@@ -318,21 +268,9 @@ export function renderIf(obj) {
       }
     }
 
-    if (!(typeof IN === "string")) {
-      syErr(`
+    if (!(typeof IN === "string")) runInvalidRenderIfInOptionError();
 
-            The value of the "in" property on the renderIf function must be a string.
-            
-            `);
-    }
-
-    if (!isObj(data)) {
-      syErr(`
-
-            The value of the "data" property on the renderIf function must be a plain Javascript object.
-
-            `);
-    }
+    if (!isObj(data)) runInvalidRenderIfDataOptionError();
 
     // eslint-disable-next-line prefer-const
     for (let [prop, value] of Object.entries(data)) {
@@ -343,14 +281,7 @@ export function renderIf(obj) {
 
       value = isCallable(value) ? value.call(data) : value;
 
-      if (!isBool(value)) {
-        err(`
-                
-                The value of a conditional property must be boolean(true/false),
-                and the value of  "${prop}" property is not boolean.
-                
-                `);
-      }
+      if (!isBool(value)) runInvalidConditionalPropValueError(prop);
 
       data[prop] = value;
     }
@@ -525,22 +456,13 @@ function runRenderingSystem(cache /*Set*/, data) {
   const reactor = new Proxy(proxyTarget, {
     set(target, prop, value) {
       if (!(prop in data) && !reservedProps.has(prop)) {
-        consW(`
-            "${prop}" was not defined 
-            as a conditional property.
-            
-            `);
+        runNotDefinedConditionalPropWarning(prop);
 
         return false;
       }
 
       if (!isBool(value) && !reservedProps.has(prop)) {
-        err(`
-                
-            The value of a conditional property must be boolean(true/false),
-            and the value of  "${prop}" property is not boolean.
-            
-            `);
+        runInvalidConditionalPropValueError(prop);
 
         return false;
       }
@@ -568,14 +490,7 @@ function runRenderingSystem(cache /*Set*/, data) {
   Object.defineProperties(reactor, {
     observe: {
       value(fn) {
-        if (!isCallable(fn)) {
-          syErr(`
-
-            The argument of [renderIf reactor].observe()
-            must be a function.
-
-            `);
-        }
+        if (!isCallable(fn)) runInvalidRenderIfObserveArgumentError();
 
         if (observer.size == 0) {
           observer.set("callBack", fn);
@@ -590,15 +505,7 @@ function runRenderingSystem(cache /*Set*/, data) {
     },
     setConds: {
       set(conditions) {
-        if (!isObj(conditions)) {
-          syErr(`
-                
-                The value of [renderIf reactor].setConds must be only
-                a Javascript object, and you defined ${valueType(conditions)}
-                as its value.
-
-                `);
-        }
+        if (!isObj(conditions)) runInvalidSetCondsValueError(conditions);
 
         // eslint-disable-next-line prefer-const
         for (let [prop, cond] of Object.entries(conditions)) {
@@ -609,18 +516,10 @@ function runRenderingSystem(cache /*Set*/, data) {
 
           cond = isCallable(cond) ? cond.call(data) : cond;
 
-          if (!isBool(cond)) {
-            err(`
-                
-                The value of a conditional property must be boolean(true/false),
-                and the value of  "${prop}" property is not boolean.
-                
-                `);
-          }
+          if (!isBool(cond)) runInvalidConditionalPropValueError(prop);
 
-          if (!hasOwnProperty(this, prop)) {
-            consW(`"${prop}" was not defined as conditional property.`);
-          }
+          if (!hasOwnProperty(this, prop))
+            runNotDefinedConditionalPropWarning(prop);
 
           proxyTarget[prop] = cond;
         }

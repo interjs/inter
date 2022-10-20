@@ -10,15 +10,6 @@ export function isNotConfigurable(obj) {
   );
 }
 
-export function defineReactorNameInToString(
-  targetObject,
-  returnInfo /*string*/
-) {
-  Object.defineProperty(targetObject, Symbol.toStringTag, {
-    get: () => returnInfo,
-  });
-}
-
 export function isObj(arg) {
   // For plain objects.
 
@@ -28,7 +19,6 @@ export function isObj(arg) {
 export function getTagName(elementNode) {
   return elementNode.nodeName.toLowerCase();
 }
-
 
 export function isSet(arg) {
   return arg instanceof Set;
@@ -97,30 +87,21 @@ export function validTagOption(option) {
   return typeof option == "string";
 }
 
-export function validStylesOrEventsOptions(option) {
-  return isObj(option);
+export function validObjectOptions(option1, option2, option3) {
+  //For the styles, attrs and events options
+
+  return isObj(option1) && isObj(option2) && isObj(option3);
 }
 
 export function getId(id) {
-  if (typeof id !== "string") {
-    syErr(`
-            
-            The value of the id attribute must be a string.
-            
-            `);
-  }
+  if (typeof id !== "string")
+    syErr("The value of the id attribute must be a string.");
 
   const el = document.getElementById(id);
 
-  if (el == void 0) {
-    err(`
-            
-            There's not an element on the document with id "${id}".
-    
-            `);
-  } else {
-    return el;
-  }
+  if (el == void 0)
+    err(`There's not an element on the document with id "${id}".`);
+  else return el;
 }
 
 export function valueType(val) {
@@ -150,34 +131,19 @@ export function valueType(val) {
 // WARNINGS HELPERS
 
 export function syErr(err) {
-  throw new SyntaxError(`
-        
-        Inter syntaxError : ${err}
-        
-        `);
+  throw new SyntaxError(`Inter syntaxError : ${err}`);
 }
 
 export function err(e) {
-  throw new Error(`
-        
-        Inter error: ${e}
-        
-        `);
+  throw new Error(`Inter error: ${e}`);
 }
 
 export function consW(w) {
-  console.warn(`
-        Inter warning: ${w}
-        
-        `);
+  console.warn(`Inter warning: ${w}`);
 }
 
 export function ParserWarning(w) {
-  console.error(`
-    
-       Inter parser error: ${w}
-        
-        `);
+  console.error(`Inter parser error: ${w}`);
 }
 
 //

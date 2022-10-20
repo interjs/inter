@@ -5,10 +5,15 @@ import {
   getId,
   consW,
   valueType,
-} from "./helpers.js";
+} from "../helpers.js";
 
 function runReservedRefNameWarning(refName) {
   consW(`"${refName}" is a reserved reference name, use others names.`);
+}
+
+function runInvalidSetRefsValueError(arg) {
+  syErr(`"${valueType(arg)}" is not a valid value for the "setRefs" property.
+        The value of the setRefs property must be a plain Javascript object.`);
 }
 
 function hasProp(object) {
@@ -147,8 +152,6 @@ function runRefParsing(rootElement, refs, refCache) {
       // The true argument says to the parser
       // to register the reference as an attribute reference.
       refCache.add(setting, true);
-
-      
     }
   }
 
@@ -360,12 +363,7 @@ export function Ref(obj) {
                 callBack(refName, refValue, oldRefValue);
               }
             }
-          } else {
-            syErr(`"${valueType(
-              o
-            )}" is not a valid value for the "setRefs" property.
-                    The value of the setRefs property must be a plain Javascript object.`);
-          }
+          } else runInvalidSetRefsValueError(o);
         },
         enumerable: !1,
       },
