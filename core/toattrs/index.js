@@ -12,7 +12,7 @@ import {
 import {
   runCanNotGetTheValueOfAnEventWarning,
   runInvalidEventHandlerError,
-  runInvalidSettAttrsValueError,
+  runInvalidSetAttrsValueError,
   runNotCallebleError,
   runNotDefinedManagerError,
   runUnexpectedPropWarning,
@@ -142,7 +142,7 @@ function defineReactiveProp(object, name, value, Element, observerCache) {
 function definesetAttrsProp(object) {
   Object.defineProperty(object, "setAttrs", {
     set(props) {
-      if (!isObj(props)) runInvalidSettAttrsValueError(props);
+      if (!isObj(props)) runInvalidSetAttrsValueError(props);
 
       for (const [prop, value] of Object.entries(props)) {
         if (!hasOwnProperty(this, prop)) {

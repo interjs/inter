@@ -22,7 +22,7 @@ export function runCanNotGetTheValueOfAnEventWarning(name) {
     `);
 }
 
-export function runInvalidSettAttrsValueError(props) {
+export function runInvalidSetAttrsValueError(props) {
   syErr(`
     "${valueType(props)}" is an invalid value for the "setAttrs" property.
     The "setAttrs" property only accepts a plain Javascript object as its

@@ -21,7 +21,7 @@ export function runNotDefinedConditionalPropWarning(prop) {
   consW(`"${prop}" was not defined as conditional property.`);
 }
 
-export function runTwoElseIfElementsCanNotRefTheSamePropError(prop) {
+export function runTwoElseIfElementsCanNotHaveTheSamePropError(prop) {
   err(`
     Two elements with the "_elseIf" attribute can not have the same conditional property.
     Property: "${prop}"

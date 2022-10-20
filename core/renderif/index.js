@@ -26,7 +26,7 @@ import {
   runNotDefinedElseIfPropWarning,
   runNotDefinedIfNotPropWarning,
   runNotDefinedIfPropWarning,
-  runTwoElseIfElementsCanNotRefTheSamePropError,
+  runTwoElseIfElementsCanNotHaveTheSamePropError,
 } from "./errors.js";
 
 function getChildNodes(root) {
@@ -141,7 +141,7 @@ export function renderIf(obj) {
           if (!this.conditionalProps.has(prop)) {
             this.elseIfs.add(elseIfOptions);
             this.conditionalProps.add(prop);
-          } else runTwoElseIfElementsCanNotRefTheSamePropError(prop);
+          } else runTwoElseIfElementsCanNotHaveTheSamePropError(prop);
         },
 
         deleteData() {
