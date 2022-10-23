@@ -3,7 +3,6 @@ import {
   isObj,
   isCallable,
   isDefined,
-  isArray,
   isEmptyObj,
   isBool,
   hasOwnProperty,
@@ -21,16 +20,6 @@ import {
   runUnsupportedRequestTypeWarning,
   runInvalidAjaxEventsOptionError,
 } from "./errors.js";
-
-function stringify(data) {
-  if (isObj(data) || isArray(data)) {
-    return JSON.stringify(data);
-  } else if (typeof data === "number") {
-    return String(data);
-  } else {
-    return data;
-  }
-}
 
 function toObj(obj) {
   if (obj !== void 0) {
@@ -71,6 +60,22 @@ function createAjaxEvents(req, events, allowedEvents) {
       }
     } else runInvalidEventWarning(name);
   });
+}
+
+function createRequestBody(body) {
+  if (!isDefined(body)) return null;
+  else if (body instanceof FormData || typeof body == "string") return body;
+  else return JSON.stringify(body);
+}
+
+function isJSON(data) {
+  try {
+    const parsed = JSON.parse(data);
+
+    return isObj(parsed);
+  } catch (e) {
+    return false;
+  }
 }
 
 export function Backend() {
@@ -152,7 +157,7 @@ Backend.prototype = {
         },
 
         isObj() {
-          return isObj(this.data);
+          return isJSON(req.responseText);
         },
       };
 
@@ -196,10 +201,10 @@ Backend.prototype = {
         req.timeout = timeout;
       }
 
-      req.send(stringify(body));
+      req.send(createRequestBody(body));
     }
 
-    const requestMethods = {
+    const responseMethods = {
       okay(callBack) {
         if (!isCallable(callBack)) runInvalidCallBackError();
 
@@ -228,7 +233,7 @@ Backend.prototype = {
       },
     };
 
-    return requestMethods;
+    return responseMethods;
   },
 };
 
