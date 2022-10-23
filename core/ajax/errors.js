@@ -20,11 +20,6 @@ export function runUnsupportedRequestTypeWarning(type) {
   err(`"${type}" is an unsupported request type in Ajax.`);
 }
 
-export function runInvalidHeaderError() {
-  syErr(`You must define the "header" argument and it must be a string
-    in "getHeader"/"hasHeader" method in AjaxResponse object.`);
-}
-
 export function runInvalidEventWarning(name) {
   consW(`There's not any event named "${name}" in Ajax request.`);
 }
@@ -44,7 +39,7 @@ export function runInvalidResponseArgumentNumberError(argNumber) {
     defined ${argNumber} argument.`);
 }
 
-export function runInvalidHeaderOptionError(headers) {
+export function runInvalidHeadersOptionError(headers) {
   syErr(`the "headers" property must be an object, and
     you defined it as : ${valueType(headers)}.`);
 }

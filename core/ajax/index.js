@@ -12,8 +12,7 @@ import {
 import {
   runInvalidCallBackError,
   runInvalidEventWarning,
-  runInvalidHeaderError,
-  runInvalidHeaderOptionError,
+  runInvalidHeadersOptionError,
   runInvalidPathOptionError,
   runInvalidResponseArgumentNumberError,
   runInvalidSecurityObjectWarning,
@@ -110,7 +109,7 @@ Backend.prototype = {
     if (unSupportedRequestType.has(path.toLowerCase()))
       runUnsupportedRequestTypeWarning(type);
 
-    const eventHandler = new Map();
+    const responseHandlers = new Map();
     let requestOpened = false;
 
     function call() {
@@ -180,11 +179,11 @@ Backend.prototype = {
       req.onreadystatechange = function () {
         if (this.readyState == 4) {
           if (this.status == 200) {
-            if (eventHandler.has("okay"))
-              eventHandler.get("okay")(AjaxResponse);
+            if (responseHandlers.has("okay"))
+              responseHandlers.get("okay")(AjaxResponse);
           } else {
-            if (eventHandler.has("error"))
-              eventHandler.get("error")(AjaxResponse);
+            if (responseHandlers.has("error"))
+              responseHandlers.get("error")(AjaxResponse);
           }
         }
       };
@@ -204,7 +203,7 @@ Backend.prototype = {
       okay(callBack) {
         if (!isCallable(callBack)) runInvalidCallBackError();
 
-        eventHandler.set("okay", callBack);
+        responseHandlers.set("okay", callBack);
         //Starting the request...
         call();
       },
@@ -212,7 +211,7 @@ Backend.prototype = {
       error(callBack) {
         if (!isCallable(callBack)) runInvalidCallBackError();
 
-        eventHandler.set("error", callBack);
+        responseHandlers.set("error", callBack);
         //Starting the request...
         call();
       },
@@ -222,8 +221,8 @@ Backend.prototype = {
         if (argNumber < 2) runInvalidResponseArgumentNumberError(argNumber);
         if (!isCallable(okay) && !isCallable(error)) runInvalidCallBackError();
 
-        eventHandler.set("okay", okay);
-        eventHandler.set("error", error);
+        responseHandlers.set("okay", okay);
+        responseHandlers.set("error", error);
         //Starting the request...
         call();
       },
