@@ -1,7 +1,7 @@
 (function () {
   /**
    * Interjs
-   * Version - 2.0.14
+   * Version - 2.0.15
    * MIT LICENSED BY - Denis Power
    * Repo - https://github.com/interjs/inter
    * 2021-2022
@@ -2724,7 +2724,7 @@
 
       if (!(oldStyle in newStyles) || !isDefined(newStyleValue)) {
         const styleV = target.style[oldStyle];
-		const styleAttr = target.getAttribute("style");
+        const styleAttr = target.getAttribute("style");
         if (isDefined(styleV) && styleV.trim().length !== 0) {
           target.style[oldStyle] = null;
         }
@@ -3020,7 +3020,7 @@
         `);
       }
 
-      const reactorHandler = new Map();
+      const responseHandlers = new Map();
       let requestOpened = false;
 
       function call() {
@@ -3028,7 +3028,7 @@
         const method = type.toUpperCase();
         const allowedEvents = new Set(["onprogress", "ontimeout", "onabort"]);
 
-        const _AjaxResponse = {
+        const AjaxResponse = {
           get status() {
             return req.status;
           },
@@ -3051,9 +3051,9 @@
 
           isObj() {
             try {
-              JSON.parse(req.responseText);
+              const parsed = JSON.parse(req.responseText);
 
-              return true;
+              return isObj(parsed);
             } catch (e) {
               return false;
             }
@@ -3128,12 +3128,12 @@
         req.onreadystatechange = function () {
           if (this.readyState == 4) {
             if (this.status == 200) {
-              if (reactorHandler.has("okay")) {
-                reactorHandler.get("okay")(_AjaxResponse);
+              if (responseHandlers.has("okay")) {
+                responseHandlers.get("okay")(AjaxResponse);
               }
             } else {
-              if (reactorHandler.has("error")) {
-                reactorHandler.get("error")(_AjaxResponse);
+              if (responseHandlers.has("error")) {
+                responseHandlers.get("error")(AjaxResponse);
               }
             }
           }
@@ -3147,10 +3147,17 @@
           req.timeout = timeout;
         }
 
-        req.send(body);
+        const createBody = () => {
+          if (!isDefined(body)) return null;
+          else if (body instanceof FormData || typeof body == "string")
+            return body;
+          else return JSON.stringify(body);
+        };
+
+        req.send(createBody(body));
       }
 
-      const reactors = {
+      const responseMethods = {
         okay(fn) {
           if (!isCallable(fn)) {
             syErr(`
@@ -3161,7 +3168,7 @@
                 `);
           }
 
-          reactorHandler.set("okay", fn);
+          responseHandlers.set("okay", fn);
           //Starting the request...
           call();
         },
@@ -3176,7 +3183,7 @@
                 `);
           }
 
-          reactorHandler.set("error", fn);
+          responseHandlers.set("error", fn);
           //Starting the request...
           call();
         },
@@ -3199,14 +3206,14 @@
                 `);
           }
 
-          reactorHandler.set("okay", okay);
-          reactorHandler.set("error", error);
+          responseHandlers.set("okay", okay);
+          responseHandlers.set("error", error);
           //Starting the request...
           call();
         },
       };
 
-      return reactors;
+      return responseMethods;
     },
   };
 
@@ -3219,5 +3226,5 @@
   window.template = template;
   window.Backend = Backend;
 
-  console.log("The global version 2.0.14 of Inter was successfully loaded.");
+  console.log("The global version 2.0.15 of Inter was successfully loaded.");
 })();
