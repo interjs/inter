@@ -6,13 +6,14 @@ import {
   isArray,
   isEmptyObj,
   isBool,
+  hasOwnProperty,
 } from "../helpers.js";
 
 import {
   runInvalidCallBackError,
   runInvalidEventWarning,
   runInvalidHeaderError,
-  runInvalidHeadersOptionError,
+  runInvalidHeaderOptionError,
   runInvalidPathOptionError,
   runInvalidResponseArgumentNumberError,
   runInvalidSecurityObjectWarning,
@@ -127,7 +128,20 @@ Backend.prototype = {
         },
 
         get headers() {
-          return req.getAllResponseHeaders();
+          const proxyTarget = {
+            getAll() {
+              return req.getAllResponseHeaders();
+            },
+          };
+          return new Proxy(proxyTarget, {
+            get() {
+              const header = arguments[1];
+
+              if (!hasOwnProperty(proxyTarget, header))
+                return req.getResponseHeader(header);
+              else return Reflect.get(...arguments);
+            },
+          });
         },
 
         get data() {
@@ -140,16 +154,6 @@ Backend.prototype = {
 
         isObj() {
           return isObj(this.data);
-        },
-
-        getHeader(header) {
-          if (!isDefined(header) || typeof header !== "string")
-            runInvalidHeaderError();
-
-          return req.getResponseHeader(header);
-        },
-        hasHeader(header) {
-          return isDefined(this.getHeader(header));
         },
       };
 
