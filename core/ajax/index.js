@@ -62,6 +62,30 @@ function createAjaxEvents(req, events, allowedEvents) {
   });
 }
 
+function convertStringToObj(string, reqObj) {
+  function createGetter(obj, prop) {
+    //At first we must define the property this way
+    // so that the methods Object.keys and Object.values
+    //work fine.
+    obj[prop] = void 0;
+    Object.defineProperty(obj, prop, {
+      get() {
+        return reqObj.getResponseHeader(prop);
+      },
+    });
+  }
+
+  const pattern = /(:?[\S]+):/g;
+  const headers = {};
+
+  string.replace(pattern, (match) => {
+    match = match.replace(":", "");
+    if (reqObj.getResponseHeader(match)) createGetter(headers, match);
+  });
+
+  return Object.freeze(headers);
+}
+
 function createRequestBody(body) {
   if (!isDefined(body)) return null;
   else if (body instanceof FormData || typeof body == "string") return body;
@@ -132,20 +156,9 @@ Backend.prototype = {
         },
 
         get headers() {
-          const proxyTarget = {
-            getAll() {
-              return req.getAllResponseHeaders();
-            },
-          };
-          return new Proxy(proxyTarget, {
-            get() {
-              const header = arguments[1];
+          const stringifiedHeaders = req.getAllResponseHeaders();
 
-              if (!hasOwnProperty(proxyTarget, header))
-                return req.getResponseHeader(header);
-              else return Reflect.get(...arguments);
-            },
-          });
+          return convertStringToObj(stringifiedHeaders, req);
         },
 
         get data() {
