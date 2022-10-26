@@ -4,8 +4,7 @@ import {
   isCallable,
   isDefined,
   isEmptyObj,
-  isBool,
-  hasOwnProperty,
+  isBool
 } from "../helpers.js";
 
 import {
