@@ -33,7 +33,7 @@ import {
   runNotConfigurableArrayError,
   runOtherArrayDeprecationWarning,
   runUnsupportedEachValueError,
-} from "./errors";
+} from "./errors.js";
 
 import { toDOM } from "../template/index.js";
 
@@ -208,7 +208,7 @@ function runObserveCallBack(each, proxy) {
 function createArrayReactor(each, renderingSystem) {
   if (isNotConfigurable(each)) runNotConfigurableArrayError();
 
-  const costumProps = new Set(["otherArray", "addItems"]);
+  const costumProps = new Set(["otherArray", "addItems", "setEach"]);
 
   return new Proxy(each, {
     set(target, prop, value, proxy) {
@@ -241,15 +241,38 @@ function createArrayReactor(each, renderingSystem) {
   });
 }
 
+function defineListReactorSetProps(obj, renderingSystem) {
+  Object.defineProperty(obj, "setProps", {
+    set(props) {
+      if (!isObj(props)) runInvalidSetPropsValueError();
+
+      for (const [prop, value] of Object.entries(props)) {
+        if (isObj(obj)) this[prop] = value;
+        else if (isMap(obj)) obj.set(prop, value);
+
+        checkType(value, renderingSystem);
+      }
+
+      if (isObj(obj)) renderingSystem();
+    },
+  });
+}
+
 function createObjReactor(each, renderingSystem, root) {
   if (isNotConfigurable(each)) runNotConfigurableArrayError();
 
+  defineListReactorSetProps(each, renderingSystem);
+
+  const specialProps = new Set(["observe", "setProps"]);
+  defineReactiveSymbol(each);
+
   return new Proxy(each, {
     set(target, prop, value, proxy) {
+      if (specialProps.has(prop)) return true;
+
       Reflect.set(...arguments);
 
       runObserveCallBack(each, proxy);
-
       renderingSystem();
 
       if (typeof value !== "number" && validEachProperty(value))
@@ -325,7 +348,7 @@ function defineReactiveMap(map, renderingSystem, listReactor, root) {
         if (method == "delete" && listReactor)
           exactElToRemove(this, arguments[0], root);
         Map.prototype[method].apply(this, arguments);
-        runObserveCallBack(this);
+        if (listReactor) runObserveCallBack(this);
         renderingSystem();
 
         if (method == "set") {
@@ -339,6 +362,7 @@ function defineReactiveMap(map, renderingSystem, listReactor, root) {
 
   walkMap(map, renderingSystem);
   defineReactiveSymbol(map);
+  if (listReactor) defineListReactorSetProps(map, renderingSystem);
 }
 
 function defineReactiveSet(set, renderingSystem, listReactor, root) {
@@ -352,8 +376,8 @@ function defineReactiveSet(set, renderingSystem, listReactor, root) {
         if (method == "delete" && listReactor)
           exactElToRemove(this, arguments[0], root);
         Set.prototype[method].apply(this, arguments);
-        runObserveCallBack(this);
         renderingSystem();
+        if (listReactor) runObserveCallBack(this);
         if (method === "add") {
           checkType(arguments[0], renderingSystem);
         }
@@ -394,65 +418,64 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
 
   //It is already reactive array.
   if (hasReactiveSymbol(array)) return false;
-
   Object.defineProperties(array, {
     shift: {
       value() {
-        Array.prototype.shift.apply(array, void 0);
+        const ArrayPrototypeShiftReturn = Array.prototype.shift.apply(
+          array,
+          void 0
+        );
         const firstNodeElement = htmlEl.children[0];
 
         if (firstNodeElement) {
           htmlEl.removeChild(firstNodeElement);
 
-          runObserveCallBack(array);
-
           renderingSystem();
+          runObserveCallBack(array);
         }
+
+        return ArrayPrototypeShiftReturn;
       },
     },
 
     unshift: {
       value() {
-        Array.prototype.unshift.apply(array, arguments);
+        const ArrayPrototypeUnshiftReturn = Array.prototype.unshift.apply(
+          array,
+          arguments
+        );
 
-        if (arguments.length > 1) {
-          let i = arguments.length - 1;
-
-          for (; i > -1; i--) {
-            const temp = DO.call(pro, arguments[i], i, pro);
-
-            if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
-            else if (htmlEl.children[0]) {
-              htmlEl.insertBefore(toDOM(temp.element), htmlEl.children[0]);
-            } else {
-              htmlEl.appendChild(toDOM(temp.element));
-            }
-
-            checkType(arguments[i], renderingSystem);
-          }
-        } else if (arguments.length == 1) {
-          const temp = DO.call(pro, arguments[0], 0, pro);
+        function render(i) {
+          const temp = DO.call(pro, arguments[i], i, pro);
 
           if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
-
           if (htmlEl.children[0]) {
             htmlEl.insertBefore(toDOM(temp.element), htmlEl.children[0]);
           } else {
             htmlEl.appendChild(toDOM(temp.element));
           }
 
-          checkType(arguments[0], renderingSystem);
+          checkType(arguments[i], renderingSystem);
         }
 
-        runObserveCallBack(array);
+        if (arguments.length > 1) {
+          let i = arguments.length - 1;
+
+          for (; i > -1; i--) render(i);
+        } else if (arguments.length == 1) render(0);
 
         renderingSystem();
+        runObserveCallBack(array);
+
+        return ArrayPrototypeUnshiftReturn;
       },
     },
-
     splice: {
       value(start, deleteCount, ...items) {
-        Array.prototype.splice.apply(array, arguments);
+        const ArrayPrototypeSpliceReturn = Array.prototype.splice.apply(
+          array,
+          arguments
+        );
 
         if (items.length == 0) {
           const from = start;
@@ -475,6 +498,8 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
             for (let l = items.length - 1; l > -1; l--) {
               const temp = DO.call(pro, items[l], l, pro);
 
+              checkType(items[l], renderingSystem);
+
               if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
 
               if (htmlEl.children[start]) {
@@ -489,9 +514,10 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
           }
         }
 
+        renderingSystem();
         runObserveCallBack(array);
 
-        renderingSystem();
+        return ArrayPrototypeSpliceReturn;
       },
     },
   });
@@ -557,24 +583,39 @@ export function renderList(options) {
     each = newEach;
 
     if (!hasReactiveSymbol(newEach)) proSetup();
+
+    renderingSystem();
+    runObserveCallBack(each);
+
+    if (typeof each !== "number") {
+      const iterable = new Iterable(each);
+
+      iterable.each((data, index, type) => {
+        if (type == "object") checkType(data[1], renderingSystem);
+        else if (type == "array" || type == "set")
+          checkType(data, renderingSystem);
+      });
+    }
   }
 
   function proSetup() {
     if (hasReactiveSymbol(each)) return false;
-
     Object.defineProperties(each, {
       setEach: { set: setEachHandler },
       observe: {
         value(callBack) {
           const observe = Symbol.for("observe");
-          if (typeof this[observe] === "function") return;
+          if (typeof this[observe] === "function") return false;
           if (!isCallable(callBack))
             syErr("The argument of the observe method must be a function.");
-          else
+          else {
             Object.defineProperty(this, observe, {
               value: callBack,
               configurable: !1,
             });
+
+            return true;
+          }
         },
       },
     });
@@ -583,6 +624,8 @@ export function renderList(options) {
 
     if (isArray(each))
       redefineArrayMutationMethods(each, root, renderingSystem, DO, pro);
+
+    defineReactiveSymbol(each);
   }
 
   function defineCostumArrayProps(array) {
@@ -948,7 +991,8 @@ function runChildrenDiffing(__new, __old, realParent) {
 
     if (realParent) {
       theLastElement = realParent.children[realParent.children.length - 1];
-    } else if (newChildren.length !== oldChildren.length) {
+    }
+    if (newChildren.length !== oldChildren.length) {
       if (target && target.parentNode != null) {
         const newElement = toDOM(newChild, true, index);
 

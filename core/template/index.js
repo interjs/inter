@@ -143,7 +143,7 @@ export function toDOM(obj, isChild, index) {
   createAttrs(attrs, container);
   createEvents(events, container);
   createStyles(styles, container);
-  createTextOrChildren(text, children);
+  createTextOrChildren(text, children, container);
 
   return container;
 }
@@ -194,7 +194,7 @@ function createChildren(root, children) {
     createAttrs(attrs, container);
     createEvents(events, container);
     createStyles(styles, container);
-    createTextOrChildren(text, children);
+    createTextOrChildren(text, children, container);
     root.appendChild(container);
   }
 }
