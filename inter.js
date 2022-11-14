@@ -1,7 +1,7 @@
 (function () {
   /**
    * Interjs
-   * Version - 2.0.15
+   * Version - 2.0.16
    * MIT LICENSED BY - Denis Power
    * Repo - https://github.com/interjs/inter
    * 2021-2022
@@ -1015,7 +1015,7 @@
       set(target, prop, value) {
         if (!(prop in data) && !reservedProps.has(prop)) {
           consW(`
-            The "${prop}" was not defined 
+            The "${prop}" property was not defined 
             as a conditional property.
             
             `);
@@ -2207,6 +2207,51 @@
           return ArrayPrototypeShiftReturn;
         },
       },
+      pop: {
+        value() {
+          const ArrayPrototypePopReturn = Array.prototype.pop.apply(
+            array,
+            arguments
+          );
+          const children = htmlEl.children;
+          const lastNodeElement = children[children.length - 1];
+
+          if (lastNodeElement) {
+            htmlEl.removeChild(lastNodeElement);
+
+            updateSystem();
+          }
+
+          return ArrayPrototypePopReturn;
+        },
+      },
+      push: {
+        value() {
+          const ArrayPrototypePushReturn = Array.prototype.push.apply(
+            array,
+            arguments
+          );
+
+          function add(item, i) {
+            const temp = DO.call(pro, item, i, pro);
+
+            if (!isValidTemplateReturn(temp)) runError();
+
+            htmlEl.appendChild(toDOM(temp.element));
+
+            checkType(item, updateSystem);
+          }
+
+          if (arguments.length == 1) add(...arguments, array.length - 1);
+          else if (arguments.length > 1) {
+            for (const item of arguments) add(item, array.length - 1);
+          }
+
+          updateSystem();
+
+          return ArrayPrototypePushReturn;
+        },
+      },
 
       unshift: {
         value() {
@@ -2439,29 +2484,14 @@
             if (!isDefined(position) || position > this.length - 1) {
               for (const item of items) {
                 this.push(item);
-
-                checkType(item, updateSystem);
               }
-
-              /**
-               * The reactive system does not track calls to
-               * the Array.prototype.push, so calling only
-               * Array.prototype.push will not trigger any update.
-               *
-               */
-
-              updateSystem();
             } else if (position == 0 || position < 0) {
               for (let i = items.length - 1; i > -1; i--) {
                 this.unshift(items[i]);
-
-                checkType(items[i], updateSystem);
               }
             } else {
               for (let i = items.length - 1; i > -1; i--) {
                 this.splice(position, 0, items[i]);
-
-                checkType(items[i], updateSystem);
               }
             }
           },
@@ -2685,8 +2715,7 @@
 
     const _old = Object.keys(oldAttributes),
       _new = Object.keys(newAttributes),
-      _greater = getGreater(_old, _new),
-      specialsAttrs = new Set(["value", "current"]);
+      _greater = getGreater(_old, _new);
 
     for (let i = 0; _greater.length > i; i++) {
       const oldAttr = _old[i],
@@ -3226,5 +3255,5 @@
   window.template = template;
   window.Backend = Backend;
 
-  console.log("The global version 2.0.15 of Inter was successfully loaded.");
+  console.log("The global version 2.0.16 of Inter was successfully loaded.");
 })();
