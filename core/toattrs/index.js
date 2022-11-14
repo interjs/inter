@@ -16,7 +16,7 @@ import {
   runNotCallebleError,
   runNotDefinedManagerError,
   runUnexpectedPropWarning,
-} from "./errors";
+} from "./errors.js";
 
 function isNull(value) {
   return value == null;
