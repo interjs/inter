@@ -117,6 +117,7 @@ export function toDOM(obj, isChild, index) {
   /*eslint-enable prefer-const*/
 
   tag = isCallable(tag) ? tag() : tag;
+  text = isCallable(text) ? text() : text;
 
   if (isDefined(renderIf) && !isChild) {
     runCanNotRenderConditionallyWarning();
@@ -131,6 +132,8 @@ export function toDOM(obj, isChild, index) {
   const container = document.createElement(tag);
   container.template = Object.assign(obj, {
     target: container,
+    tag: tag,
+    text: text,
   }); // For diffing task.
 
   if (isChild) {
@@ -164,12 +167,12 @@ function createChildren(root, children) {
 
     index++;
     child.index = index;
+
     tag = isCallable(tag) ? tag() : tag;
+    text = isCallable(text) ? text() : text;
 
     if (isDefined(renderIf) && isBool(renderIf)) {
-      if (isFalse(renderIf)) {
-        continue;
-      }
+      if (isFalse(renderIf)) continue;
     }
 
     if (isDefined(renderIf) && !isBool(renderIf))
@@ -184,6 +187,8 @@ function createChildren(root, children) {
     container.index = index;
     container.template = Object.assign(child, {
       target: container,
+      tag: tag,
+      text: text,
     }); //For diffing task.
 
     createAttrs(attrs, container);

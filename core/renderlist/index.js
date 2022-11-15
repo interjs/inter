@@ -4,14 +4,12 @@ import {
   isCallable,
   validInProperty,
   validEachProperty,
-  valueType,
   Iterable,
   isAtag,
   getId,
   consW,
   isArray,
   isDefined,
-  err,
   isMap,
   isSet,
   isTrue,
@@ -23,7 +21,27 @@ import {
   isValidTemplateReturn,
 } from "../helpers.js";
 
+import {
+  runCanNotDefineReactivePropWarning,
+  runDetecteReservedPropdWarnig,
+  runInvalidAddItemsFirstArgumentError,
+  runInvalidAddItemsSecodArgumentError,
+  runInvalidDefinePropsValueError,
+  runInvalidDeletePropsValueError,
+  runInvalidSetPropsValueError,
+  runInvalidTemplateReturnError,
+  runNotConfigurableArrayError,
+  runOtherArrayDeprecationWarning,
+  runUnsupportedEachValueError,
+} from "./errors";
+
 import { toDOM } from "../template/index.js";
+
+import {
+  runInvalidEventHandlerWarning,
+  runInvalidEventWarning,
+  runInvalidStyleWarning,
+} from "../template/errors.js";
 
 /**
  *  Reactive system for listing.
@@ -31,36 +49,128 @@ import { toDOM } from "../template/index.js";
  */
 
 function checkType(arg, call) {
-  if (isObj(arg)) {
-    defineReactiveObj(arg, call);
-  } else if (isArray(arg)) {
-    defineReactiveArray(arg, call);
-  } else if (isMap(arg)) {
-    defineReactiveMap(arg, call);
-  } else {
-    if (isSet(arg)) {
-      defineReactiveSet(arg, call);
-    }
-  }
+  if (isObj(arg)) defineReactiveObj(arg, call);
+  else if (isArray(arg)) defineReactiveArray(arg, call);
+  else if (isMap(arg)) defineReactiveMap(arg, call);
+  else if (isSet(arg)) defineReactiveSet(arg, call);
 }
 
-function exactElToRemove(obj, key, root) {
-  if (isObj(obj)) {
-    _inObj(obj, key, root);
-  } else if (isSet(obj)) {
-    _inSet(obj, key, root);
-  } else {
-    _inMap(obj, key, root);
+function defineReactiveSymbol(obj) {
+  const symbol = Symbol.for("reactive");
+
+  Object.defineProperty(obj, symbol, {
+    get: () => true,
+  });
+}
+
+function hasReactiveSymbol(obj) {
+  const symbol = Symbol.for("reactive");
+
+  return symbol in obj;
+}
+
+function defineReactiveObj(obj, renderingSystem) {
+  const reservedProps = new Set(["setProps", "defineProps", "deleteProps"]);
+
+  function defineReservedProps(props) {
+    for (const { name, setHandler } of props) {
+      Object.defineProperty(obj, name, {
+        set: setHandler,
+      });
+    }
   }
+
+  function defineReactiveProp(prop) {
+    let readValue = obj[prop];
+
+    obj[prop] = void 0;
+    Object.defineProperty(obj, prop, {
+      set(newValue) {
+        readValue = newValue;
+        renderingSystem();
+        checkType(newValue, renderingSystem);
+      },
+
+      get() {
+        return readValue;
+      },
+      configurable: !0,
+    });
+  }
+
+  function deleteProps(props) {
+    if (!isArray) runInvalidDeletePropsValueError(props);
+
+    for (const prop of props) {
+      if (typeof prop !== "string") continue;
+      if (!reservedProps.has(prop)) delete obj[prop];
+
+      renderingSystem();
+    }
+  }
+
+  function defineProps(props) {
+    if (!isObj(props)) runInvalidDefinePropsValueError(props);
+
+    for (const [prop, value] of Object.entries(props)) {
+      if (!(prop in this) && !reservedProps.has(prop)) {
+        obj[prop] = value;
+        defineReactiveProp(prop);
+      }
+
+      renderingSystem();
+    }
+  }
+
+  function setProps(props) {
+    if (!isObj(props)) runInvalidSetPropsValueError(props);
+
+    for (const [prop, value] of Object.entries(props)) {
+      if (!reservedProps.has(prop)) obj[prop] = value;
+      checkType(value, renderingSystem);
+    }
+  }
+
+  if (hasReactiveSymbol(obj)) {
+    //The object is already reactive
+    //So, we must skip all the task.
+
+    return true;
+  }
+
+  if (isNotConfigurable(obj)) {
+    runCanNotDefineReactivePropWarning();
+    return false;
+  }
+
+  for (const prop of Object.keys(obj)) {
+    if (reservedProps.has(prop)) runDetecteReservedPropdWarnig(prop);
+
+    defineReactiveProp(prop);
+    checkType(obj[prop], renderingSystem);
+  }
+
+  const reservedPropsSetting = [
+    { name: "defineProps", setHandler: defineProps },
+    { name: "setProps", setHandler: setProps },
+    { name: "deleteProps", setHandler: deleteProps },
+  ];
+
+  defineReservedProps(reservedPropsSetting);
+  defineReactiveSymbol(obj);
+}
+
+function exactElToRemove(obj) {
+  if (isObj(obj)) _inObj(...arguments);
+  else if (isSet(obj)) _inSet(...arguments);
+  else _inMap(...arguments);
 }
 
 function _inObj(obj, key, root) {
   const keys = Object.keys(obj);
 
   keys.some((prop, i) => {
-    if (prop == key) {
-      _exactRemove(root, i);
-    }
+    if (prop == key) _exactRemove(root, i);
   });
 }
 
@@ -68,58 +178,53 @@ function _inSet(set, key, root) {
   const obj = Array.from(set);
 
   obj.some((item, i) => {
-    if (item == key) {
-      _exactRemove(root, i);
-    }
+    if (item == key) _exactRemove(root, i);
   });
 }
 
 function _inMap(obj, key, root) {
   let i = -1;
 
-  obj.forEach((value, prop) => {
+  obj.forEach(() => {
     i++;
+    const prop = arguments[1];
 
-    if (prop == key) {
-      _exactRemove(root, i);
-    }
+    if (prop == key) _exactRemove(root, i);
   });
 }
 
 function _exactRemove(root, i) {
   const elToRmove = root.children[i];
 
-  if (isAtag(elToRmove)) {
-    root.removeChild(elToRmove);
-  }
+  if (isAtag(elToRmove)) root.removeChild(elToRmove);
 }
 
-function createArrayReactor(each, updateSystem) {
-  if (isNotConfigurable(each)) {
-    err(`
-        
-        Inter fails to define the reactivity in the list reactor,
-        because the Array  of the each option is not configurable.
-        
-        `);
-  }
+function runObserveCallBack(each, proxy) {
+  const observe = Symbol.for("observe");
+  if (typeof each[observe] === "function")
+    each[observe](isDefined(proxy) ? proxy : each);
+}
+
+function createArrayReactor(each, renderingSystem) {
+  if (isNotConfigurable(each)) runNotConfigurableArrayError();
 
   const costumProps = new Set(["otherArray", "addItems"]);
 
   return new Proxy(each, {
-    set(target, prop, value) {
+    set(target, prop, value, proxy) {
       if (costumProps.has(prop)) {
-        Reflect.set(target, prop, value);
+        Reflect.set(...arguments);
         return true;
       }
 
-      Reflect.set(target, prop, value);
+      Reflect.set(...arguments);
 
-      updateSystem();
+      runObserveCallBack(each, proxy);
 
-      if (typeof prop !== "number" && validEachProperty(value)) {
-        checkType(value, updateSystem);
-      }
+      renderingSystem();
+
+      if (typeof value !== "number" && validEachProperty(value))
+        checkType(value, renderingSystem);
 
       return true;
     },
@@ -136,25 +241,19 @@ function createArrayReactor(each, updateSystem) {
   });
 }
 
-function createObjReactor(each, updateSystem, root) {
-  if (isNotConfigurable(each)) {
-    err(`
-        
-        Inter fails to define the reactivity in the list reactor,
-        because the Array  of the each option is not configurable.
-        
-        `);
-  }
+function createObjReactor(each, renderingSystem, root) {
+  if (isNotConfigurable(each)) runNotConfigurableArrayError();
 
   return new Proxy(each, {
-    set(target, prop, value) {
-      Reflect.set(target, prop, value);
+    set(target, prop, value, proxy) {
+      Reflect.set(...arguments);
 
-      updateSystem();
+      runObserveCallBack(each, proxy);
 
-      if (typeof prop !== "number" && validEachProperty(value)) {
-        checkType(value, updateSystem);
-      }
+      renderingSystem();
+
+      if (typeof value !== "number" && validEachProperty(value))
+        checkType(value, renderingSystem);
 
       return true;
     },
@@ -163,184 +262,24 @@ function createObjReactor(each, updateSystem, root) {
       return Reflect.get(...arguments);
     },
 
-    deleteProperty(target, prop) {
+    deleteProperty(target, prop, proxy) {
       if (prop in target) {
         exactElToRemove(target, prop, root);
         Reflect.deleteProperty(...arguments);
-        updateSystem();
+        runObserveCallBack(each, proxy);
+        renderingSystem();
 
         return true;
       }
 
-      consW(`
-            You are trying to delete the "${prop}" property in the list
-            reactor, but that property does not exist in the list reactor.
-            
-            `);
+      consW(`You are trying to delete the "${prop}" property in the list
+            reactor, but that property does not exist in the list reactor.`);
     },
   });
 }
 
-function defineReactiveObj(obj, call) {
-  const reactive = Symbol.for("reactive"),
-    reservedProps = new Set(["setProps", "defineProps", "deleteProps"]),
-    share = Object.assign(Object.create(null), obj);
-
-  if (reactive in obj) {
-    //The object is already reactive
-    //So, we must skip all the task.
-
-    return false;
-  }
-
-  if (isNotConfigurable(obj)) {
-    consW(`
-        
-        Inter fails to define reactivity
-        in a plain Javascript object because it is a non-configurable object.
-        
-        `);
-
-    return false;
-  }
-
-  for (const prop of Object.keys(obj)) {
-    if (reservedProps.has(prop)) {
-      delete obj[prop];
-
-      consW(`
-        
-        "${prop}" is a reserved property,
-        do not create a property with this name in the reactor
-        of reactive listing.
-        
-        `);
-    }
-
-    Object.defineProperty(obj, prop, {
-      set(newValue) {
-        share[prop] = newValue;
-        call();
-        checkType(newValue, call);
-      },
-
-      get() {
-        return share[prop];
-      },
-      configurable: !0,
-    });
-
-    checkType(obj[prop], call);
-  }
-
-  Object.defineProperties(obj, {
-    defineProps: {
-      set(props) {
-        if (!isObj(props)) {
-          syErr(`
-                    
-                    The value of [List reactor => Object.defineProps] must be
-                    only a plain Javascript object, and you
-                    defined "${valueType(props)}" as its value.
-                    
-                    `);
-        }
-
-        for (const [prop, value] of Object.entries(props)) {
-          if (
-            !(prop in this) &&
-            prop !== "defineProps" &&
-            prop !== "setProps" &&
-            prop !== "dleteProps"
-          ) {
-            share[prop] = value;
-            Object.defineProperty(this, prop, {
-              set(newValue) {
-                share[prop] = newValue;
-                call();
-                checkType(newValue, call);
-              },
-              get() {
-                return share[prop];
-              },
-              configurable: !0,
-            });
-
-            checkType(value, call);
-          }
-        }
-
-        call();
-      },
-      enumerable: !1,
-    },
-
-    setProps: {
-      set(props) {
-        if (!isObj(props)) {
-          syErr(`
-                    
-                    The value of [Reactor].defineProps must be
-                    only a plain Javascript object, and you
-                    defined ${valueType(props)} as its value.
-                    
-                    `);
-        }
-
-        for (const [prop, value] of Object.entries(props)) {
-          if (
-            prop in this &&
-            prop !== "defineProps" &&
-            prop !== "setProps" &&
-            prop !== "deleteProps"
-          ) {
-            share[prop] = value;
-            checkType(value, call);
-          }
-        }
-
-        call();
-      },
-      enumerable: !1,
-    },
-    deleteProps: {
-      set(props) {
-        if (!isArray(props)) {
-          syErr(`
-                    
-                    The value of [List reactor => Object.deleteprops] must be 
-                    an array, and you defined "${valueType(
-                      props
-                    )}" as its value.
-                    
-                    `);
-        }
-
-        for (const prop of props) {
-          if (prop in this) {
-            delete this[prop];
-            delete share[prop];
-          }
-        }
-
-        call();
-      },
-      enumerable: !1,
-    },
-    [reactive]: {
-      get() {
-        return true;
-      },
-    },
-  });
-}
-
-function defineReactiveArray(array, call) {
-  const reactive = Symbol.for("reactive");
-
-  if (reactive in array) {
-    return false;
-  }
+function defineReactiveArray(array, renderingSystem) {
+  if (hasReactiveSymbol(array)) return false;
 
   const mutationMethods = [
     "push",
@@ -356,36 +295,27 @@ function defineReactiveArray(array, call) {
     Object.defineProperty(array, method, {
       value(start, deleteCount, ...items) {
         Array.prototype[method].apply(this, arguments);
-        call();
+        renderingSystem();
 
         if (method === "push" || method === "unshift") {
           for (const arg of arguments) {
-            checkType(arg, call);
+            checkType(arg, renderingSystem);
           }
-        } else {
-          if (method === "splice" && isDefined(items)) {
-            for (const item of items) {
-              checkType(item, call);
-            }
+        } else if (method === "splice" && isDefined(items)) {
+          for (const item of items) {
+            checkType(item, renderingSystem);
           }
         }
       },
     });
   }
 
-  walkArray(array, call);
-
-  Object.defineProperty(array, reactive, {
-    value: true,
-  });
+  walkArray(array, renderingSystem);
+  defineReactiveSymbol(array);
 }
 
-function defineReactiveMap(map, call, listReactor, root) {
-  const reactive = Symbol.for("reactive");
-
-  if (reactive in map) {
-    return false;
-  }
+function defineReactiveMap(map, renderingSystem, listReactor, root) {
+  if (hasReactiveSymbol(map)) return false;
 
   const mutationMethods = ["set", "delete", "clear"];
 
@@ -395,30 +325,24 @@ function defineReactiveMap(map, call, listReactor, root) {
         if (method == "delete" && listReactor)
           exactElToRemove(this, arguments[0], root);
         Map.prototype[method].apply(this, arguments);
-        call();
+        runObserveCallBack(this);
+        renderingSystem();
 
         if (method == "set") {
           const value = arguments[1];
 
-          checkType(value, call);
+          checkType(value, renderingSystem);
         }
       },
     });
   }
 
-  walkMap(map, call);
-
-  Object.defineProperty(map, reactive, {
-    value: true,
-  });
+  walkMap(map, renderingSystem);
+  defineReactiveSymbol(map);
 }
 
-function defineReactiveSet(set, call, listReactor, root) {
-  const reactive = Symbol.for("reactive");
-
-  if (reactive in set) {
-    return false;
-  }
+function defineReactiveSet(set, renderingSystem, listReactor, root) {
+  if (hasReactiveSymbol(set)) return false;
 
   const mutationMethods = ["add", "clear", "delete"];
 
@@ -428,19 +352,17 @@ function defineReactiveSet(set, call, listReactor, root) {
         if (method == "delete" && listReactor)
           exactElToRemove(this, arguments[0], root);
         Set.prototype[method].apply(this, arguments);
-        call();
+        runObserveCallBack(this);
+        renderingSystem();
         if (method === "add") {
-          checkType(arguments[0], call);
+          checkType(arguments[0], renderingSystem);
         }
       },
     });
   }
 
-  walkSet(set, call);
-
-  Object.defineProperty(set, reactive, {
-    value: true,
-  });
+  walkSet(set, renderingSystem);
+  defineReactiveSymbol(set);
 }
 
 function walkMap(map, call) {
@@ -467,28 +389,11 @@ function walkSet(set, call) {
   });
 }
 
-const reactive = Symbol.for("reactive");
-
-function costumReactor(array, htmlEl, updateSystem, DO, pro) {
-  if (isNotConfigurable(array)) {
-    return false;
-  }
+function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
+  if (isNotConfigurable(array)) return false;
 
   //It is already reactive array.
-  if (reactive in array) {
-    return false;
-  }
-
-  // Is not returning the template.
-  function runError() {
-    syErr(`
-                
-        You are not returning the template function
-        in "do" method, renderList, you must only return
-        the template function.
-        
-        `);
-  }
+  if (hasReactiveSymbol(array)) return false;
 
   Object.defineProperties(array, {
     shift: {
@@ -499,7 +404,9 @@ function costumReactor(array, htmlEl, updateSystem, DO, pro) {
         if (firstNodeElement) {
           htmlEl.removeChild(firstNodeElement);
 
-          updateSystem();
+          runObserveCallBack(array);
+
+          renderingSystem();
         }
       },
     },
@@ -514,23 +421,19 @@ function costumReactor(array, htmlEl, updateSystem, DO, pro) {
           for (; i > -1; i--) {
             const temp = DO.call(pro, arguments[i], i, pro);
 
-            if (!isValidTemplateReturn(temp)) {
-              runError();
-            }
-            if (htmlEl.children[0]) {
+            if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
+            else if (htmlEl.children[0]) {
               htmlEl.insertBefore(toDOM(temp.element), htmlEl.children[0]);
             } else {
               htmlEl.appendChild(toDOM(temp.element));
             }
 
-            checkType(arguments[i], updateSystem);
+            checkType(arguments[i], renderingSystem);
           }
         } else if (arguments.length == 1) {
           const temp = DO.call(pro, arguments[0], 0, pro);
 
-          if (!isValidTemplateReturn(temp)) {
-            runError();
-          }
+          if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
 
           if (htmlEl.children[0]) {
             htmlEl.insertBefore(toDOM(temp.element), htmlEl.children[0]);
@@ -538,10 +441,12 @@ function costumReactor(array, htmlEl, updateSystem, DO, pro) {
             htmlEl.appendChild(toDOM(temp.element));
           }
 
-          checkType(arguments[0], updateSystem);
+          checkType(arguments[0], renderingSystem);
         }
 
-        updateSystem();
+        runObserveCallBack(array);
+
+        renderingSystem();
       },
     },
 
@@ -570,9 +475,7 @@ function costumReactor(array, htmlEl, updateSystem, DO, pro) {
             for (let l = items.length - 1; l > -1; l--) {
               const temp = DO.call(pro, items[l], l, pro);
 
-              if (!isValidTemplateReturn(temp)) {
-                runError();
-              }
+              if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
 
               if (htmlEl.children[start]) {
                 htmlEl.insertBefore(
@@ -586,189 +489,164 @@ function costumReactor(array, htmlEl, updateSystem, DO, pro) {
           }
         }
 
-        updateSystem();
+        runObserveCallBack(array);
+
+        renderingSystem();
       },
     },
-    [reactive]: { value: true },
   });
 }
 
 export function renderList(options) {
+  function defineListReactor(each, renderingSystem, root) {
+    if (isArray(each)) {
+      defineCostumArrayProps(each);
+      return createArrayReactor(each, renderingSystem);
+    } else if (isObj(each)) {
+      return createObjReactor(each, renderingSystem, root);
+    } else if (isSet(each)) {
+      defineReactiveSet(each, renderingSystem, true, root);
+
+      return each;
+    } else {
+      if (isMap(each)) {
+        defineReactiveMap(each, renderingSystem, true, root);
+
+        return each;
+      }
+    }
+  }
+
   if (new.target !== void 0) {
-    syErr(`
-        
-        renderList is not a constructor, do not call
-        it with the "new" keyword.
-        
-        `);
+    syErr(`renderList is not a constructor, do not call
+        it with the "new" keyword.`);
   }
 
   if (!isObj(options)) {
-    syErr(`
-        
-        The options(the argument of renderList) must be a plain Javascript object.
-        
-        `);
+    syErr(
+      "The options(the argument of renderList) must be a plain Javascript object."
+    );
   }
 
+  /*eslint-disable prefer-const*/
+
   let { in: IN, each, do: DO } = options;
+
+  /*eslint-enable prefer-const*/
 
   const root = getId(IN);
 
   if (!validInProperty(IN)) {
-    syErr(`
-        
-        The "in" option in renderList must be a string.
-        
-        `);
+    syErr("The 'in' option in renderList must be a string.");
   }
 
-  if (!validEachProperty(each)) {
-    syErr(`
-  
-        "${valueType(
-          each
-        )}" is not a valid value for the "each" option in renderList.
-        The value that are accepted in "each" option, are:
-
-        Array.
-        Plain js object.
-        Map.
-        Set.
-
-         
-        `);
-  }
+  if (!validEachProperty(each)) runUnsupportedEachValueError(each);
 
   if (!isCallable(DO)) {
-    syErr(`
-        
-        The value of the "do" option in renderList, must be only a function.
-        
-        `);
+    syErr(
+      "The value of the 'do' option in renderList must be only a function."
+    );
   }
 
   let pro,
     firstRender = true;
 
-  function proSetup() {
-    if (isArray(each)) {
-      pro = createArrayReactor(each, updateSystem);
+  function setEachHandler(newEach) {
+    if (!validEachProperty(newEach)) runUnsupportedEachValueError(newEach);
 
-      costumReactor(each, root, updateSystem, DO, pro);
-    } else if (isObj(each)) {
-      pro = createObjReactor(each, updateSystem, root);
-    } else if (isSet(each)) {
-      defineReactiveSet(each, updateSystem, true, root);
-      pro = each;
-    } else {
-      if (isMap(each)) {
-        defineReactiveMap(each, updateSystem, true, root);
-        pro = each;
-      }
-    }
+    each = newEach;
+
+    if (!hasReactiveSymbol(newEach)) proSetup();
   }
 
-  const defineNewEach = (newArray) => {
-    each = newArray;
-    defineReactorReactiveProps(each, updateSystem);
-    proSetup();
-    updateSystem();
-  };
-
-  function defineReactorReactiveProps() {
-    const reactive = Symbol.for("reactive");
-
-    if (reactive in each) {
-      return false;
-    }
+  function proSetup() {
+    if (hasReactiveSymbol(each)) return false;
 
     Object.defineProperties(each, {
-      otherArray: {
-        set(value) {
-          if (!isArray(value)) {
-            syErr(
-              "The value of [List reactor].otherArray property must be an Array."
-            );
-          }
-
-          defineNewEach(value);
-
-          for (const item of value) {
-            checkType(item, updateSystem);
-          }
+      setEach: { set: setEachHandler },
+      observe: {
+        value(callBack) {
+          const observe = Symbol.for("observe");
+          if (typeof this[observe] === "function") return;
+          if (!isCallable(callBack))
+            syErr("The argument of the observe method must be a function.");
+          else
+            Object.defineProperty(this, observe, {
+              value: callBack,
+              configurable: !1,
+            });
         },
-
-        configurable: !0,
-        enumerable: !1,
-      },
-      addItems: {
-        value(items, position) {
-          if (isDefined(position) && typeof position !== "number") {
-            syErr(`
-                        
-                        The second argument of [LIST REACTOR].addItems must 
-                        be a number.
-                        
-                        `);
-          }
-
-          if (!isArray(items)) {
-            syErr(`
-                        
-                        The first argument of [LIST REACTOR ].addItems must be an Array.
-                        
-                        `);
-          }
-
-          if (!isDefined(position) || position > this.length - 1) {
-            for (const item of items) {
-              this.push(item);
-
-              checkType(item, updateSystem);
-            }
-
-            /**
-             * The reactive system does not track calls to
-             * the Array.prototype.push, so calling only
-             * Array.prototype.push will not trigger any update.
-             *
-             */
-
-            updateSystem();
-          } else if (position == 0 || position < 0) {
-            for (let i = items.length - 1; i > -1; i--) {
-              this.unshift(items[i]);
-
-              checkType(items[i], updateSystem);
-            }
-          } else {
-            for (let i = items.length - 1; i > -1; i--) {
-              this.splice(position, 0, items[i]);
-
-              checkType(items[i], updateSystem);
-            }
-          }
-        },
-        configurable: !0,
-        enumerable: !1,
-        writable: !1,
       },
     });
+
+    pro = defineListReactor(each, renderingSystem, root, true);
+
+    if (isArray(each))
+      redefineArrayMutationMethods(each, root, renderingSystem, DO, pro);
   }
 
-  if (isArray(each)) {
-    defineReactorReactiveProps();
+  function defineCostumArrayProps(array) {
+    if (hasReactiveSymbol(array)) return false;
+
+    function addItemsHandler(items, position) {
+      if (isDefined(position) && typeof position !== "number")
+        runInvalidAddItemsSecodArgumentError();
+
+      if (!isArray(items)) runInvalidAddItemsFirstArgumentError();
+      if (!isDefined(position) || position > this.length - 1) {
+        for (const item of items) {
+          this.push(item);
+
+          checkType(item, renderingSystem);
+        }
+
+        /**
+         * The reactive system does not track calls to
+         * the Array.prototype.push, so calling only
+         * Array.prototype.push will not trigger any update.
+         *
+         */
+
+        renderingSystem();
+      } else if (position == 0 || position < 0) {
+        for (let i = items.length - 1; i > -1; i--) {
+          this.unshift(items[i]);
+
+          checkType(items[i], renderingSystem);
+        }
+      } else {
+        for (let i = items.length - 1; i > -1; i--) {
+          this.splice(position, 0, items[i]);
+
+          checkType(items[i], renderingSystem);
+        }
+      }
+    }
+
+    const costumProps = [
+      { name: "otherArray", handler: setEachHandler },
+      { name: "addItems", handler: addItemsHandler },
+    ];
+
+    for (const { name, handler } of costumProps) {
+      Object.defineProperty(array, name, {
+        set() {
+          if (name === "otherArray") runOtherArrayDeprecationWarning();
+
+          handler(...arguments);
+        },
+      });
+    }
   }
 
   proSetup();
 
-  function updateSystem() {
-    const i = new Iterable(each);
+  function renderingSystem() {
+    const iterable = new Iterable(each);
 
-    syncronizeRootChildrenLengAndSourceLength(root, i);
+    synchronizeRootChildrenLengthAndSourceLength(root, iterable);
 
-    i.each((data, index, type) => {
+    iterable.each((data, index, type) => {
       let newTemp;
 
       function checkIterationSourceType() {
@@ -795,11 +673,7 @@ export function renderList(options) {
           root.appendChild(toDOM(newTemp.element));
         } else {
           if (!actualEl.template) {
-            consW(`
-                    
-                    Avoid manipulating what Inter manipulates,
-                    
-                    `);
+            consW("Avoid manipulating what Inter manipulates.");
 
             /**
              * ActualEl was not rendered by Inter, in
@@ -816,21 +690,14 @@ export function renderList(options) {
         if (firstRender) {
           checkType(
             type !== "object" ? data : data[1] /*obj prop*/,
-            updateSystem
+            renderingSystem
           );
         }
-      } else {
-        syErr(`
-            
-           The template function is not being returned inside the "do" method in
-           renderList(reactive listing), just return the template function.
-            
-            `);
-      }
+      } else runInvalidTemplateReturnError();
     });
   }
 
-  updateSystem();
+  renderingSystem();
 
   firstRender = false;
 
@@ -838,20 +705,14 @@ export function renderList(options) {
 }
 
 function runDiff(newTemp, oldTemp, oldRoot) {
-  /**
-   * the update and the UpdateChildren
-   * have high priority in the diffing.
-   *
-   */
-
   const diff = {
     children: true,
   };
 
-  ContainerDeffing(newTemp, oldTemp, diff);
+  runContainerDiffing(newTemp, oldTemp, diff);
 
   if (diff.children && newTemp.children && newTemp.children.length > 0) {
-    diffingChildren(newTemp.children, oldTemp.children, oldRoot);
+    runChildrenDiffing(newTemp.children, oldTemp.children, oldRoot);
   }
 }
 
@@ -865,10 +726,13 @@ function AreBothArray(first, second) {
   return isArray(first) && isArray(second);
 }
 
-function ContainerDeffing(newContainer, oldContainer, diff) {
+function getValue(text) {
+  if (typeof text === "function") text = text();
+  return text;
+}
+
+function runContainerDiffing(newContainer, oldContainer, diff) {
   const {
-    tag: newTag,
-    text: newText,
     attrs: newAttrs = {},
     events: newEvents = {},
     styles: newStyles = {},
@@ -876,8 +740,6 @@ function ContainerDeffing(newContainer, oldContainer, diff) {
   } = newContainer;
 
   const {
-    tag: oldTag,
-    text: oldText,
     attrs: oldAttrs = {},
     events: oldEvents = {},
     styles: oldStyles = {},
@@ -886,6 +748,10 @@ function ContainerDeffing(newContainer, oldContainer, diff) {
   } = oldContainer;
 
   const rootEL = target.parentNode;
+  const newText = getValue(newContainer.text);
+  const oldText = getValue(oldContainer.text);
+  const newTag = getValue(newContainer.tag);
+  const oldTag = getValue(oldContainer.tag);
 
   if (newTag !== oldTag) {
     const newElement = toDOM(newContainer);
@@ -896,11 +762,7 @@ function ContainerDeffing(newContainer, oldContainer, diff) {
 
     shareProps(oldContainer, newContainer);
     oldContainer.target = newElement;
-
-    return true;
-  }
-
-  if (isOneAnArrayAndOtherNot(newChildren, oldChildren)) {
+  } else if (isOneAnArrayAndOtherNot(newChildren, oldChildren)) {
     const newElement = toDOM(newContainer);
 
     rootEL.replaceChild(newElement, target);
@@ -908,11 +770,7 @@ function ContainerDeffing(newContainer, oldContainer, diff) {
     diff.children = false;
     shareProps(oldContainer, newContainer);
     oldContainer.target = newElement;
-
-    return true;
-  }
-
-  if (
+  } else if (
     AreBothArray(newChildren, oldChildren) &&
     newChildren.length !== oldChildren.length
   ) {
@@ -923,11 +781,7 @@ function ContainerDeffing(newContainer, oldContainer, diff) {
     diff.children = false;
     shareProps(oldContainer, newContainer);
     oldContainer.target = newElement;
-
-    return true;
-  }
-
-  if (!isDefined(newChildren) && !isDefined(oldChildren)) {
+  } else if (!isDefined(newChildren) && !isDefined(oldChildren)) {
     if (newText !== oldText) {
       target.textContent = newText;
 
@@ -935,13 +789,9 @@ function ContainerDeffing(newContainer, oldContainer, diff) {
     }
   }
 
-  attributeDiffing(target, oldAttrs, newAttrs);
-  eventDeffing(target, oldEvents, newEvents);
-  styleDiffing(target, oldStyles, newStyles);
-
-  shareProps(oldAttrs, newAttrs);
-  shareProps(oldEvents, newEvents);
-  shareProps(oldStyles, newStyles);
+  runAttributeDiffing(target, oldAttrs, newAttrs);
+  runEventDiffing(target, oldEvents, newEvents);
+  runStyleDiffing(target, oldStyles, newStyles);
 }
 
 function shareProps(target, source) {
@@ -952,88 +802,104 @@ function getGreater(firstArray, secondArray) {
   return firstArray.length > secondArray.length ? firstArray : secondArray;
 }
 
-function attributeDiffing(target, oldAttributes, newAttributes) {
-  const _old = Object.keys(oldAttributes),
-    _new = Object.keys(newAttributes),
-    _greater = getGreater(_old, _new);
-
-  for (let i = 0; _greater.length > i; i++) {
-    const oldAttr = _old[i],
-      newAttr = _new[i];
-
-    if (
-      !(oldAttr in newAttributes) ||
-      !isDefined(newAttributes[oldAttr]) ||
-      isFalse(newAttributes[oldAttr])
-    ) {
-      target.removeAttribute(oldAttr);
+function runAttributeDiffing(target, oldAttributes, newAttributes) {
+  function removeAttr(attr) {
+    if (target.hasAttribute(attr)) {
+      target.removeAttribute(attr);
+    } else if (specialsAttrs.has(attr)) {
+      target[attr] = "";
     }
 
-    if (isDefined(newAttributes[newAttr]) && !isFalse(newAttributes[newAttr])) {
-      if (newAttributes[newAttr] !== oldAttributes[newAttr]) {
-        target.setAttribute(newAttr, newAttributes[newAttr]);
+    if (attr == "checked" && target.checked) target.checked = false;
+  }
+
+  const oldAttrsArray = Object.keys(oldAttributes),
+    newAttrsArray = Object.keys(newAttributes),
+    greater = getGreater(oldAttrsArray, newAttrsArray),
+    specialsAttrs = new Set(["value", "current"]);
+
+  for (let i = 0; greater.length > i; i++) {
+    const oldAttrName = oldAttributes[i],
+      newAttrName = newAttrsArray[i],
+      oldAttrValue = getValue(oldAttributes[oldAttrName]),
+      newAttrValue = getValue(newAttributes[newAttrName]);
+
+    if (!(oldAttrName in newAttributes)) removeAttr(oldAttrName);
+    else if (!isDefined(newAttrValue) || isFalse(newAttrValue))
+      removeAttr(newAttrName);
+    else if (isDefined(newAttrValue) && !isFalse(newAttrValue)) {
+      if (newAttrValue !== oldAttrValue) {
+        if (specialsAttrs.has(newAttrName)) target[newAttrName] = newAttrValue;
+        else target.setAttribute(newAttrName, newAttrValue);
+
+        if (newAttrName == "checked" && !target.checked) target.checked = true;
       }
     }
+
+    oldAttributes[oldAttrName] = newAttrValue;
   }
 }
 
-function styleDiffing(target, oldStyles, newStyles) {
-  const _old = Object.keys(oldStyles),
-    _new = Object.keys(newStyles),
-    _greater = getGreater(_old, _new);
+function runStyleDiffing(target, oldStyles, newStyles) {
+  const oldStylesArray = Object.keys(oldStyles),
+    newStylesArray = Object.keys(newStyles),
+    greater = getGreater(oldStylesArray, newStylesArray);
 
-  for (let i = 0; _greater.length > i; i++) {
-    const oldStyle = _old[i],
-      newStyle = _new[i];
+  for (let i = 0; greater.length > i; i++) {
+    const oldStyleName = oldStylesArray[i],
+      newStyleName = newStylesArray[i],
+      oldStyleValue = getValue(oldStyles[oldStyleName]),
+      newStyleValue = getValue(newStyles[newStyleName]);
 
-    if (!(oldStyle in newStyles) || !isDefined(newStyles[oldStyle])) {
-      target.style.removeProperty(oldStyle);
+    if (!(oldStyleName in newStyles) || !isDefined(newStyleValue)) {
+      const styleValue = target.style[oldStyleName];
+      const styleAttr = target.getAttribute("style");
+      if (isDefined(styleValue) && styleValue.trim().length !== 0) {
+        target.style[oldStyleName] = null;
+      }
 
-      _new.splice(i, 1);
-      if (_new.length == 0) {
+      if (styleAttr && styleAttr.trim().length == 0)
         target.removeAttribute("style");
+    } else if (isDefined(newStyleValue)) {
+      if (newStyleValue !== oldStyleValue) {
+        if (validStyleName(newStyleName)) {
+          target.style[newStyleName] = newStyleValue;
+
+          if (target.style[newStyleName] !== newStyleValue)
+            ParserWarning(
+              `"${newStyleValue}" is an invalid value for the "${newStyleName}" style.`
+            );
+        } else runInvalidStyleWarning(newStyleName);
       }
     }
 
-    if (isDefined(newStyles[newStyle])) {
-      if (newStyles[newStyle] !== oldStyles[newStyle]) {
-        if (validStyleName(newStyle)) {
-          target.style[newStyle] = newStyles[newStyle];
-        } else {
-          ParserWarning(`
-        
-        "${newStyle}" doesn't seem to be a valid style name.
-        
-        `);
-        }
-      }
-    }
+    oldStyles[oldStyleName] = newStyleValue;
   }
 }
 
-function eventDeffing(target, oldEvents, newEvents) {
-  const _old = Object.keys(oldEvents),
-    _new = Object.keys(newEvents),
-    _greater = getGreater(_old, _new);
+function runEventDiffing(target, oldEvents, newEvents) {
+  const oldEventsArray = Object.keys(oldEvents),
+    newEventsArray = Object.keys(newEvents),
+    greater = getGreater(oldEventsArray, newEventsArray);
 
-  for (let i = 0; _greater.length > i; i++) {
-    const oldEvent = _old[i],
-      newEvent = _new[i];
+  for (let i = 0; greater.length > i; i++) {
+    const oldEventName = oldEventsArray[i],
+      newEventName = newEventsArray[i];
 
-    if (!(oldEvent in newEvents) || !isDefined(newEvents[oldEvent])) {
-      target[oldEvent] = void 0;
+    if (!(oldEventName in newEvents) || !isDefined(newEvents[oldEventName]))
+      target[oldEventName] = void 0;
+    if (!isCallable(newEvents[newEventName]) && validDomEvent(newEventName)) {
+      target[oldEventName] = void 0;
+
+      runInvalidEventHandlerWarning(newEventName);
+
+      continue;
     }
 
-    if (isDefined(newEvents[newEvent])) {
-      if (validDomEvent(newEvent)) {
-        target[newEvent] = newEvents[newEvent];
-      } else {
-        ParserWarning(`
-        
-        "${newEvent}" doesn't seem to be a valid dom event.
-        
-        `);
-      }
+    if (isDefined(newEvents[newEventName])) {
+      if (validDomEvent(newEventName)) {
+        target[newEventName] = newEvents[newEventName];
+      } else runInvalidEventWarning(newEventName);
     }
   }
 }
@@ -1048,25 +914,16 @@ function insertBefore(root, index, virtualElement) {
   }
 }
 
-function diffingChildren(__new, __old, realParent) {
-  const _new = Array.from(__new),
-    _old = Array.from(__old);
+function runChildrenDiffing(__new, __old, realParent) {
+  const newContainer = Array.from(__new),
+    oldContainer = Array.from(__old);
 
-  for (let i = 0; i < _new.length; i++) {
-    /**
-     * {tag:"h2"}  {tag:"h2"}
-     * {tag:null} {tag:null}
-     * {tag:"button"} {tag:"button"}
-     *
-     */
-
-    const newChild = _new[i],
-      oldChild = _old[i];
+  for (let i = 0; i < newContainer.length; i++) {
+    const newChild = newContainer[i],
+      oldChild = oldContainer[i];
     let hasChildren = false;
 
     const {
-      tag: newTag,
-      text: newText,
       children: newChildren = [],
       events: newEvents = {},
       attrs: newAttrs = {},
@@ -1075,8 +932,6 @@ function diffingChildren(__new, __old, realParent) {
     } = newChild;
 
     const {
-      tag: oldTag,
-      text: oldText,
       children: oldChildren = [],
       events: oldEvents = {},
       attrs: oldAttrs = {},
@@ -1086,12 +941,14 @@ function diffingChildren(__new, __old, realParent) {
     } = oldChild;
 
     let theLastElement;
+    const newText = getValue(newChild.text);
+    const oldText = getValue(oldChild.text);
+    const newTag = getValue(newChild.tag);
+    const oldTag = getValue(oldChild.tag);
 
     if (realParent) {
       theLastElement = realParent.children[realParent.children.length - 1];
-    }
-
-    if (newChildren.length !== oldChildren.length) {
+    } else if (newChildren.length !== oldChildren.length) {
       if (target && target.parentNode != null) {
         const newElement = toDOM(newChild, true, index);
 
@@ -1100,8 +957,6 @@ function diffingChildren(__new, __old, realParent) {
         Object.assign(oldChild, newChild);
         oldChild.target = newElement;
       }
-
-      continue;
     } else {
       if (newTag !== oldTag) {
         const newELement = toDOM(newChild, true, index);
@@ -1112,17 +967,11 @@ function diffingChildren(__new, __old, realParent) {
           realParent.replaceChild(newELement, target);
           oldChild.target = newELement;
         }
-
-        continue;
-      }
-
-      if (isFalse(newRenderIf)) {
+      } else if (isFalse(newRenderIf)) {
         if (target && target.parentNode != null) {
           realParent.removeChild(target);
         }
-      }
-
-      if (isTrue(newRenderIf)) {
+      } else if (isTrue(newRenderIf)) {
         if (target && target.parentNode == null) {
           const newELement = toDOM(newChild, true, index);
 
@@ -1135,8 +984,6 @@ function diffingChildren(__new, __old, realParent) {
           } else {
             realParent.appendChild(newELement);
           }
-
-          continue;
         }
 
         if (!target) {
@@ -1165,7 +1012,7 @@ function diffingChildren(__new, __old, realParent) {
         newChildren.length !== 0
       ) {
         hasChildren = true;
-        diffingChildren(newChildren, oldChildren, target);
+        runChildrenDiffing(newChildren, oldChildren, target);
       }
 
       if (oldText !== newText && target && !hasChildren) {
@@ -1176,15 +1023,15 @@ function diffingChildren(__new, __old, realParent) {
       oldChild.tag = newTag;
 
       if (target) {
-        attributeDiffing(target, oldAttrs, newAttrs);
-        styleDiffing(target, oldStyles, newStyles);
-        eventDeffing(target, oldEvents, newEvents);
+        runAttributeDiffing(target, oldAttrs, newAttrs);
+        runStyleDiffing(target, oldStyles, newStyles);
+        runEventDiffing(target, oldEvents, newEvents);
       }
     }
   }
 }
 
-function syncronizeRootChildrenLengAndSourceLength(root, iterable) {
+function synchronizeRootChildrenLengthAndSourceLength(root, iterable) {
   if (root.children.length > iterable.source.values.length) {
     let length = root.children.length - iterable.source.values.length;
 
