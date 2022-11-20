@@ -55,13 +55,13 @@ function hasRefNamed(text, refName) {
 
 /**
  *
- * We are considering them as specials attributes
+ * We are considering them as special attributes
  * because we must not use the setAttribute method
  * to set them.
  *
  */
 
-const specialsAttrs = new Set(["currentTime", "value"]);
+const specialAttrs = new Set(["currentTime", "value"]);
 
 function runRefParsing(rootElement, refs, refCache) {
   function getTextNodes(el) {
@@ -130,10 +130,10 @@ function runRefParsing(rootElement, refs, refCache) {
     for (const attr of elementNode.attributes) {
       for (const ref in refs) {
         if (hasRefNamed(attr.value, ref)) {
-          if (!specialsAttrs.has(attr.name)) {
+          if (!specialAttrs.has(attr.name)) {
             setting.attrs[attr.name] = attr.value;
           } else {
-            refCache.specialsAttrs.add({
+            refCache.specialAttrs.add({
               target: elementNode,
               attr: {
                 [attr.name]: attr.value,
@@ -210,10 +210,10 @@ export function Ref(obj) {
     const refParser = {
       attrs: new Set(), // Attribute reference.
       text: new Set(), // Text reference.
-      specialsAttrs: new Set(),
+      specialAttrs: new Set(),
       observed: new Map(),
       refs: proxyTarget,
-      hadIteratedOverSpecialsAttrs: false,
+      hadIteratedOverSpecialAttrs: false,
       add(setting, attr) {
         // if attr, the parser must register the reference
         // as an attribute reference.
@@ -225,8 +225,8 @@ export function Ref(obj) {
         }
       },
 
-      updateSpecialsAttrs() {
-        for (const special of Array.from(this.specialsAttrs)) {
+      updateSpecialAttrs() {
+        for (const special of Array.from(this.specialAttrs)) {
           const { target } = special;
 
           // eslint-disable-next-line prefer-const
@@ -298,7 +298,7 @@ export function Ref(obj) {
       updateRefs() {
         if (this.text.size > 0) this.updateTextRef();
         if (this.attrs.size > 0) this.updateAttrRef();
-        if (this.specialsAttrs.size > 0) this.updateSpecialsAttrs();
+        if (this.specialAttrs.size > 0) this.updateSpecialsAttrs();
       },
     };
 

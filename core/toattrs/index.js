@@ -65,8 +65,8 @@ function parse(rootElement, dataObject) {
 }
 
 function spreadAttrs(Element, managerObject) {
-  const specials = new Set(["value", "currentTime"]);
-  const isNotSpecial = (name) => !specials.has(name);
+  const special = new Set(["value", "currentTime"]);
+  const isNotSpecial = (name) => !special.has(name);
   const isAnEvent = (name) => name.startsWith("on") && validDomEvent(name);
   const isSpecial = (name) => !isNotSpecial(name);
   const observerCache = new Map();
@@ -113,8 +113,8 @@ function defineEvent(Element, eventName, handler, managerObject) {
 }
 
 function defineReactiveProp(object, name, value, Element, observerCache) {
-  const specials = new Set(["value", "currentTime", "checked"]);
-  const isNotSpecial = () => !specials.has(name);
+  const special = new Set(["value", "currentTime", "checked"]);
+  const isNotSpecial = () => !special.has(name);
   const isAnEvent = () => name.startsWith("on") && validDomEvent(name);
   const isSpecial = () => !isNotSpecial(name);
   let propValue = value;

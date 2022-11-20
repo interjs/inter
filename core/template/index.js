@@ -24,7 +24,7 @@ import {
   runInvalidTemplateArgumentError,
 } from "./errors.js";
 
-function createEvents(events, container, hasCheckedAttr) {
+function createEvents(events, container) {
   Object.entries(events).forEach((event) => {
     const [name, handler] = event;
 
@@ -40,7 +40,7 @@ function createAttrs(attrs, container) {
   Object.entries(attrs).forEach((attr) => {
     // eslint-disable-next-line prefer-const
     let [name, value] = attr;
-    const specialsAttrs = new Set(["value", "currentTime", "checked"]);
+    const specialAttrs = new Set(["value", "currentTime", "checked"]);
 
     const setAttr = (attrValue) => {
       if (isDefined(attrValue) && !isFalse(attrValue)) {
@@ -142,7 +142,7 @@ export function toDOM(obj, isChild, index) {
   }
 
   createAttrs(attrs, container);
-  createEvents(events, container, hasOwnProperty(attrs, "checked"));
+  createEvents(events, container);
   createStyles(styles, container);
   createTextOrChildren(text, children, container);
 
@@ -193,7 +193,7 @@ function createChildren(root, children) {
     }); //For diffing task.
 
     createAttrs(attrs, container);
-    createEvents(events, container, hasOwnProperty(attrs, "checked"));
+    createEvents(events, container);
     createStyles(styles, container);
     createTextOrChildren(text, children, container);
     root.appendChild(container);

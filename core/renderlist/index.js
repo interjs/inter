@@ -885,7 +885,7 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
   function removeAttr(attr) {
     if (target.hasAttribute(attr)) {
       target.removeAttribute(attr);
-    } else if (specialsAttrs.has(attr)) {
+    } else if (specialAttrs.has(attr)) {
       if (attr === "checked") target.checked = false;
       else target[attr] = "";
     }
@@ -895,7 +895,7 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
   const oldAttrsArray = Object.keys(oldAttributes),
     newAttrsArray = Object.keys(newAttributes),
     greater = getGreater(oldAttrsArray, newAttrsArray),
-    specialsAttrs = new Set(["value", "current", "checked"]);
+    specialAttrs = new Set(["value", "current", "checked"]);
 
   for (let i = 0; greater.length > i; i++) {
     const oldAttrName = oldAttrsArray[i],
@@ -908,7 +908,7 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
       removeAttr(newAttrName);
     else if (isDefined(newAttrValue) && !isFalse(newAttrValue)) {
       if (newAttrValue !== oldAttrValue) {
-        if (specialsAttrs.has(newAttrName)) target[newAttrName] = newAttrValue;
+        if (specialAttrs.has(newAttrName)) target[newAttrName] = newAttrValue;
         else target.setAttribute(newAttrName, newAttrValue);
       }
 
