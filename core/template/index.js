@@ -8,7 +8,7 @@ import {
   validDomEvent,
   validStyleName,
   isBool,
-  isFalse
+  isFalse,
 } from "../helpers.js";
 
 import {
@@ -20,7 +20,7 @@ import {
   runInvalidRenderIfOptionWarning,
   runInvalidStyleWarning,
   runInvalidTagOptionError,
-  runInvalidTemplateArgumentError
+  runInvalidTemplateArgumentError,
 } from "./errors.js";
 
 function createEvents(events, container) {
@@ -68,7 +68,7 @@ function createStyles(styles, container) {
 
       if (isDefined(styleValue)) {
         container.style[name] = styleValue;
-		container.template.styles[name] = styleValue;
+        container.template.styles[name] = styleValue;
       }
     } else runInvalidStyleWarning(name);
   });

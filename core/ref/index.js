@@ -1,20 +1,12 @@
+import { isObj, syErr, isCallable, getId } from "../helpers.js";
+
 import {
-  isObj,
-  syErr,
-  isCallable,
-  getId,
-  consW,
-  valueType,
-} from "../helpers.js";
-
-function runReservedRefNameWarning(refName) {
-  consW(`"${refName}" is a reserved reference name, use others names.`);
-}
-
-function runInvalidSetRefsValueError(arg) {
-  syErr(`"${valueType(arg)}" is not a valid value for the "setRefs" property.
-        The value of the setRefs property must be a plain Javascript object.`);
-}
+  runInvalidSetRefsValueError,
+  runInvalidRefDataProperty,
+  runInvalidRefInProperty,
+  runInvalidRefArgument,
+  runReservedRefNameWarning,
+} from "./errors.js";
 
 function hasProp(object) {
   return Object.keys(object).length > 0;
@@ -173,24 +165,13 @@ function runRefParsing(rootElement, refs, refCache) {
 export function Ref(obj) {
   if (new.target != void 0) {
     syErr("Do not call the Ref function with the new keyword.");
-  } else if (!isObj(obj)) {
-    syErr(
-      "The argument of the Ref function must be a plain Javascript object."
-    );
-  } else {
+  } else if (!isObj(obj)) runInvalidRefArgument();
+  else {
     const { in: IN, data } = obj;
 
-    if (!(typeof IN === "string")) {
-      syErr(
-        "The value of the 'in' property on the Ref function must be a string."
-      );
-    }
+    if (!(typeof IN === "string")) runInvalidRefInProperty();
 
-    if (!isObj(data)) {
-      syErr(
-        "The value of the 'data' property on the Ref function must be a plain Javascript object. "
-      );
-    }
+    if (!isObj(data)) runInvalidRefDataProperty();
 
     const reservedRefNames = new Set(["setRefs", "observe"]);
 
@@ -209,7 +190,7 @@ export function Ref(obj) {
     const proxyTarget = Object.assign({}, data);
     const refParser = {
       attrs: new Set(), // Attribute reference.
-      text: new Set(), // Text reference.
+      texts: new Set(), // Text reference.
       specialAttrs: new Set(),
       observed: new Map(),
       refs: proxyTarget,
@@ -221,12 +202,12 @@ export function Ref(obj) {
         if (attr) {
           this.attrs.add(setting);
         } else {
-          this.text.add(setting);
+          this.texts.add(setting);
         }
       },
 
       updateSpecialAttrs() {
-        for (const special of Array.from(this.specialAttrs)) {
+        for (const special of this.specialAttrs) {
           const { target } = special;
 
           // eslint-disable-next-line prefer-const
@@ -245,7 +226,7 @@ export function Ref(obj) {
         }
       },
       updateAttrRef() {
-        for (const attributeRef of Array.from(this.attrs)) {
+        for (const attributeRef of this.attrs) {
           const { target, attrs } = attributeRef;
 
           // eslint-disable-next-line prefer-const
@@ -269,8 +250,8 @@ export function Ref(obj) {
         }
       },
       updateTextRef() {
-        if (this.text.size > 0) {
-          for (const textRef of Array.from(this.text)) {
+        if (this.texts.size > 0) {
+          for (const textRef of this.texts) {
             // eslint-disable-next-line prefer-const
             let { target, text } = textRef;
 
@@ -296,9 +277,9 @@ export function Ref(obj) {
       },
 
       updateRefs() {
-        if (this.text.size > 0) this.updateTextRef();
+        if (this.texts.size > 0) this.updateTextRef();
         if (this.attrs.size > 0) this.updateAttrRef();
-        if (this.specialAttrs.size > 0) this.updateSpecialsAttrs();
+        if (this.specialAttrs.size > 0) this.updateSpecialAttrs();
       },
     };
 

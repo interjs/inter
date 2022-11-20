@@ -889,7 +889,6 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
       if (attr === "checked") target.checked = false;
       else target[attr] = "";
     }
-
   }
 
   const oldAttrsArray = Object.keys(oldAttributes),
@@ -911,7 +910,6 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
         if (specialAttrs.has(newAttrName)) target[newAttrName] = newAttrValue;
         else target.setAttribute(newAttrName, newAttrValue);
       }
-
     }
 
     oldAttributes[oldAttrName] = newAttrValue;
@@ -961,7 +959,6 @@ function runEventDiffing(target, oldEvents, newEvents) {
     greater = getGreater(oldEventsArray, newEventsArray);
 
   for (let i = 0; greater.length > i; i++) {
-
     const oldEventName = oldEventsArray[i],
       newEventName = newEventsArray[i];
 
