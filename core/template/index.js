@@ -9,6 +9,7 @@ import {
   validStyleName,
   isBool,
   isFalse,
+  hasOwnProperty,
 } from "../helpers.js";
 
 import {
@@ -23,7 +24,7 @@ import {
   runInvalidTemplateArgumentError,
 } from "./errors.js";
 
-function createEvents(events, container) {
+function createEvents(events, container, hasCheckedAttr) {
   Object.entries(events).forEach((event) => {
     const [name, handler] = event;
 
@@ -39,15 +40,14 @@ function createAttrs(attrs, container) {
   Object.entries(attrs).forEach((attr) => {
     // eslint-disable-next-line prefer-const
     let [name, value] = attr;
+    const specialsAttrs = new Set(["value", "currentTime", "checked"]);
 
     const setAttr = (attrValue) => {
       if (isDefined(attrValue) && !isFalse(attrValue)) {
-        if (name !== "value") {
-          container.setAttribute(name, attrValue);
-        } else {
-          container[name] = attrValue;
-        }
+        if (!specialsAttrs.has(name)) container.setAttribute(name, attrValue);
+        else container[name] = attrValue;
       }
+	  container.template.attrs[name] = attrValue;
     };
 
     if (isCallable(value)) {
@@ -69,6 +69,7 @@ function createStyles(styles, container) {
 
       if (isDefined(styleValue)) {
         container.style[name] = styleValue;
+		container.template.styles[name] = styleValue;
       }
     } else runInvalidStyleWarning(name);
   });
@@ -141,7 +142,7 @@ export function toDOM(obj, isChild, index) {
   }
 
   createAttrs(attrs, container);
-  createEvents(events, container);
+  createEvents(events, container, hasOwnProperty(attrs, "checked"));
   createStyles(styles, container);
   createTextOrChildren(text, children, container);
 
@@ -192,7 +193,7 @@ function createChildren(root, children) {
     }); //For diffing task.
 
     createAttrs(attrs, container);
-    createEvents(events, container);
+    createEvents(events, container, hasOwnProperty(attrs, "checked"));
     createStyles(styles, container);
     createTextOrChildren(text, children, container);
     root.appendChild(container);

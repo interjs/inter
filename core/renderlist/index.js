@@ -437,6 +437,51 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
         return ArrayPrototypeShiftReturn;
       },
     },
+    pop: {
+      value() {
+        const ArrayPrototypePopReturn = Array.prototype.pop.apply(
+          array,
+          arguments
+        );
+        const children = htmlEl.children;
+        const lastNodeElement = children[children.length - 1];
+
+        if (lastNodeElement) {
+          htmlEl.removeChild(lastNodeElement);
+
+          renderingSystem();
+        }
+
+        return ArrayPrototypePopReturn;
+      },
+    },
+    push: {
+      value() {
+        const ArrayPrototypePushReturn = Array.prototype.push.apply(
+          array,
+          arguments
+        );
+
+        function render(item, i) {
+          const temp = DO.call(pro, item, i, pro);
+
+          if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
+
+          htmlEl.appendChild(toDOM(temp.element));
+
+          checkType(item, renderingSystem);
+        }
+
+        if (arguments.length == 1) render(...arguments, array.length - 1);
+        else if (arguments.length > 1) {
+          for (const item of arguments) render(item, array.length - 1);
+        }
+
+        renderingSystem();
+
+        return ArrayPrototypePushReturn;
+      },
+    },
 
     unshift: {
       value() {
@@ -445,8 +490,8 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
           arguments
         );
 
-        function render(i) {
-          const temp = DO.call(pro, arguments[i], i, pro);
+        function render(i, item) {
+          const temp = DO.call(pro, item, i, pro);
 
           if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
           if (htmlEl.children[0]) {
@@ -455,14 +500,14 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
             htmlEl.appendChild(toDOM(temp.element));
           }
 
-          checkType(arguments[i], renderingSystem);
+          checkType(item, renderingSystem);
         }
 
         if (arguments.length > 1) {
           let i = arguments.length - 1;
 
-          for (; i > -1; i--) render(i);
-        } else if (arguments.length == 1) render(0);
+          for (; i > -1; i--) render(i, arguments[i]);
+        } else if (arguments.length == 1) render(0, ...arguments);
 
         renderingSystem();
         runObserveCallBack(array);
@@ -628,6 +673,10 @@ export function renderList(options) {
     defineReactiveSymbol(each);
   }
 
+  function defineProp(obj, prop, descriptiors) {
+    Object.defineProperty(obj, prop, descriptiors);
+  }
+
   function defineCostumArrayProps(array) {
     if (hasReactiveSymbol(array)) return false;
 
@@ -639,29 +688,14 @@ export function renderList(options) {
       if (!isDefined(position) || position > this.length - 1) {
         for (const item of items) {
           this.push(item);
-
-          checkType(item, renderingSystem);
         }
-
-        /**
-         * The reactive system does not track calls to
-         * the Array.prototype.push, so calling only
-         * Array.prototype.push will not trigger any update.
-         *
-         */
-
-        renderingSystem();
       } else if (position == 0 || position < 0) {
         for (let i = items.length - 1; i > -1; i--) {
           this.unshift(items[i]);
-
-          checkType(items[i], renderingSystem);
         }
       } else {
         for (let i = items.length - 1; i > -1; i--) {
           this.splice(position, 0, items[i]);
-
-          checkType(items[i], renderingSystem);
         }
       }
     }
@@ -672,13 +706,15 @@ export function renderList(options) {
     ];
 
     for (const { name, handler } of costumProps) {
-      Object.defineProperty(array, name, {
-        set() {
-          if (name === "otherArray") runOtherArrayDeprecationWarning();
+      if (name == "addItems") defineProp(array, name, { value: handler });
+      else
+        defineProp(array, name, {
+          set() {
+            if (name === "otherArray") runOtherArrayDeprecationWarning();
 
-          handler(...arguments);
-        },
-      });
+            handler(...arguments);
+          },
+        });
     }
   }
 
@@ -850,19 +886,19 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
     if (target.hasAttribute(attr)) {
       target.removeAttribute(attr);
     } else if (specialsAttrs.has(attr)) {
-      target[attr] = "";
+      if (attr === "checked") target.checked = false;
+      else target[attr] = "";
     }
 
-    if (attr == "checked" && target.checked) target.checked = false;
   }
 
   const oldAttrsArray = Object.keys(oldAttributes),
     newAttrsArray = Object.keys(newAttributes),
     greater = getGreater(oldAttrsArray, newAttrsArray),
-    specialsAttrs = new Set(["value", "current"]);
+    specialsAttrs = new Set(["value", "current", "checked"]);
 
   for (let i = 0; greater.length > i; i++) {
-    const oldAttrName = oldAttributes[i],
+    const oldAttrName = oldAttrsArray[i],
       newAttrName = newAttrsArray[i],
       oldAttrValue = getValue(oldAttributes[oldAttrName]),
       newAttrValue = getValue(newAttributes[newAttrName]);
@@ -874,9 +910,8 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
       if (newAttrValue !== oldAttrValue) {
         if (specialsAttrs.has(newAttrName)) target[newAttrName] = newAttrValue;
         else target.setAttribute(newAttrName, newAttrValue);
-
-        if (newAttrName == "checked" && !target.checked) target.checked = true;
       }
+
     }
 
     oldAttributes[oldAttrName] = newAttrValue;
@@ -926,6 +961,7 @@ function runEventDiffing(target, oldEvents, newEvents) {
     greater = getGreater(oldEventsArray, newEventsArray);
 
   for (let i = 0; greater.length > i; i++) {
+
     const oldEventName = oldEventsArray[i],
       newEventName = newEventsArray[i];
 
