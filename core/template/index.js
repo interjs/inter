@@ -8,8 +8,7 @@ import {
   validDomEvent,
   validStyleName,
   isBool,
-  isFalse,
-  hasOwnProperty,
+  isFalse
 } from "../helpers.js";
 
 import {
@@ -21,7 +20,7 @@ import {
   runInvalidRenderIfOptionWarning,
   runInvalidStyleWarning,
   runInvalidTagOptionError,
-  runInvalidTemplateArgumentError,
+  runInvalidTemplateArgumentError
 } from "./errors.js";
 
 function createEvents(events, container) {
@@ -44,10 +43,10 @@ function createAttrs(attrs, container) {
 
     const setAttr = (attrValue) => {
       if (isDefined(attrValue) && !isFalse(attrValue)) {
-        if (!specialsAttrs.has(name)) container.setAttribute(name, attrValue);
+        if (!specialAttrs.has(name)) container.setAttribute(name, attrValue);
         else container[name] = attrValue;
       }
-	  container.template.attrs[name] = attrValue;
+      container.template.attrs[name] = attrValue;
     };
 
     if (isCallable(value)) {
