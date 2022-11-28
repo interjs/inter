@@ -301,6 +301,25 @@ function createObjReactor(each, renderingSystem, root) {
   });
 }
 
+function mutateArrayMap(array) {
+  Object.defineProperty(array, "map", {
+    value(callBack) {
+      const newArray = new Array();
+      newArray.reactor = this;
+      let index = -1;
+
+      for (const item of this) {
+        index++;
+
+        const returnValue = callBack(item, index, this);
+        newArray.push(returnValue);
+      }
+
+      return newArray;
+    },
+  });
+}
+
 function defineReactiveArray(array, renderingSystem) {
   if (hasReactiveSymbol(array)) return false;
 
@@ -314,11 +333,54 @@ function defineReactiveArray(array, renderingSystem) {
     "reverse",
   ];
 
+  array.mutationInfo = void 0;
+
   for (const method of mutationMethods) {
     Object.defineProperty(array, method, {
       value(start, deleteCount, ...items) {
+        if (method == "pop")
+          this.mutationInfo = {
+            method: "pop",
+            renderingSystem: renderingSystem,
+          };
+        else if (method == "shift")
+          this.mutationInfo = {
+            method: "shift",
+            renderingSystem: renderingSystem,
+          };
+        else if (method == "push")
+          this.mutationInfo = {
+            method: "push",
+            itemsLength: arguments.length,
+            renderingSystem: renderingSystem,
+          };
+        else if (method == "unshift")
+          this.mutationInfo = {
+            method: "unshift",
+            itemsLength: arguments.length,
+            renderingSystem: renderingSystem,
+          };
+        else if (method == "splice") {
+          this.mutationInfo = {
+            method: "splice",
+            start: start,
+            deleteCount: deleteCount,
+            itemsLength: isDefined(items) ? items.length : 0,
+            renderingSystem: renderingSystem,
+          };
+        }
+
         Array.prototype[method].apply(this, arguments);
         renderingSystem();
+
+        this.mutationInfo = {
+          method: void 0,
+          removeInfo: [],
+          do: void 0,
+          newData: [],
+          from: void 0,
+          to: void 0,
+        };
 
         if (method === "push" || method === "unshift") {
           for (const arg of arguments) {
@@ -335,6 +397,7 @@ function defineReactiveArray(array, renderingSystem) {
 
   walkArray(array, renderingSystem);
   defineReactiveSymbol(array);
+  mutateArrayMap(array);
 }
 
 function defineReactiveMap(map, renderingSystem, listReactor, root) {
@@ -728,6 +791,14 @@ export function renderList(options) {
     iterable.each((data, index, type) => {
       let newTemp;
 
+      if (firstRender) {
+        checkType(
+          type !== "object" ? data : data[1] /*obj prop*/,
+          renderingSystem,
+          DO
+        );
+      }
+
       function checkIterationSourceType() {
         if (type === "array") {
           newTemp = DO.call(pro, data, index, pro);
@@ -765,13 +836,6 @@ export function renderList(options) {
             runDiff(newTemp.element, actualEl.template, actualEl);
           }
         }
-
-        if (firstRender) {
-          checkType(
-            type !== "object" ? data : data[1] /*obj prop*/,
-            renderingSystem
-          );
-        }
       } else runInvalidTemplateReturnError();
     });
   }
@@ -786,12 +850,13 @@ export function renderList(options) {
 function runDiff(newTemp, oldTemp, oldRoot) {
   const diff = {
     children: true,
+    continue: true,
   };
 
   runContainerDiffing(newTemp, oldTemp, diff);
 
   if (diff.children && newTemp.children && newTemp.children.length > 0) {
-    runChildrenDiffing(newTemp.children, oldTemp.children, oldRoot);
+    runChildrenDiffing(newTemp.children, oldTemp.children, oldRoot, diff);
   }
 }
 
@@ -1026,7 +1091,77 @@ function runChildrenDiffing(__new, __old, realParent) {
       theLastElement = realParent.children[realParent.children.length - 1];
     }
     if (newChildren.length !== oldChildren.length) {
-      if (target && target.parentNode != null) {
+      const { reactor } = newChildren;
+
+      if (reactor != void 0) {
+        const {
+          mutationInfo: { method, start, deleteCount, itemsLength },
+        } = reactor;
+
+        // eslint-disable-next-line no-inner-declarations
+        function AddEl(startPoint, mutationMethod) {
+          for (
+            let i = itemsLength - 1;
+            newChildren.length > target.children.length;
+            i--
+          ) {
+            const currentElement = target.children[startPoint];
+            const child = newChildren[i];
+
+            if (currentElement)
+              target.insertBefore(
+                toDOM(child, true, child.index),
+                currentElement
+              );
+            else target.appendChild(toDOM(child, true, child.index));
+
+            if (mutationMethod == "unshift") oldChildren.unshift(child);
+            else if (mutationMethod == "splice")
+              oldChildren.splice(start, deleteCount, child);
+          }
+        }
+
+        const lastNodeElement = target.children[target.children.length - 1];
+        const firstNodeElement = target.children[0];
+        if (method == "pop" && lastNodeElement) {
+          target.removeChild(lastNodeElement);
+          oldChildren.pop();
+        } else if (method == "shift" && firstNodeElement) {
+          target.removeChild(firstNodeElement);
+          oldChildren.shift();
+        } else if (method == "push") {
+          for (
+            let i = itemsLength;
+            newChildren.length > target.children.length;
+            i--
+          ) {
+            const child = newChildren[newChildren.length - i];
+
+            target.appendChild(toDOM(child, true, child.index));
+          }
+        } else if (method == "unshift") AddEl(0, method);
+        else if (method == "splice") {
+          if (
+            typeof start == "number" &&
+            typeof deleteCount == "number" &&
+            itemsLength == 0
+          ) {
+            //No Addition.
+
+            for (
+              let i = start;
+              newChildren.length < target.children.length;
+              i++
+            ) {
+              const elToRemove = target.children[start];
+
+              if (elToRemove) target.removeChild(elToRemove);
+            }
+
+            oldChildren.splice(start, deleteCount);
+          } else if (itemsLength > 0) AddEl(start, method);
+        }
+      } else if (target && target.parentNode != null) {
         const newElement = toDOM(newChild, true, index);
 
         realParent.replaceChild(newElement, target);
@@ -1034,76 +1169,74 @@ function runChildrenDiffing(__new, __old, realParent) {
         Object.assign(oldChild, newChild);
         oldChild.target = newElement;
       }
-    } else {
-      if (newTag !== oldTag) {
+    }
+
+    if (newTag !== oldTag) {
+      const newELement = toDOM(newChild, true, index);
+
+      Object.assign(oldChild, newChild);
+
+      if (target && target.parentNode != null) {
+        realParent.replaceChild(newELement, target);
+        oldChild.target = newELement;
+      }
+    } else if (isFalse(newRenderIf)) {
+      if (target && target.parentNode != null) {
+        realParent.removeChild(target);
+      }
+    } else if (isTrue(newRenderIf)) {
+      if (target && target.parentNode == null) {
         const newELement = toDOM(newChild, true, index);
 
         Object.assign(oldChild, newChild);
 
-        if (target && target.parentNode != null) {
-          realParent.replaceChild(newELement, target);
-          oldChild.target = newELement;
+        oldChild.target = newELement;
+
+        if (theLastElement && theLastElement.index > index) {
+          insertBefore(realParent, index, newELement);
+        } else {
+          realParent.appendChild(newELement);
         }
-      } else if (isFalse(newRenderIf)) {
-        if (target && target.parentNode != null) {
-          realParent.removeChild(target);
-        }
-      } else if (isTrue(newRenderIf)) {
-        if (target && target.parentNode == null) {
+      }
+
+      if (!target) {
+        if (theLastElement && theLastElement.index > index) {
           const newELement = toDOM(newChild, true, index);
 
           Object.assign(oldChild, newChild);
 
           oldChild.target = newELement;
 
-          if (theLastElement && theLastElement.index > index) {
-            insertBefore(realParent, index, newELement);
-          } else {
-            realParent.appendChild(newELement);
-          }
-        }
+          insertBefore(realParent, index, newELement);
+        } else {
+          const newELement = toDOM(newChild, true, index);
 
-        if (!target) {
-          if (theLastElement && theLastElement.index > index) {
-            const newELement = toDOM(newChild, true, index);
+          Object.assign(oldChild, newChild);
 
-            Object.assign(oldChild, newChild);
+          oldChild.target = newELement;
 
-            oldChild.target = newELement;
-
-            insertBefore(realParent, index, newELement);
-          } else {
-            const newELement = toDOM(newChild, true, index);
-
-            Object.assign(oldChild, newChild);
-
-            oldChild.target = newELement;
-
-            realParent.appendChild(newELement);
-          }
+          realParent.appendChild(newELement);
         }
       }
+    }
 
-      if (
-        newChildren.length == oldChildren.length &&
-        newChildren.length !== 0
-      ) {
-        hasChildren = true;
-        runChildrenDiffing(newChildren, oldChildren, target);
-      }
+    if (newChildren.length == oldChildren.length && newChildren.length !== 0) {
+      hasChildren = true;
 
-      if (oldText !== newText && target && !hasChildren) {
-        target.textContent = newText;
-        oldChild.text = newText;
-      }
+      runChildrenDiffing(newChildren, oldChildren, target);
+    }
 
-      oldChild.tag = newTag;
+    if (oldText !== newText && target && !hasChildren) {
+      target.textContent = newText;
+      oldChild.text = newText;
+    }
 
-      if (target) {
-        runAttributeDiffing(target, oldAttrs, newAttrs);
-        runStyleDiffing(target, oldStyles, newStyles);
-        runEventDiffing(target, oldEvents, newEvents);
-      }
+    oldChild.tag = newTag;
+
+    if (target) {
+      runAttributeDiffing(target, oldAttrs, newAttrs);
+      runStyleDiffing(target, oldStyles, newStyles);
+      runEventDiffing(target, oldEvents, newEvents);
     }
   }
 }
