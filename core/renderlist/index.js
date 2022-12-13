@@ -370,7 +370,10 @@ function defineReactiveArray(array, renderingSystem) {
           };
         }
 
-        Array.prototype[method].apply(this, arguments);
+        const ArrayPrototypeMethodReturn = Array.prototype[method].apply(
+          this,
+          arguments
+        );
         renderingSystem();
 
         this.mutationInfo = {
@@ -391,6 +394,8 @@ function defineReactiveArray(array, renderingSystem) {
             checkType(item, renderingSystem);
           }
         }
+
+        return ArrayPrototypeMethodReturn;
       },
     });
   }
@@ -410,7 +415,10 @@ function defineReactiveMap(map, renderingSystem, listReactor, root) {
       value() {
         if (method == "delete" && listReactor)
           exactElToRemove(this, arguments[0], root);
-        Map.prototype[method].apply(this, arguments);
+        const MapPrototypeMethodReturn = Map.prototype[method].apply(
+          this,
+          arguments
+        );
         if (listReactor) runObserveCallBack(this);
         renderingSystem();
 
@@ -419,6 +427,8 @@ function defineReactiveMap(map, renderingSystem, listReactor, root) {
 
           checkType(value, renderingSystem);
         }
+
+        return MapPrototypeMethodReturn;
       },
     });
   }
@@ -438,12 +448,17 @@ function defineReactiveSet(set, renderingSystem, listReactor, root) {
       value() {
         if (method == "delete" && listReactor)
           exactElToRemove(this, arguments[0], root);
-        Set.prototype[method].apply(this, arguments);
+        const SetPrototypeMethodReturn = Set.prototype[method].apply(
+          this,
+          arguments
+        );
         renderingSystem();
         if (listReactor) runObserveCallBack(this);
         if (method === "add") {
           checkType(arguments[0], renderingSystem);
         }
+
+        return SetPrototypeMethodReturn;
       },
     });
   }
