@@ -12,13 +12,15 @@ import {
   isDefined,
   isMap,
   isSet,
-  isTrue,
   isFalse,
   isNotConfigurable,
   validStyleName,
   validDomEvent,
   ParserWarning,
   isValidTemplateReturn,
+  isPositiveValue,
+  isNegativeValue,
+  hasOwnProperty,
 } from "../helpers.js";
 
 import {
@@ -1195,11 +1197,11 @@ function runChildrenDiffing(__new, __old, realParent) {
         realParent.replaceChild(newELement, target);
         oldChild.target = newELement;
       }
-    } else if (isFalse(newRenderIf)) {
+    } else if(isNegativeValue(newRenderIf) && hasOwnProperty(newChild, "renderIf")) {
       if (target && target.parentNode != null) {
         realParent.removeChild(target);
       }
-    } else if (isTrue(newRenderIf)) {
+    } else if (isPositiveValue(newRenderIf)) {
       if (target && target.parentNode == null) {
         const newELement = toDOM(newChild, true, index);
 
@@ -1214,7 +1216,7 @@ function runChildrenDiffing(__new, __old, realParent) {
         }
       }
 
-      if (!target) {
+     else if (!target) {
         if (theLastElement && theLastElement.index > index) {
           const newELement = toDOM(newChild, true, index);
 

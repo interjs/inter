@@ -247,4 +247,20 @@ Iterable.prototype.each = function (callBack) {
   }
 };
 
+
+export function isNegativeValue(value){
+
+  const nevagativeValues = new Set([0, false, null, undefined, ""]);
+
+  return nevagativeValues.has(value);
+
+}
+
+export function isPositiveValue(value){
+
+  return !isNegativeValue(value)
+
+} 
+
+
 //</>

@@ -7,8 +7,10 @@ import {
   isObj,
   validDomEvent,
   validStyleName,
-  isBool,
   isFalse,
+  isNegativeValue,
+  isPositiveValue,
+  hasOwnProperty,
 } from "../helpers.js";
 
 import {
@@ -17,7 +19,6 @@ import {
   runInvalidEventHandlerWarning,
   runInvalidEventWarning,
   runInvalidObjectOptionsError,
-  runInvalidRenderIfOptionWarning,
   runInvalidStyleWarning,
   runInvalidTagOptionError,
   runInvalidTemplateArgumentError,
@@ -119,7 +120,7 @@ export function toDOM(obj, isChild, index) {
   tag = isCallable(tag) ? tag() : tag;
   text = isCallable(text) ? text() : text;
 
-  if (isDefined(renderIf) && !isChild) {
+  if (isPositiveValue(renderIf) && !isChild) {
     runCanNotRenderConditionallyWarning();
 
     return false;
@@ -171,12 +172,7 @@ function createChildren(root, children) {
     tag = isCallable(tag) ? tag() : tag;
     text = isCallable(text) ? text() : text;
 
-    if (isDefined(renderIf) && isBool(renderIf)) {
-      if (isFalse(renderIf)) continue;
-    }
-
-    if (isDefined(renderIf) && !isBool(renderIf))
-      runInvalidRenderIfOptionWarning(renderIf);
+    if (isNegativeValue(renderIf) && hasOwnProperty(child, "renderIf")) continue;
 
     if (!validTagOption(tag)) runInvalidTagOptionError(tag);
 
@@ -198,3 +194,4 @@ function createChildren(root, children) {
     root.appendChild(container);
   }
 }
+

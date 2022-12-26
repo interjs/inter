@@ -1,4 +1,4 @@
-import { syErr, ParserWarning, consW, valueType } from "../helpers.js";
+import { syErr, ParserWarning,  valueType } from "../helpers.js";
 
 export function runInvalidTemplateArgumentError(arg) {
   syErr(`The argument of the template function must be a plain Javascript object,
@@ -29,11 +29,6 @@ export function runInvalidStyleWarning(styleName) {
 export function runCanNotRenderConditionallyWarning() {
   ParserWarning(`You can not conditionally render the main
      container in the template function.`);
-}
-
-export function runInvalidRenderIfOptionWarning() {
-  consW(`The value of the renderIf property must be
-     boolean(true/false) in the template function.`);
 }
 
 export function runInvalidTagOptionError(tag) {
