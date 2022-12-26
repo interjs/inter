@@ -67,7 +67,7 @@ export function runNotDefinedIfNotPropWarning(child, _ifNot, data) {
 
 export function runNotDefinedElseIfPropWarning(propValue) {
   ParserWarning(`The conditional rendering parser found an element which has the "_elseIf"
-     conditional property and whose its value is: "${propValue}",
+     conditional property whose the value is: "${propValue}",
      but you did not define any conditional property with that name.
   
     `);
