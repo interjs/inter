@@ -69,13 +69,13 @@ const conditionalAttributeCounter = {
 
 function hasMoreThanOneConditionalAttribute(elementNode) {
   const _ifAttrValue = elementNode.getAttribute("_if"),
-    _elseAttrValue = elementNode.getAttribute("_elseIf"),
+    _elseIfAttrValue = elementNode.getAttribute("_elseIf"),
     _ifNotAttrValue = elementNode.getAttribute("_ifNot"),
     _elseAttr = elementNode.hasAttribute("_else") ? true : void 0;
 
   conditionalAttributeCounter.set([
     _ifAttrValue,
-    _elseAttrValue,
+    _elseIfAttrValue,
     _ifNotAttrValue,
     _elseAttr,
   ]);
