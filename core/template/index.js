@@ -9,7 +9,6 @@ import {
   validStyleName,
   isFalse,
   isNegativeValue,
-  isPositiveValue,
   hasOwnProperty,
 } from "../helpers.js";
 
@@ -105,22 +104,15 @@ export function template(obj) {
 
 export function toDOM(obj, isChild, index) {
   /* eslint-disable prefer-const */
-  let {
-    tag,
-    text,
-    renderIf,
-    attrs = {},
-    events = {},
-    styles = {},
-    children = [],
-  } = obj;
+  let { tag, text, attrs = {}, events = {}, styles = {}, children = [] } = obj;
 
   /*eslint-enable prefer-const*/
 
   tag = isCallable(tag) ? tag() : tag;
   text = isCallable(text) ? text() : text;
+  const hasRenderIfProp = hasOwnProperty(obj, "renderIf");
 
-  if (isPositiveValue(renderIf) && !isChild) {
+  if (hasRenderIfProp && !isChild) {
     runCanNotRenderConditionallyWarning();
 
     return false;
