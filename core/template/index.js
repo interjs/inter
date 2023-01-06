@@ -172,7 +172,8 @@ function createChildren(root, children) {
     tag = isCallable(tag) ? tag() : tag;
     text = isCallable(text) ? text() : text;
 
-    if (isNegativeValue(renderIf) && hasOwnProperty(child, "renderIf")) continue;
+    if (isNegativeValue(renderIf) && hasOwnProperty(child, "renderIf"))
+      continue;
 
     if (!validTagOption(tag)) runInvalidTagOptionError(tag);
 
@@ -194,4 +195,3 @@ function createChildren(root, children) {
     root.appendChild(container);
   }
 }
-

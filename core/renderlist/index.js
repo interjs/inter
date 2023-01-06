@@ -58,6 +58,7 @@ function checkType(arg, call) {
 }
 
 function defineReactiveSymbol(obj) {
+  if (hasReactiveSymbol(obj)) return false;
   const symbol = Symbol.for("reactive");
 
   Object.defineProperty(obj, symbol, {
@@ -68,7 +69,7 @@ function defineReactiveSymbol(obj) {
 function hasReactiveSymbol(obj) {
   const symbol = Symbol.for("reactive");
 
-  return symbol in obj;
+  return hasOwnProperty(obj, symbol);
 }
 
 function defineReactiveObj(obj, renderingSystem) {
@@ -528,8 +529,8 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
 
         if (lastNodeElement) {
           htmlEl.removeChild(lastNodeElement);
-
           renderingSystem();
+          runObserveCallBack(array);
         }
 
         return ArrayPrototypePopReturn;
@@ -558,6 +559,7 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
         }
 
         renderingSystem();
+        runObserveCallBack(array);
 
         return ArrayPrototypePushReturn;
       },
@@ -798,7 +800,7 @@ export function renderList(options) {
     }
   }
 
-  proSetup();
+   if(typeof each !== "number")  proSetup();
 
   function renderingSystem() {
     const iterable = new Iterable(each);
@@ -1197,7 +1199,10 @@ function runChildrenDiffing(__new, __old, realParent) {
         realParent.replaceChild(newELement, target);
         oldChild.target = newELement;
       }
-    } else if(isNegativeValue(newRenderIf) && hasOwnProperty(newChild, "renderIf")) {
+    } else if (
+      isNegativeValue(newRenderIf) &&
+      hasOwnProperty(newChild, "renderIf")
+    ) {
       if (target && target.parentNode != null) {
         realParent.removeChild(target);
       }
@@ -1214,9 +1219,7 @@ function runChildrenDiffing(__new, __old, realParent) {
         } else {
           realParent.appendChild(newELement);
         }
-      }
-
-     else if (!target) {
+      } else if (!target) {
         if (theLastElement && theLastElement.index > index) {
           const newELement = toDOM(newChild, true, index);
 

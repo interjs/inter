@@ -248,7 +248,7 @@ Iterable.prototype.each = function (callBack) {
 };
 
 export function isNegativeValue(value) {
-  value = typeof value == "string" ? value.trim() : value;	
+  value = typeof value == "string" ? value.trim() : value;
   const nevagativeValues = new Set([0, false, null, undefined, ""]);
 
   return nevagativeValues.has(value);

@@ -59,3 +59,4 @@ export function runInvalidTemplateReturnError() {
   syErr(`The template function is not being returned inside the "do" method in
            renderList(reactive listing), just return the template function.`);
 }
+

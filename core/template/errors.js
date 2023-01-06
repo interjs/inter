@@ -1,4 +1,4 @@
-import { syErr, ParserWarning,  valueType } from "../helpers.js";
+import { syErr, ParserWarning, valueType } from "../helpers.js";
 
 export function runInvalidTemplateArgumentError(arg) {
   syErr(`The argument of the template function must be a plain Javascript object,

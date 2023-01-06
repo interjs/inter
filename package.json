@@ -1,6 +1,7 @@
+
 {
   "name": "inter",
-  "version": "2.0.16",
+  "version": "2.1.0",
   "description": "The javascript framework to build highly interactive front-end web applications.",
   "author": "Denis Power",
   "license": "MIT",
@@ -11,7 +12,6 @@
   },
   "homepage": "https://interjs.github.io",
   "devDependencies": {
-    "node": "^14.18.0",
     "prettier": "2.7.1"
   },
   "dependencies": {
@@ -21,9 +21,6 @@
     "url": "https://github.com/interjs/inter/issues"
   },
   "main": "inter.js",
-  "directories": {
-    "test": "test"
-  },
   "keywords": [
     "interjs",
     "inter"
