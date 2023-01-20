@@ -14,7 +14,8 @@ module.exports = {
 		"camelcase": "error",
 		"prefer-const": "warn",
 		"prefer-template": "error",
-		"getter-return": "error",	
+		"getter-return": "error",
+		"no-inner-declarations": "off"
 	
 		},
 	parserOptions: {
