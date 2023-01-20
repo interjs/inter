@@ -177,7 +177,7 @@ export function renderIf(obj) {
       for (const child of rootElementChildNodes) {
         index++;
         child.index = index;
-		
+
         const isTheLastIteration = rootElementInitialLength - 1 == index;
 
         if (child.nodeType == 3) {
@@ -185,9 +185,8 @@ export function renderIf(obj) {
 
           continue;
         }
-		
-	  if (!hasNoConditionalAttr(child)) child.parentNode.removeChild(child);
 
+        if (!hasNoConditionalAttr(child)) child.parentNode.removeChild(child);
 
         if (child.children.length > 0) {
           parseAttrs(child);
@@ -233,7 +232,7 @@ export function renderIf(obj) {
         } else if (child.hasAttribute("_elseIf")) {
           const elseIf = child.getAttribute("_elseIf");
           child.removeAttribute("_elseIf");
-		  child.parentNode.removeChild(child);
+          child.parentNode.removeChild(child);
 
           if (!parserOptions.if) runInvalidElseIfAttributeError(child);
           else if (!hasOwnProperty(data, elseIf))
@@ -395,9 +394,8 @@ function runRenderingSystem(cache /*Set*/, data) {
 
           if (target.parentNode != null) rootElement.removeChild(target);
           if (rendered && ELSE && ELSE.parentNode != null) {
-			  ELSE.parentNode.removeChild(ELSE)
-		  }
-          else if (!rendered && ELSE && ELSE.parentNode == null) {
+            ELSE.parentNode.removeChild(ELSE);
+          } else if (!rendered && ELSE && ELSE.parentNode == null) {
             insertBefore(rootElement, ELSE);
             options.lastRendered = {
               target: ELSE,
