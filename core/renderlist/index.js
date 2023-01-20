@@ -266,12 +266,12 @@ function createObjReactor(each, renderingSystem, root) {
 
   defineListReactorSetProps(each, renderingSystem);
 
-  const specialProps = new Set(["observe", "setProps"]);
+  const specialProps = new Set(["observe"]);
   defineReactiveSymbol(each);
 
   return new Proxy(each, {
     set(target, prop, value, proxy) {
-      if (specialProps.has(prop)) return true;
+      if (specialProps.has(prop)) return false;
 
       Reflect.set(...arguments);
 
@@ -377,6 +377,7 @@ function defineReactiveArray(array, renderingSystem) {
           this,
           arguments
         );
+
         renderingSystem();
 
         this.mutationInfo = {
@@ -495,159 +496,139 @@ function walkSet(set, call) {
 }
 
 function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
+  function render(item, i, start) {
+    const temp = DO.call(pro, item, i, pro);
+    const newChild = toDOM(temp.element);
+    const domChild = htmlEl.children[start];
+
+    if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
+
+    if (newChild && isDefined(start)) {
+      htmlEl.insertBefore(newChild, domChild);
+    } else {
+      htmlEl.appendChild(newChild);
+    }
+
+    checkType(item, renderingSystem);
+  }
+
+  function ArrayPrototypeShiftHandler() {
+    const ArrayPrototypeShiftReturn = Array.prototype.shift.apply(
+      array,
+      void 0
+    );
+    const firstNodeElement = htmlEl.children[0];
+
+    if (firstNodeElement) {
+      htmlEl.removeChild(firstNodeElement);
+
+      renderingSystem();
+      runObserveCallBack(array);
+    }
+
+    return ArrayPrototypeShiftReturn;
+  }
+
+  function ArrayPrototypePopHandler() {
+    const ArrayPrototypePopReturn = Array.prototype.pop.apply(array, arguments);
+    const children = htmlEl.children;
+    const lastNodeElement = children[children.length - 1];
+
+    if (lastNodeElement) {
+      htmlEl.removeChild(lastNodeElement);
+      renderingSystem();
+      runObserveCallBack(array);
+    }
+
+    return ArrayPrototypePopReturn;
+  }
+
+  function ArrayPrototypePushHandler() {
+    const ArrayPrototypePushReturn = Array.prototype.push.apply(
+      array,
+      arguments
+    );
+
+    if (arguments.length == 1) render(...arguments, array.length - 1);
+    else if (arguments.length > 1) {
+      for (const item of arguments) render(item, array.length - 1);
+    }
+
+    renderingSystem();
+    runObserveCallBack(array);
+
+    return ArrayPrototypePushReturn;
+  }
+
+  function ArrayPrototypeUnshiftHandler() {
+    const ArrayPrototypeUnshiftReturn = Array.prototype.unshift.apply(
+      array,
+      arguments
+    );
+
+    if (arguments.length > 1) {
+      let i = arguments.length - 1;
+
+      for (; i > -1; i--) render(arguments[i], 0, 0);
+    } else if (arguments.length == 1) render(...arguments, 0, 0);
+
+    renderingSystem();
+    runObserveCallBack(array);
+
+    return ArrayPrototypeUnshiftReturn;
+  }
+
+  function ArrayPrototypeSpliceHandler(start, deleteCount, ...items) {
+    const ArrayPrototypeSpliceReturn = Array.prototype.splice.apply(
+      array,
+      arguments
+    );
+
+    function deleteChildren() {
+      const length = deleteCount;
+      for (let i = 0; i < length; i++) {
+        const child = htmlEl.children[start];
+
+        if (child) htmlEl.removeChild(child);
+      }
+    }
+
+    function insertBehind() {
+      for (let i = items.length - 1; i > -1; i--) render(items[i], i, start);
+    }
+
+    if (deleteCount > 0 && items.length > 0) {
+      deleteChildren();
+      insertBehind();
+    }
+
+    if (items.length == 0) deleteChildren();
+    else if (deleteCount == 0 && items.length > 0) insertBehind();
+
+    renderingSystem();
+    runObserveCallBack(array);
+
+    return ArrayPrototypeSpliceReturn;
+  }
+
+  const mutatedMethods = [
+    { name: "unshift", handler: ArrayPrototypeUnshiftHandler },
+    { name: "shift", handler: ArrayPrototypeShiftHandler },
+    { name: "push", handler: ArrayPrototypePushHandler },
+    { name: "pop", handler: ArrayPrototypePopHandler },
+    { name: "splice", handler: ArrayPrototypeSpliceHandler },
+  ];
+
   if (isNotConfigurable(array)) return false;
 
   //It is already reactive array.
   if (hasReactiveSymbol(array)) return false;
-  Object.defineProperties(array, {
-    shift: {
-      value() {
-        const ArrayPrototypeShiftReturn = Array.prototype.shift.apply(
-          array,
-          void 0
-        );
-        const firstNodeElement = htmlEl.children[0];
 
-        if (firstNodeElement) {
-          htmlEl.removeChild(firstNodeElement);
-
-          renderingSystem();
-          runObserveCallBack(array);
-        }
-
-        return ArrayPrototypeShiftReturn;
-      },
-    },
-    pop: {
-      value() {
-        const ArrayPrototypePopReturn = Array.prototype.pop.apply(
-          array,
-          arguments
-        );
-        const children = htmlEl.children;
-        const lastNodeElement = children[children.length - 1];
-
-        if (lastNodeElement) {
-          htmlEl.removeChild(lastNodeElement);
-          renderingSystem();
-          runObserveCallBack(array);
-        }
-
-        return ArrayPrototypePopReturn;
-      },
-    },
-    push: {
-      value() {
-        const ArrayPrototypePushReturn = Array.prototype.push.apply(
-          array,
-          arguments
-        );
-
-        function render(item, i) {
-          const temp = DO.call(pro, item, i, pro);
-
-          if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
-
-          htmlEl.appendChild(toDOM(temp.element));
-
-          checkType(item, renderingSystem);
-        }
-
-        if (arguments.length == 1) render(...arguments, array.length - 1);
-        else if (arguments.length > 1) {
-          for (const item of arguments) render(item, array.length - 1);
-        }
-
-        renderingSystem();
-        runObserveCallBack(array);
-
-        return ArrayPrototypePushReturn;
-      },
-    },
-
-    unshift: {
-      value() {
-        const ArrayPrototypeUnshiftReturn = Array.prototype.unshift.apply(
-          array,
-          arguments
-        );
-
-        function render(i, item) {
-          const temp = DO.call(pro, item, i, pro);
-
-          if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
-          if (htmlEl.children[0]) {
-            htmlEl.insertBefore(toDOM(temp.element), htmlEl.children[0]);
-          } else {
-            htmlEl.appendChild(toDOM(temp.element));
-          }
-
-          checkType(item, renderingSystem);
-        }
-
-        if (arguments.length > 1) {
-          let i = arguments.length - 1;
-
-          for (; i > -1; i--) render(i, arguments[i]);
-        } else if (arguments.length == 1) render(0, ...arguments);
-
-        renderingSystem();
-        runObserveCallBack(array);
-
-        return ArrayPrototypeUnshiftReturn;
-      },
-    },
-    splice: {
-      value(start, deleteCount, ...items) {
-        const ArrayPrototypeSpliceReturn = Array.prototype.splice.apply(
-          array,
-          arguments
-        );
-
-        if (items.length == 0) {
-          const from = start;
-          const to = deleteCount;
-
-          /**
-           * 4
-           * 1
-           *
-           */
-          for (let i = 0; i < to; i++) {
-            const node = htmlEl.children[from];
-
-            if (node) {
-              htmlEl.removeChild(node);
-            }
-          }
-        } else {
-          if (deleteCount == 0 && items) {
-            for (let l = items.length - 1; l > -1; l--) {
-              const temp = DO.call(pro, items[l], l, pro);
-
-              checkType(items[l], renderingSystem);
-
-              if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
-
-              if (htmlEl.children[start]) {
-                htmlEl.insertBefore(
-                  toDOM(temp.element),
-                  htmlEl.children[start]
-                );
-              } else {
-                htmlEl.appendChild(toDOM(temp.element));
-              }
-            }
-          }
-        }
-
-        renderingSystem();
-        runObserveCallBack(array);
-
-        return ArrayPrototypeSpliceReturn;
-      },
-    },
-  });
+  for (const { name, handler } of mutatedMethods) {
+    Object.defineProperty(array, name, {
+      value: handler,
+    });
+  }
 }
 
 export function renderList(options) {
@@ -707,6 +688,8 @@ export function renderList(options) {
   function setEachHandler(newEach) {
     if (!validEachProperty(newEach)) runUnsupportedEachValueError(newEach);
 
+    const observeSymbol = Symbol.for("observe");
+    newEach[observeSymbol] = each[observeSymbol];
     each = newEach;
 
     if (!hasReactiveSymbol(newEach)) proSetup();
@@ -800,7 +783,7 @@ export function renderList(options) {
     }
   }
 
-   if(typeof each !== "number")  proSetup();
+  if (typeof each !== "number") proSetup();
 
   function renderingSystem() {
     const iterable = new Iterable(each);
@@ -1117,27 +1100,65 @@ function runChildrenDiffing(__new, __old, realParent) {
           mutationInfo: { method, start, deleteCount, itemsLength },
         } = reactor;
 
-        // eslint-disable-next-line no-inner-declarations
-        function AddEl(startPoint, mutationMethod) {
-          for (
-            let i = itemsLength - 1;
-            newChildren.length > target.children.length;
-            i--
-          ) {
-            const currentElement = target.children[startPoint];
-            const child = newChildren[i];
+        function addByPush() {
+          let i = itemsLength;
 
-            if (currentElement)
-              target.insertBefore(
-                toDOM(child, true, child.index),
-                currentElement
-              );
-            else target.appendChild(toDOM(child, true, child.index));
+          for (; i > 0; i--) {
+            const child = newChildren[newChildren.length - i];
 
-            if (mutationMethod == "unshift") oldChildren.unshift(child);
-            else if (mutationMethod == "splice")
-              oldChildren.splice(start, deleteCount, child);
+            target.appendChild(toDOM(child, true, child.index));
+            oldChildren.push(child);
           }
+        }
+
+        function AddByShiftOrSplice(mutationMethod) {
+          function insertBehind(start, itemsLength) {
+            for (let i = itemsLength - 1; i > -1; i--) {
+              const child = target.children[start];
+              const virtualChild = newChildren[i];
+              const newChild = toDOM(virtualChild, true, virtualChild.index);
+
+              if (child) target.insertBefore(newChild, child);
+              else target.appendChild(newChild);
+
+              addedtems.unshift(virtualChild);
+            }
+          }
+
+          const addedtems = new Array();
+
+          if (
+            mutationMethod == "splice" &&
+            deleteCount == 0 &&
+            itemsLength > 0
+          ) {
+            insertBehind(start, itemsLength);
+            oldChildren.splice(start, deleteCount, ...addedtems);
+          } else if (mutationMethod == "splice" && deleteCount > 0) {
+            for (let i = 0; i < deleteCount; i++) {
+              const child = target.children[start];
+
+              if (child) target.removeChild(child);
+            }
+
+            insertBehind(start, itemsLength);
+
+            oldChildren.splice(start, deleteCount, addedtems);
+          } else if (mutationMethod == "unshift") {
+            insertBehind(0, itemsLength);
+
+            oldChildren.unshift(...addedtems);
+          }
+        }
+
+        function deleteBySplice() {
+          let i = start;
+          for (; newChildren.length < target.children.length; i++) {
+            const elToRemove = target.children[start];
+            if (elToRemove) target.removeChild(elToRemove);
+          }
+
+          oldChildren.splice(start, deleteCount);
         }
 
         const lastNodeElement = target.children[target.children.length - 1];
@@ -1148,37 +1169,25 @@ function runChildrenDiffing(__new, __old, realParent) {
         } else if (method == "shift" && firstNodeElement) {
           target.removeChild(firstNodeElement);
           oldChildren.shift();
-        } else if (method == "push") {
-          for (
-            let i = itemsLength;
-            newChildren.length > target.children.length;
-            i--
-          ) {
-            const child = newChildren[newChildren.length - i];
-
-            target.appendChild(toDOM(child, true, child.index));
-          }
-        } else if (method == "unshift") AddEl(0, method);
+        } else if (method == "push") addByPush();
+        else if (method == "unshift") AddByShiftOrSplice(method);
         else if (method == "splice") {
           if (
             typeof start == "number" &&
             typeof deleteCount == "number" &&
             itemsLength == 0
-          ) {
-            //No Addition.
+          )
+            deleteBySplice();
+          else if (itemsLength > 0) AddByShiftOrSplice(method);
+          else if (deleteCount == void 0) {
+            const data = {
+              source: {
+                values: newChildren,
+              },
+            };
 
-            for (
-              let i = start;
-              newChildren.length < target.children.length;
-              i++
-            ) {
-              const elToRemove = target.children[start];
-
-              if (elToRemove) target.removeChild(elToRemove);
-            }
-
-            oldChildren.splice(start, deleteCount);
-          } else if (itemsLength > 0) AddEl(start, method);
+            synchronizeRootChildrenLengthAndSourceLength(target, data);
+          }
         }
       } else if (target && target.parentNode != null) {
         const newElement = toDOM(newChild, true, index);
@@ -1266,7 +1275,9 @@ function synchronizeRootChildrenLengthAndSourceLength(root, iterable) {
     let length = root.children.length - iterable.source.values.length;
 
     while (length--) {
-      root.removeChild(root.children[length]);
+      const lastElementIndex = root.children.length - 1;
+      const lastElement = root.children[lastElementIndex];
+      root.removeChild(lastElement);
     }
   }
 }

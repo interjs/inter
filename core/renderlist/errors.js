@@ -35,9 +35,10 @@ export function runUnsupportedEachValueError(value) {
   syErr(`"${valueType(
     value
   )}" is not a valid value for the "each" option in renderList.
-    The value that are accepted in "each" option, are:
+    The values that are accepted in "each" option, are:
     Array.
     Plain js object.
+    Number.
     Map.
     Set.`);
 }
@@ -52,11 +53,10 @@ export function runInvalidAddItemsFirstArgumentError() {
 
 export function runOtherArrayDeprecationWarning() {
   consW(`The "otherArray" property was deprecated since version 2.1.0,
-     use "setEach" property instead.`);
+     use the "setEach" property instead.`);
 }
 
 export function runInvalidTemplateReturnError() {
   syErr(`The template function is not being returned inside the "do" method in
            renderList(reactive listing), just return the template function.`);
 }
-
