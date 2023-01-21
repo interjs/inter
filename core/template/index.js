@@ -114,8 +114,6 @@ export function toDOM(obj, isChild, index) {
 
   if (hasRenderIfProp && !isChild) {
     runCanNotRenderConditionallyWarning();
-
-    return false;
   }
 
   if (!validTagOption(tag)) runInvalidTagOptionError(tag);

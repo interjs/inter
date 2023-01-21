@@ -102,14 +102,15 @@ function defineReactiveObj(obj, renderingSystem) {
   }
 
   function deleteProps(props) {
-    if (!isArray) runInvalidDeletePropsValueError(props);
+    if (!isArray(props)) runInvalidDeletePropsValueError(props);
 
     for (const prop of props) {
       if (typeof prop !== "string") continue;
-      if (!reservedProps.has(prop)) delete obj[prop];
-
-      renderingSystem();
+      else if (!hasOwnProperty(obj, prop)) continue;
+      else if (!reservedProps.has(prop)) delete obj[prop];
     }
+
+    renderingSystem();
   }
 
   function defineProps(props) {
@@ -267,6 +268,11 @@ function createObjReactor(each, renderingSystem, root) {
   defineListReactorSetProps(each, renderingSystem);
 
   const specialProps = new Set(["observe"]);
+  const settableRservedProps = new Set(["setEach", "setProps"]);
+
+  function isNotReservedSettableProp(prop) {
+    return !settableRservedProps.has(prop);
+  }
   defineReactiveSymbol(each);
 
   return new Proxy(each, {
@@ -275,11 +281,13 @@ function createObjReactor(each, renderingSystem, root) {
 
       Reflect.set(...arguments);
 
-      runObserveCallBack(each, proxy);
-      renderingSystem();
+      if (isNotReservedSettableProp(prop)) {
+        renderingSystem();
+        runObserveCallBack(each, proxy);
 
-      if (typeof value !== "number" && validEachProperty(value))
-        checkType(value, renderingSystem);
+        if (typeof value !== "number" && validEachProperty(value))
+          checkType(value, renderingSystem);
+      }
 
       return true;
     },
@@ -292,8 +300,8 @@ function createObjReactor(each, renderingSystem, root) {
       if (prop in target) {
         exactElToRemove(target, prop, root);
         Reflect.deleteProperty(...arguments);
-        runObserveCallBack(each, proxy);
         renderingSystem();
+        runObserveCallBack(each, proxy);
 
         return true;
       }
@@ -1089,6 +1097,20 @@ function runChildrenDiffing(__new, __old, realParent) {
     const newTag = getValue(newChild.tag);
     const oldTag = getValue(oldChild.tag);
 
+    function insertConditionally() {
+      const newELement = toDOM(newChild, true, index);
+
+      Object.assign(oldChild, newChild);
+
+      oldChild.target = newELement;
+
+      if (theLastElement && theLastElement.index > index) {
+        insertBefore(realParent, index, newELement);
+      } else {
+        realParent.appendChild(newELement);
+      }
+    }
+
     if (realParent) {
       theLastElement = realParent.children[realParent.children.length - 1];
     }
@@ -1196,6 +1218,8 @@ function runChildrenDiffing(__new, __old, realParent) {
 
         Object.assign(oldChild, newChild);
         oldChild.target = newElement;
+
+        continue;
       }
     }
 
@@ -1208,6 +1232,7 @@ function runChildrenDiffing(__new, __old, realParent) {
         realParent.replaceChild(newELement, target);
         oldChild.target = newELement;
       }
+      continue;
     } else if (
       isNegativeValue(newRenderIf) &&
       hasOwnProperty(newChild, "renderIf")
@@ -1216,37 +1241,8 @@ function runChildrenDiffing(__new, __old, realParent) {
         realParent.removeChild(target);
       }
     } else if (isPositiveValue(newRenderIf)) {
-      if (target && target.parentNode == null) {
-        const newELement = toDOM(newChild, true, index);
-
-        Object.assign(oldChild, newChild);
-
-        oldChild.target = newELement;
-
-        if (theLastElement && theLastElement.index > index) {
-          insertBefore(realParent, index, newELement);
-        } else {
-          realParent.appendChild(newELement);
-        }
-      } else if (!target) {
-        if (theLastElement && theLastElement.index > index) {
-          const newELement = toDOM(newChild, true, index);
-
-          Object.assign(oldChild, newChild);
-
-          oldChild.target = newELement;
-
-          insertBefore(realParent, index, newELement);
-        } else {
-          const newELement = toDOM(newChild, true, index);
-
-          Object.assign(oldChild, newChild);
-
-          oldChild.target = newELement;
-
-          realParent.appendChild(newELement);
-        }
-      }
+      if (target && target.parentNode == null) insertConditionally();
+      else if (!target) insertConditionally();
     }
 
     if (newChildren.length == oldChildren.length && newChildren.length !== 0) {
