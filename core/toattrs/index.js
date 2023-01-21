@@ -48,9 +48,8 @@ function parse(rootElement, dataObject) {
   const children = rootElement.getElementsByTagName("*");
 
   for (const child of children) {
-    const { name: attr } = child.attributes[0];
-
     if (child.attributes.length == 1) {
+      const { name: attr } = child.attributes[0];
       if (mayBeAnAttrManager(attr) && isAValidAttrManagerSyntax(attr)) {
         const managerName = getManagerName(attr);
 
