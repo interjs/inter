@@ -20,7 +20,7 @@ function getConfig() {
     resultObject.file = JSON.parse(fs.readFileSync("./globalconfig.json"));
     resultObject.hasFile = true;
   } catch (e) {
-    resultObject.hasFile = false;
+    /*No globalconfig.json*/
   }
 
   return resultObject;
