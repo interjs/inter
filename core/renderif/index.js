@@ -232,7 +232,6 @@ export function renderIf(obj) {
         } else if (child.hasAttribute("_elseIf")) {
           const elseIf = child.getAttribute("_elseIf");
           child.removeAttribute("_elseIf");
-          child.parentNode.removeChild(child);
 
           if (!parserOptions.if) runInvalidElseIfAttributeError(child);
           else if (!hasOwnProperty(data, elseIf))
