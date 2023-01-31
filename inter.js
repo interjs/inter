@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.1.1
+ * Version - 2.1.2
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2023
@@ -1327,7 +1327,6 @@
           } else if (child.hasAttribute("_elseIf")) {
             const elseIf = child.getAttribute("_elseIf");
             child.removeAttribute("_elseIf");
-            child.parentNode.removeChild(child);
 
             if (!parserOptions.if) runInvalidElseIfAttributeError(child);
             else if (!hasOwnProperty(data, elseIf))
@@ -3289,5 +3288,5 @@
   window.template = template;
   window.toAttrs = toAttrs;
   window.Backend = Backend;
-  console.log("The global version 2.1.1 of Inter was loaded successfully.");
+  console.log("The global version 2.1.2 of Inter was loaded successfully.");
 })();
