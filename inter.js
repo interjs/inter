@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.1.2
+ * Version - 2.1.3
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021-2023
@@ -3288,5 +3288,5 @@
   window.template = template;
   window.toAttrs = toAttrs;
   window.Backend = Backend;
-  console.log("The global version 2.1.2 of Inter was loaded successfully.");
+  console.log("The global version 2.1.3 of Inter was loaded successfully.");
 })();
