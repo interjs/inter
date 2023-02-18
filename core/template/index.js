@@ -14,6 +14,7 @@ import {
 
 import {
   runCanNotRenderConditionallyWarning,
+  runIllegalAttrsPropWarning,
   runIllegalTextWarning,
   runInvalidEventHandlerWarning,
   runInvalidEventWarning,
@@ -39,7 +40,13 @@ function createAttrs(attrs, container) {
   Object.entries(attrs).forEach((attr) => {
     // eslint-disable-next-line prefer-const
     let [name, value] = attr;
+    let hasWarning = false;
     const specialAttrs = new Set(["value", "currentTime", "checked"]);
+
+    if ((name.startsWith("on") && validDomEvent(name)) || name == "style") {
+      runIllegalAttrsPropWarning(name);
+      hasWarning = true;
+    }
 
     const setAttr = (attrValue) => {
       if (isDefined(attrValue) && !isFalse(attrValue)) {
@@ -49,12 +56,14 @@ function createAttrs(attrs, container) {
       container.template.attrs[name] = attrValue;
     };
 
-    if (isCallable(value)) {
-      value = value();
+    if (!hasWarning) {
+      if (isCallable(value)) {
+        value = value();
 
-      setAttr(value);
-    } else {
-      setAttr(value);
+        setAttr(value);
+      } else {
+        setAttr(value);
+      }
     }
   });
 }
