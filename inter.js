@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.1.5
+ * Version - 2.1.6
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021 - 2023
@@ -182,7 +182,7 @@
   }
 
   function runReservedRefNameWarning(refName) {
-    consW(`"${refName}" is a reserved reference name, use others names.`);
+    consW(`"${refName}" is a reserved reference name, use other name.`);
   }
 
   function runInvalidSetRefsValueError(arg) {
@@ -219,7 +219,7 @@
   }
 
   function runNotDefinedConditionalPropWarning(prop) {
-    consW(`"${prop}" was not defined as conditional property.`);
+    consW(`"${prop}" was not defined as a conditional property.`);
   }
 
   function runTwoElseIfElementsCanNotHaveTheSamePropError(prop) {
@@ -819,10 +819,13 @@
             const refs = getRefs(attrValue);
 
             for (const ref of refs) {
-              const pattern = new RegExp(`{\\s*(:?${ref})\\s*}`, "g");
-              attrValue = attrValue.replace(pattern, this.refs[ref]);
+              if (reservedRefNames.has(ref)) continue;
+              if (ref in this.refs) {
+                const pattern = new RegExp(`{\\s*(:?${ref})\\s*}`, "g");
+                attrValue = attrValue.replace(pattern, this.refs[ref]);
 
-              if (!hasRefs(attrValue)) break;
+                if (!hasRefs(attrValue)) break;
+              }
             }
 
             target[attrName] = attrValue;
@@ -837,6 +840,7 @@
               const refNames = getRefs(value);
 
               for (const refName of refNames) {
+                if (reservedRefNames.has(refName)) continue;
                 if (refName in this.refs) {
                   const pattern = new RegExp(`{\\s*(:?${refName})\\s*}`, "g");
 
@@ -863,6 +867,7 @@
               const refNames = getRefs(text);
 
               for (const refName of refNames) {
+                if (reservedRefNames.has(refName)) continue;
                 if (refName in this.refs) {
                   const pattern = new RegExp(`{\\s*(:?${refName})\\s*}`, "g");
 
@@ -926,7 +931,7 @@
         setRefs: {
           set(o) {
             if (isObj(o)) {
-              const reservedRefNames = new Set(["setRefs", "observe"]);
+              let hasNewRefName = false;
 
               for (const [refName, refValue] of Object.entries(o)) {
                 if (reservedRefNames.has(refName)) {
@@ -935,16 +940,23 @@
                   continue;
                 }
 
-                const oldRefValue = data[refName];
+                if (!hasOwnProperty(this, refName)) hasNewRefName = true;
+                if (hasOwnProperty(this, refName) && this[refName] == refValue)
+                  continue;
+
+                const oldRefValue = proxyTarget[refName];
 
                 if (isCallable(refValue)) {
-                  proxyTarget[refName] = refValue.call(reactor);
+                  proxyTarget[refName] = refValue.call(this);
                 } else {
                   proxyTarget[refName] = refValue;
                 }
 
                 runObserveCallBack(refName, refValue, oldRefValue);
               }
+
+              if (hasNewRefName)
+                runRefParsing(getId(IN), proxyTarget, refParser);
             } else runInvalidSetRefsValueError(o);
           },
           enumerable: !1,
@@ -1638,8 +1650,10 @@
 
             if (!isBool(cond)) runInvalidConditionalPropValueError(prop);
 
-            if (!hasOwnProperty(this, prop))
+            if (!hasOwnProperty(this, prop)) {
               runNotDefinedConditionalPropWarning(prop);
+              continue;
+            }
 
             if (this[prop] == cond) continue;
 
@@ -3329,5 +3343,5 @@
   window.template = template;
   window.toAttrs = toAttrs;
   window.Backend = Backend;
-  console.log("The global version 2.1.5 of Inter was loaded successfully.");
+  console.log("The global version 2.1.6 of Inter was loaded successfully.");
 })();
