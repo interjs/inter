@@ -448,6 +448,14 @@ function runRenderingSystem(cache /*Set*/, data) {
     }
   }
 
+  function runObserveCallBack(prop, value) {
+    if (observer.size == 1) {
+      const callBack = observer.get("callBack");
+
+      callBack(prop, value);
+    }
+  }
+
   const reservedProps = new Set(["setConds", "observe"]);
   const observer = new Map();
   const proxyTarget = Object.assign({}, data);
@@ -456,6 +464,7 @@ function runRenderingSystem(cache /*Set*/, data) {
 
   const reactor = new Proxy(proxyTarget, {
     set(target, prop, value) {
+      if (prop in target && target[prop] == value) return false;
       if (!(prop in data) && !reservedProps.has(prop)) {
         runNotDefinedConditionalPropWarning(prop);
 
@@ -473,11 +482,7 @@ function runRenderingSystem(cache /*Set*/, data) {
       if (!reservedProps.has(prop)) {
         checkWhatToRender(proxyTarget, prop);
 
-        if (observer.size == 1) {
-          const callBack = observer.get("callBack");
-
-          callBack(prop, value);
-        }
+        runObserveCallBack(prop, value);
       }
 
       return true;
@@ -522,7 +527,11 @@ function runRenderingSystem(cache /*Set*/, data) {
           if (!hasOwnProperty(this, prop))
             runNotDefinedConditionalPropWarning(prop);
 
+          if (this[prop] == cond) continue;
+
           proxyTarget[prop] = cond;
+
+          runObserveCallBack(prop, cond);
         }
 
         checkWhatToRender(proxyTarget);

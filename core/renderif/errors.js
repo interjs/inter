@@ -94,7 +94,7 @@ export function runInvalidSetCondsValueError(arg) {
 export function runNotDefinedIfPropWarning(propValue, child, data) {
   ParserWarning(`
     The conditional rendering parser found
-    an element wich has the "_if" attribute and the value
+    an element which has the "_if" attribute and the value
     of this attribute is not a conditional property.
   
     {

@@ -178,6 +178,7 @@ export function Ref(obj) {
     for (const refName in data) {
       if (reservedRefNames.has(refName)) {
         runReservedRefNameWarning(refName);
+        delete data[refName];
 
         continue;
       }
@@ -285,9 +286,17 @@ export function Ref(obj) {
 
     runRefParsing(getId(IN), proxyTarget, refParser);
 
+    function runObserveCallBack(refName, value, oldValue) {
+      if (refParser.observed.size == 1 && !reservedRefNames.has(refName)) {
+        const callBack = refParser.observed.get("callBack");
+
+        callBack(refName, value, oldValue);
+      }
+    }
+
     const reactor = new Proxy(proxyTarget, {
       set(target, key, value, proxy) {
-        if (target[key] == value) return false;
+        if (key in target && target[key] == value) return false;
 
         const oldValue = target[key];
 
@@ -295,13 +304,7 @@ export function Ref(obj) {
           value = value.call(proxy);
         }
         Reflect.set(...arguments);
-
-        if (refParser.observed.size == 1) {
-          const callBack = refParser.observed.get("callBack");
-
-          callBack(key, value, oldValue);
-        }
-
+        runObserveCallBack(key, value, oldValue);
         if (!(key in proxy)) {
           // Dynamic ref.
 
@@ -338,11 +341,7 @@ export function Ref(obj) {
                 proxyTarget[refName] = refValue;
               }
 
-              if (refParser.observed.size == 1) {
-                const callBack = refParser.observed.get("callBack");
-
-                callBack(refName, refValue, oldRefValue);
-              }
+              runObserveCallBack(refName, refValue, oldRefValue);
             }
           } else runInvalidSetRefsValueError(o);
         },

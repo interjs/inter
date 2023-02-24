@@ -40,6 +40,7 @@ import {
 import { toDOM } from "../template/index.js";
 
 import {
+  runIllegalAttrsPropWarning,
   runInvalidEventHandlerWarning,
   runInvalidEventWarning,
   runInvalidStyleWarning,
@@ -969,7 +970,7 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
   const oldAttrsArray = Object.keys(oldAttributes),
     newAttrsArray = Object.keys(newAttributes),
     greater = getGreater(oldAttrsArray, newAttrsArray),
-    specialAttrs = new Set(["value", "current", "checked"]);
+    specialAttrs = new Set(["value", "currentTime", "checked"]);
 
   for (let i = 0; greater.length > i; i++) {
     const oldAttrName = oldAttrsArray[i],
@@ -981,7 +982,12 @@ function runAttributeDiffing(target, oldAttributes, newAttributes) {
     else if (!isDefined(newAttrValue) || isFalse(newAttrValue))
       removeAttr(newAttrName);
     else if (isDefined(newAttrValue) && !isFalse(newAttrValue)) {
-      if (newAttrValue !== oldAttrValue) {
+      if (
+        (newAttrName.startsWith("on") && validDomEvent(newAttrName)) ||
+        newAttrName == "style"
+      )
+        runIllegalAttrsPropWarning(newAttrName);
+      else if (newAttrName !== oldAttrName || newAttrValue !== oldAttrValue) {
         if (specialAttrs.has(newAttrName)) target[newAttrName] = newAttrValue;
         else target.setAttribute(newAttrName, newAttrValue);
       }
