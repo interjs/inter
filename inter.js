@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.1.4
+ * Version - 2.1.5
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021 - 2023
@@ -64,7 +64,7 @@
      use it as property of the "events" object, like:
 
      {
-      tag: "button", text: "Click me", events: { ${prop}: () => { //Some code here }  }
+      tag: "button", text: "Some text", events: { ${prop}: () => { //Some code here }  }
      }
      `;
 
@@ -295,7 +295,7 @@
   function runNotDefinedIfPropWarning(propValue, child, data) {
     ParserWarning(`
     The conditional rendering parser found
-    an element wich has the "_if" attribute and the value
+    an element which has the "_if" attribute and the value
     of this attribute is not a conditional property.
   
     {
@@ -780,6 +780,7 @@
       for (const refName in data) {
         if (reservedRefNames.has(refName)) {
           runReservedRefNameWarning(refName);
+          delete data[refName];
 
           continue;
         }
@@ -887,9 +888,17 @@
 
       runRefParsing(getId(IN), proxyTarget, refParser);
 
+      function runObserveCallBack(refName, value, oldValue) {
+        if (refParser.observed.size == 1 && !reservedRefNames.has(refName)) {
+          const callBack = refParser.observed.get("callBack");
+
+          callBack(refName, value, oldValue);
+        }
+      }
+
       const reactor = new Proxy(proxyTarget, {
         set(target, key, value, proxy) {
-          if (target[key] == value) return false;
+          if (key in target && target[key] == value) return false;
 
           const oldValue = target[key];
 
@@ -897,13 +906,7 @@
             value = value.call(proxy);
           }
           Reflect.set(...arguments);
-
-          if (refParser.observed.size == 1) {
-            const callBack = refParser.observed.get("callBack");
-
-            callBack(key, value, oldValue);
-          }
-
+          runObserveCallBack(key, value, oldValue);
           if (!(key in proxy)) {
             // Dynamic ref.
 
@@ -940,11 +943,7 @@
                   proxyTarget[refName] = refValue;
                 }
 
-                if (refParser.observed.size == 1) {
-                  const callBack = refParser.observed.get("callBack");
-
-                  callBack(refName, refValue, oldRefValue);
-                }
+                runObserveCallBack(refName, refValue, oldRefValue);
               }
             } else runInvalidSetRefsValueError(o);
           },
@@ -1563,6 +1562,14 @@
       }
     }
 
+    function runObserveCallBack(prop, value) {
+      if (observer.size == 1) {
+        const callBack = observer.get("callBack");
+
+        callBack(prop, value);
+      }
+    }
+
     const reservedProps = new Set(["setConds", "observe"]);
     const observer = new Map();
     const proxyTarget = Object.assign({}, data);
@@ -1571,6 +1578,7 @@
 
     const reactor = new Proxy(proxyTarget, {
       set(target, prop, value) {
+        if (prop in target && target[prop] == value) return false;
         if (!(prop in data) && !reservedProps.has(prop)) {
           runNotDefinedConditionalPropWarning(prop);
 
@@ -1588,11 +1596,7 @@
         if (!reservedProps.has(prop)) {
           checkWhatToRender(proxyTarget, prop);
 
-          if (observer.size == 1) {
-            const callBack = observer.get("callBack");
-
-            callBack(prop, value);
-          }
+          runObserveCallBack(prop, value);
         }
 
         return true;
@@ -1637,7 +1641,11 @@
             if (!hasOwnProperty(this, prop))
               runNotDefinedConditionalPropWarning(prop);
 
+            if (this[prop] == cond) continue;
+
             proxyTarget[prop] = cond;
+
+            runObserveCallBack(prop, cond);
           }
 
           checkWhatToRender(proxyTarget);
@@ -2761,7 +2769,7 @@
     const oldAttrsArray = Object.keys(oldAttributes),
       newAttrsArray = Object.keys(newAttributes),
       greater = getGreater(oldAttrsArray, newAttrsArray),
-      specialAttrs = new Set(["value", "current", "checked"]);
+      specialAttrs = new Set(["value", "currentTime", "checked"]);
 
     for (let i = 0; greater.length > i; i++) {
       const oldAttrName = oldAttrsArray[i],
@@ -2773,7 +2781,12 @@
       else if (!isDefined(newAttrValue) || isFalse(newAttrValue))
         removeAttr(newAttrName);
       else if (isDefined(newAttrValue) && !isFalse(newAttrValue)) {
-        if (newAttrValue !== oldAttrValue) {
+        if (
+          (newAttrName.startsWith("on") && validDomEvent(newAttrName)) ||
+          newAttrName == "style"
+        )
+          runIllegalAttrsPropWarning(newAttrName);
+        else if (newAttrName !== oldAttrName || newAttrValue !== oldAttrValue) {
           if (specialAttrs.has(newAttrName)) target[newAttrName] = newAttrValue;
           else target.setAttribute(newAttrName, newAttrValue);
         }
@@ -3316,5 +3329,5 @@
   window.template = template;
   window.toAttrs = toAttrs;
   window.Backend = Backend;
-  console.log("The global version 2.1.4 of Inter was loaded successfully.");
+  console.log("The global version 2.1.5 of Inter was loaded successfully.");
 })();

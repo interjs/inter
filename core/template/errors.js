@@ -55,7 +55,7 @@ export function runIllegalAttrsPropWarning(prop) {
      use it as property of the "events" object, like:
 
      {
-      tag: "button", text: "Click me", events: { ${prop}: () => { //Some code here }  }
+      tag: "button", text: "Some text", events: { ${prop}: () => { //Some code here }  }
      }
      `;
 
