@@ -1,7 +1,7 @@
 import { consW, syErr, valueType } from "../helpers.js";
 
 export function runReservedRefNameWarning(refName) {
-  consW(`"${refName}" is a reserved reference name, use others names.`);
+  consW(`"${refName}" is a reserved reference name, use other name.`);
 }
 
 export function runInvalidSetRefsValueError(arg) {

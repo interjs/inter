@@ -524,8 +524,10 @@ function runRenderingSystem(cache /*Set*/, data) {
 
           if (!isBool(cond)) runInvalidConditionalPropValueError(prop);
 
-          if (!hasOwnProperty(this, prop))
+          if (!hasOwnProperty(this, prop)) {
             runNotDefinedConditionalPropWarning(prop);
+            continue;
+          }
 
           if (this[prop] == cond) continue;
 

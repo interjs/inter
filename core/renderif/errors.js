@@ -18,7 +18,7 @@ export function runInvalidRenderIfDataOptionError() {
 }
 
 export function runNotDefinedConditionalPropWarning(prop) {
-  consW(`"${prop}" was not defined as conditional property.`);
+  consW(`"${prop}" was not defined as a conditional property.`);
 }
 
 export function runTwoElseIfElementsCanNotHaveTheSamePropError(prop) {

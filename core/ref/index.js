@@ -1,4 +1,4 @@
-import { isObj, syErr, isCallable, getId } from "../helpers.js";
+import { isObj, syErr, isCallable, getId, hasOwnProperty } from "../helpers.js";
 
 import {
   runInvalidSetRefsValueError,
@@ -217,10 +217,13 @@ export function Ref(obj) {
           const refs = getRefs(attrValue);
 
           for (const ref of refs) {
-            const pattern = new RegExp(`{\\s*(:?${ref})\\s*}`, "g");
-            attrValue = attrValue.replace(pattern, this.refs[ref]);
+            if (reservedRefNames.has(ref)) continue;
+            if (ref in this.refs) {
+              const pattern = new RegExp(`{\\s*(:?${ref})\\s*}`, "g");
+              attrValue = attrValue.replace(pattern, this.refs[ref]);
 
-            if (!hasRefs(attrValue)) break;
+              if (!hasRefs(attrValue)) break;
+            }
           }
 
           target[attrName] = attrValue;
@@ -235,6 +238,7 @@ export function Ref(obj) {
             const refNames = getRefs(value);
 
             for (const refName of refNames) {
+              if (reservedRefNames.has(refName)) continue;
               if (refName in this.refs) {
                 const pattern = new RegExp(`{\\s*(:?${refName})\\s*}`, "g");
 
@@ -261,6 +265,7 @@ export function Ref(obj) {
             const refNames = getRefs(text);
 
             for (const refName of refNames) {
+              if (reservedRefNames.has(refName)) continue;
               if (refName in this.refs) {
                 const pattern = new RegExp(`{\\s*(:?${refName})\\s*}`, "g");
 
@@ -324,7 +329,7 @@ export function Ref(obj) {
       setRefs: {
         set(o) {
           if (isObj(o)) {
-            const reservedRefNames = new Set(["setRefs", "observe"]);
+            let hasNewRefName = false;
 
             for (const [refName, refValue] of Object.entries(o)) {
               if (reservedRefNames.has(refName)) {
@@ -333,16 +338,22 @@ export function Ref(obj) {
                 continue;
               }
 
-              const oldRefValue = data[refName];
+              if (!hasOwnProperty(this, refName)) hasNewRefName = true;
+              if (hasOwnProperty(this, refName) && this[refName] == refValue)
+                continue;
+
+              const oldRefValue = proxyTarget[refName];
 
               if (isCallable(refValue)) {
-                proxyTarget[refName] = refValue.call(reactor);
+                proxyTarget[refName] = refValue.call(this);
               } else {
                 proxyTarget[refName] = refValue;
               }
 
               runObserveCallBack(refName, refValue, oldRefValue);
             }
+
+            if (hasNewRefName) runRefParsing(getId(IN), proxyTarget, refParser);
           } else runInvalidSetRefsValueError(o);
         },
         enumerable: !1,
