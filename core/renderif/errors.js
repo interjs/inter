@@ -13,7 +13,7 @@ export function runInvalidRenderIfInOptionError() {
 }
 
 export function runInvalidRenderIfDataOptionError() {
-  syErr(`The value of the "data" property on the renderIf function 
+  syErr(`The value of the "data" property in the renderIf function 
     must be a plain Javascript object.`);
 }
 
@@ -59,7 +59,7 @@ export function runNotDefinedIfNotPropWarning(child, _ifNot, data) {
     {
         element: ${child.nodeName.toLowerCase()},
         _ifNot: ${_ifNot},
-        data: ${Object.keys(data)}
+        data: { ${Object.keys(data)} }
     }
     
     `);
@@ -100,7 +100,7 @@ export function runNotDefinedIfPropWarning(propValue, child, data) {
     {
         element: ${child.nodeName.toLowerCase()},
         _if: ${propValue},
-        data: ${Object.keys(data)}
+        data: { ${Object.keys(data)} }
     }
     
     `);
