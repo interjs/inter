@@ -345,8 +345,6 @@ function defineReactiveArray(array, renderingSystem) {
     "reverse",
   ];
 
-  array.mutationInfo = void 0;
-
   for (const method of mutationMethods) {
     Object.defineProperty(array, method, {
       value(start, deleteCount, ...items) {
@@ -389,14 +387,7 @@ function defineReactiveArray(array, renderingSystem) {
 
         renderingSystem();
 
-        this.mutationInfo = {
-          method: void 0,
-          removeInfo: [],
-          do: void 0,
-          newData: [],
-          from: void 0,
-          to: void 0,
-        };
+        this.mutationInfo = void 0;
 
         if (method === "push" || method === "unshift") {
           for (const arg of arguments) {
