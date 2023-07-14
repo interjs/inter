@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.1.6
+ * Version - 2.1.7
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021 - 2023
@@ -214,7 +214,7 @@
   }
 
   function runInvalidRenderIfDataOptionError() {
-    syErr(`The value of the "data" property on the renderIf function 
+    syErr(`The value of the "data" property in the renderIf function 
     must be a plain Javascript object.`);
   }
 
@@ -260,7 +260,7 @@
     {
         element: ${child.nodeName.toLowerCase()},
         _ifNot: ${_ifNot},
-        data: ${Object.keys(data)}
+        data: { ${Object.keys(data)} }
     }
     
     `);
@@ -301,7 +301,7 @@
     {
         element: ${child.nodeName.toLowerCase()},
         _if: ${propValue},
-        data: ${Object.keys(data)}
+        data: { ${Object.keys(data)} }
     }
     
     `);
@@ -1229,7 +1229,7 @@
 
       const reservedProps = new Set(["setConds", "observe"]);
       const theContainer = getId(IN);
-      const conditionalRenderingCache = new Set();
+      const conditionalRenderingCache = new Array();
 
       // eslint-disable-next-line no-inner-declarations
       function parseAttrs(rootElement) {
@@ -1295,7 +1295,10 @@
         };
 
         const cacheParserOptions = () => {
-          conditionalRenderingCache.add(parserOptions.getOptions());
+          const conditionalGroup = parserOptions.elseIfs.size;
+          const options = parserOptions.getOptions();
+          if (conditionalGroup) conditionalRenderingCache.unshift(options);
+          else conditionalRenderingCache.push(options);
         };
 
         const rootElementChildNodes = getChildNodes(rootElement);
@@ -1419,9 +1422,7 @@
     }
   }
 
-  function runRenderingSystem(cache /*Set*/, data) {
-    const ArrayOfOptions = Array.from(cache);
-
+  function runRenderingSystem(ArrayOfOptions, data) {
     function falsefyProps(conditionalProps, changedProp) {
       if (isFalse(proxyTarget[changedProp]) || conditionalProps.length < 2)
         return;
@@ -1494,9 +1495,11 @@
           ifNot,
           rootElement,
         } = options;
-        const conditionalProps = Array.from(options.conditionalProps);
+        const conditionalProps = options.conditionalProps;
+        const isInConditionalGroup = new Set(conditionalProps).has(changedProp);
 
-        if (isDefined(changedProp)) falsefyProps(conditionalProps, changedProp);
+        if (isDefined(changedProp) && isInConditionalGroup)
+          falsefyProps(conditionalProps, changedProp);
 
         if (ifNot) {
           if (isFalse(source[ifNot]) && target.parentNode == null) {
@@ -2148,8 +2151,6 @@
       "reverse",
     ];
 
-    array.mutationInfo = void 0;
-
     for (const method of mutationMethods) {
       Object.defineProperty(array, method, {
         value(start, deleteCount, ...items) {
@@ -2192,14 +2193,7 @@
 
           renderingSystem();
 
-          this.mutationInfo = {
-            method: void 0,
-            removeInfo: [],
-            do: void 0,
-            newData: [],
-            from: void 0,
-            to: void 0,
-          };
+          this.mutationInfo = void 0;
 
           if (method === "push" || method === "unshift") {
             for (const arg of arguments) {
@@ -3343,5 +3337,5 @@
   window.template = template;
   window.toAttrs = toAttrs;
   window.Backend = Backend;
-  console.log("The global version 2.1.6 of Inter was loaded successfully.");
+  console.log("The global version 2.1.7 of Inter was loaded successfully.");
 })();
