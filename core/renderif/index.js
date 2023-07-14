@@ -103,7 +103,7 @@ export function renderIf(obj) {
 
     const reservedProps = new Set(["setConds", "observe"]);
     const theContainer = getId(IN);
-    const conditionalRenderingCache = new Set();
+    const conditionalRenderingCache = new Array();
 
     // eslint-disable-next-line no-inner-declarations
     function parseAttrs(rootElement) {
@@ -169,7 +169,10 @@ export function renderIf(obj) {
       };
 
       const cacheParserOptions = () => {
-        conditionalRenderingCache.add(parserOptions.getOptions());
+        const conditionalGroup = parserOptions.elseIfs.size;
+        const options = parserOptions.getOptions();
+        if (conditionalGroup) conditionalRenderingCache.unshift(options);
+        else conditionalRenderingCache.push(options);
       };
 
       const rootElementChildNodes = getChildNodes(rootElement);
@@ -293,9 +296,7 @@ export function renderIf(obj) {
   }
 }
 
-function runRenderingSystem(cache /*Set*/, data) {
-  const ArrayOfOptions = Array.from(cache);
-
+function runRenderingSystem(ArrayOfOptions, data) {
   function falsefyProps(conditionalProps, changedProp) {
     if (isFalse(proxyTarget[changedProp]) || conditionalProps.length < 2)
       return;
@@ -368,9 +369,11 @@ function runRenderingSystem(cache /*Set*/, data) {
         ifNot,
         rootElement,
       } = options;
-      const conditionalProps = Array.from(options.conditionalProps);
+      const conditionalProps = options.conditionalProps;
+      const isInConditionalGroup = new Set(conditionalProps).has(changedProp);
 
-      if (isDefined(changedProp)) falsefyProps(conditionalProps, changedProp);
+      if (isDefined(changedProp) && isInConditionalGroup)
+        falsefyProps(conditionalProps, changedProp);
 
       if (ifNot) {
         if (isFalse(source[ifNot]) && target.parentNode == null) {
