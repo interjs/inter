@@ -195,7 +195,7 @@ Backend.prototype = {
 
       req.onreadystatechange = function () {
         if (this.readyState == 4) {
-          if (this.status == 200) {
+          if (this.status >= 200 && this.status < 300) {
             if (responseHandlers.has("okay"))
               responseHandlers.get("okay")(AjaxResponse);
           } else {
