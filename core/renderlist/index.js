@@ -33,7 +33,6 @@ import {
   runInvalidSetPropsValueError,
   runInvalidTemplateReturnError,
   runNotConfigurableArrayError,
-  runOtherArrayDeprecationWarning,
   runUnsupportedEachValueError,
 } from "./errors.js";
 
@@ -213,11 +212,11 @@ function runObserveCallBack(each, proxy) {
 function createArrayReactor(each, renderingSystem) {
   if (isNotConfigurable(each)) runNotConfigurableArrayError();
 
-  const costumProps = new Set(["otherArray", "addItems", "setEach"]);
+  const customProps = new Set(["addItems", "setEach"]);
 
   return new Proxy(each, {
     set(target, prop, value, proxy) {
-      if (costumProps.has(prop)) {
+      if (customProps.has(prop)) {
         Reflect.set(...arguments);
         return true;
       }
@@ -634,7 +633,7 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
 export function renderList(options) {
   function defineListReactor(each, renderingSystem, root) {
     if (isArray(each)) {
-      defineCostumArrayProps(each);
+      defineCustomArrayProps(each);
       return createArrayReactor(each, renderingSystem);
     } else if (isObj(each)) {
       return createObjReactor(each, renderingSystem, root);
@@ -742,7 +741,7 @@ export function renderList(options) {
     Object.defineProperty(obj, prop, descriptiors);
   }
 
-  function defineCostumArrayProps(array) {
+  function defineCustomArrayProps(array) {
     if (hasReactiveSymbol(array)) return false;
 
     function addItemsHandler(items, position) {
@@ -765,22 +764,10 @@ export function renderList(options) {
       }
     }
 
-    const costumProps = [
-      { name: "otherArray", handler: setEachHandler },
-      { name: "addItems", handler: addItemsHandler },
-    ];
+    const customProps = [{ name: "addItems", handler: addItemsHandler }];
 
-    for (const { name, handler } of costumProps) {
-      if (name == "addItems") defineProp(array, name, { value: handler });
-      else
-        defineProp(array, name, {
-          set() {
-            if (name === "otherArray") runOtherArrayDeprecationWarning();
-
-            handler(...arguments);
-          },
-        });
-    }
+    for (const { name, handler } of customProps)
+      defineProp(array, name, { value: handler });
   }
 
   if (typeof each !== "number") proSetup();

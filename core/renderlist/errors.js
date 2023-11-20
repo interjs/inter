@@ -51,11 +51,6 @@ export function runInvalidAddItemsFirstArgumentError() {
   syErr("The first argument of [LIST REACTOR ].addItems must be an Array.");
 }
 
-export function runOtherArrayDeprecationWarning() {
-  consW(`The "otherArray" property was deprecated since version 2.1.0,
-     use the "setEach" property instead.`);
-}
-
 export function runInvalidTemplateReturnError() {
   syErr(`The template function is not being returned inside the "do" method in
            renderList(reactive listing), just return the template function.`);
