@@ -9,7 +9,7 @@ import {
 
 import {
   runInvalidCallBackError,
-  runInvalidEventWarning,
+  runInvalidAjaxEventWarning,
   runInvalidHeadersOptionError,
   runInvalidPathOptionError,
   runInvalidResponseArgumentNumberError,
@@ -57,7 +57,7 @@ function createAjaxEvents(req, events, allowedEvents) {
           handler(Arg);
         };
       }
-    } else runInvalidEventWarning(name);
+    } else runInvalidAjaxEventWarning(name);
   });
 }
 

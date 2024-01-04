@@ -20,7 +20,7 @@ export function runUnsupportedRequestTypeWarning(type) {
   err(`"${type}" is an unsupported request type in Ajax.`);
 }
 
-export function runInvalidEventWarning(name) {
+export function runInvalidAjaxEventWarning(name) {
   consW(`There's not any event named "${name}" in Ajax request.`);
 }
 
