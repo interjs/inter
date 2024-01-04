@@ -131,7 +131,7 @@ export function valueType(val) {
 // WARNINGS HELPERS
 
 export function syErr(err) {
-  throw new SyntaxError(`Inter syntaxError : ${err}`);
+  throw new Error(`Inter syntaxError : ${err}`);
 }
 
 export function err(e) {
