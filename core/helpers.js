@@ -67,10 +67,6 @@ export function isAtag(tag) {
   return tag instanceof HTMLElement;
 }
 
-export function isANode(target) {
-  return isDefined(target) && (target.nodeType == 1 || target.nodeType == 3);
-}
-
 export function validDomEvent(eventName) {
   return eventName in HTMLElement.prototype;
 }
