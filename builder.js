@@ -203,8 +203,8 @@ function build() {
   
 `;
   } else if (isModuleBuild) {
-    body = `
-    
+    body = ` 
+	
 /**
  * Interjs 
  * Version - ${buildVersion}
@@ -221,7 +221,7 @@ ${builtCode}
   }
 
   if (isGlobalBuild) writeFileSync("inter.js", format(body));
-  else if (isModuleBuild) writeFileSync("inter.m.js", body);
+  else if (isModuleBuild) writeFileSync("inter.m.js", format(body));
 
   Package.version = buildVersion;
   packageLock.version = buildVersion;
