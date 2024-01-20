@@ -16,7 +16,6 @@ import {
   isNotConfigurable,
   validStyleName,
   validDomEvent,
-  ParserWarning,
   isValidTemplateReturn,
   isPositiveValue,
   isNegativeValue,
@@ -43,6 +42,7 @@ import {
   runInvalidEventHandlerWarning,
   runInvalidEventWarning,
   runInvalidStyleWarning,
+  runInvalidStyleValue,
 } from "../template/errors.js";
 
 /**
@@ -864,6 +864,98 @@ function getValue(text) {
   return text;
 }
 
+function runNestedListDiffing(reactor, target, newChildren, oldChildren) {
+  const {
+    mutationInfo: { method, start, deleteCount, itemsLength },
+  } = reactor;
+
+  function addByPush() {
+    let i = itemsLength;
+
+    for (; i > 0; i--) {
+      const child = newChildren[newChildren.length - i];
+
+      target.appendChild(toDOM(child, true, child.index));
+      oldChildren.push(child);
+    }
+  }
+
+  function AddByUnShiftOrSplice(mutationMethod) {
+    function insertBehind(start, itemsLength) {
+      for (let i = itemsLength - 1; i > -1; i--) {
+        const child = target.children[start];
+        const virtualChild = newChildren[i];
+        const newChild = toDOM(virtualChild, true, virtualChild.index);
+
+        if (child) target.insertBefore(newChild, child);
+        else target.appendChild(newChild);
+
+        addedtems.unshift(virtualChild);
+      }
+    }
+
+    const addedtems = new Array();
+
+    if (mutationMethod == "splice" && deleteCount == 0 && itemsLength > 0) {
+      insertBehind(start, itemsLength);
+      oldChildren.splice(start, deleteCount, ...addedtems);
+    } else if (mutationMethod == "splice" && deleteCount > 0) {
+      for (let i = 0; i < deleteCount; i++) {
+        const child = target.children[start];
+
+        if (child) target.removeChild(child);
+      }
+
+      insertBehind(start, itemsLength);
+
+      oldChildren.splice(start, deleteCount, addedtems);
+    } else if (mutationMethod == "unshift") {
+      insertBehind(0, itemsLength);
+
+      oldChildren.unshift(...addedtems);
+    }
+  }
+
+  function deleteBySplice() {
+    let i = start;
+    for (; newChildren.length < target.children.length; i++) {
+      const elToRemove = target.children[start];
+      if (elToRemove) target.removeChild(elToRemove);
+    }
+
+    oldChildren.splice(start, deleteCount);
+  }
+
+  const lastNodeElement = target.children[target.children.length - 1];
+  const firstNodeElement = target.children[0];
+  if (method == "pop" && lastNodeElement) {
+    target.removeChild(lastNodeElement);
+    oldChildren.pop();
+  } else if (method == "shift" && firstNodeElement) {
+    target.removeChild(firstNodeElement);
+    oldChildren.shift();
+  } else if (method == "push") addByPush();
+  else if (method == "unshift") AddByUnShiftOrSplice(method);
+  else if (method == "splice") {
+    if (
+      typeof start == "number" &&
+      typeof deleteCount == "number" &&
+      itemsLength == 0
+    )
+      deleteBySplice();
+    else if (itemsLength > 0) AddByUnShiftOrSplice(method);
+    else if (deleteCount == void 0) {
+      const data = {
+        source: {
+          values: newChildren,
+        },
+      };
+
+      synchronizeRootChildrenLengthAndSourceLength(target, data);
+    }
+  }
+}
+
 function runContainerDiffing(newContainer, oldContainer, diff) {
   const {
     attrs: newAttrs = {},
@@ -879,6 +971,11 @@ function runContainerDiffing(newContainer, oldContainer, diff) {
     children: oldChildren,
     target,
   } = oldContainer;
+
+  const { reactor } = newChildren;
+
+  if (reactor != void 0)
+    runNestedListDiffing(reactor, target, newChildren, oldChildren);
 
   const rootEL = target.parentNode;
   const newText = getValue(newContainer.text);
@@ -1000,10 +1097,8 @@ function runStyleDiffing(target, oldStyles, newStyles) {
         if (validStyleName(newStyleName)) {
           target.style[newStyleName] = newStyleValue;
 
-          if (target.style[newStyleName] !== newStyleValue)
-            ParserWarning(
-              `"${newStyleValue}" is an invalid value for the "${newStyleName}" style.`
-            );
+          if (!target.style[newStyleName])
+            runInvalidStyleValue(newStyleName, newStyleValue);
         } else runInvalidStyleWarning(newStyleName);
       }
     }
@@ -1101,101 +1196,9 @@ function runChildrenDiffing(__new, __old, realParent) {
     if (newChildren.length !== oldChildren.length) {
       const { reactor } = newChildren;
 
-      if (reactor != void 0) {
-        const {
-          mutationInfo: { method, start, deleteCount, itemsLength },
-        } = reactor;
-
-        function addByPush() {
-          let i = itemsLength;
-
-          for (; i > 0; i--) {
-            const child = newChildren[newChildren.length - i];
-
-            target.appendChild(toDOM(child, true, child.index));
-            oldChildren.push(child);
-          }
-        }
-
-        function AddByShiftOrSplice(mutationMethod) {
-          function insertBehind(start, itemsLength) {
-            for (let i = itemsLength - 1; i > -1; i--) {
-              const child = target.children[start];
-              const virtualChild = newChildren[i];
-              const newChild = toDOM(virtualChild, true, virtualChild.index);
-
-              if (child) target.insertBefore(newChild, child);
-              else target.appendChild(newChild);
-
-              addedtems.unshift(virtualChild);
-            }
-          }
-
-          const addedtems = new Array();
-
-          if (
-            mutationMethod == "splice" &&
-            deleteCount == 0 &&
-            itemsLength > 0
-          ) {
-            insertBehind(start, itemsLength);
-            oldChildren.splice(start, deleteCount, ...addedtems);
-          } else if (mutationMethod == "splice" && deleteCount > 0) {
-            for (let i = 0; i < deleteCount; i++) {
-              const child = target.children[start];
-
-              if (child) target.removeChild(child);
-            }
-
-            insertBehind(start, itemsLength);
-
-            oldChildren.splice(start, deleteCount, addedtems);
-          } else if (mutationMethod == "unshift") {
-            insertBehind(0, itemsLength);
-
-            oldChildren.unshift(...addedtems);
-          }
-        }
-
-        function deleteBySplice() {
-          let i = start;
-          for (; newChildren.length < target.children.length; i++) {
-            const elToRemove = target.children[start];
-            if (elToRemove) target.removeChild(elToRemove);
-          }
-
-          oldChildren.splice(start, deleteCount);
-        }
-
-        const lastNodeElement = target.children[target.children.length - 1];
-        const firstNodeElement = target.children[0];
-        if (method == "pop" && lastNodeElement) {
-          target.removeChild(lastNodeElement);
-          oldChildren.pop();
-        } else if (method == "shift" && firstNodeElement) {
-          target.removeChild(firstNodeElement);
-          oldChildren.shift();
-        } else if (method == "push") addByPush();
-        else if (method == "unshift") AddByShiftOrSplice(method);
-        else if (method == "splice") {
-          if (
-            typeof start == "number" &&
-            typeof deleteCount == "number" &&
-            itemsLength == 0
-          )
-            deleteBySplice();
-          else if (itemsLength > 0) AddByShiftOrSplice(method);
-          else if (deleteCount == void 0) {
-            const data = {
-              source: {
-                values: newChildren,
-              },
-            };
-
-            synchronizeRootChildrenLengthAndSourceLength(target, data);
-          }
-        }
-      } else if (target && target.parentNode != null) {
+      if (reactor != void 0)
+        runNestedListDiffing(reactor, target, newChildren, oldChildren);
+      else if (target && target.parentNode != null) {
         const newElement = toDOM(newChild, true, index);
 
         realParent.replaceChild(newElement, target);
@@ -1261,3 +1264,21 @@ function synchronizeRootChildrenLengthAndSourceLength(root, iterable) {
     }
   }
 }
+
+/**
+ * <div>
+ * <p>Olá</p>
+ * <p>Olá</p>
+ * <p>Olá</p>
+ * <!--Added dynamically  -->
+ * <p>Olá</p>
+ * </div>
+ *
+ *<div>
+ * <p>Olá</p>
+ * <p>Olá</p>
+ * <p>Olá</p>
+ *
+ * </div>
+ *
+ */

@@ -61,3 +61,7 @@ export function runIllegalAttrsPropWarning(prop) {
 
   consW(prop.startsWith("on") ? event : styleProp);
 }
+
+export function runInvalidStyleValue(name, value) {
+  ParserWarning(`"${value}" is an invalid value for the "${name}" style.`);
+}
