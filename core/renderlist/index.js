@@ -972,7 +972,9 @@ function runContainerDiffing(newContainer, oldContainer, diff) {
     target,
   } = oldContainer;
 
-  const { reactor } = newChildren;
+  let reactor;
+
+  if (isArray(newChildren)) reactor = newChildren.reactor;
 
   if (reactor != void 0)
     runNestedListDiffing(reactor, target, newChildren, oldChildren);
