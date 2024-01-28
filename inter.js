@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.2.1
+ * Version - 2.2.2
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021 - 2024
@@ -2785,7 +2785,9 @@
       target,
     } = oldContainer;
 
-    const { reactor } = newChildren;
+    let reactor;
+
+    if (isArray(newChildren)) reactor = newChildren.reactor;
 
     if (reactor != void 0)
       runNestedListDiffing(reactor, target, newChildren, oldChildren);
@@ -3342,5 +3344,5 @@
   window.template = template;
   window.toAttrs = toAttrs;
   window.Backend = Backend;
-  console.log("The global version 2.2.1 of Inter was loaded successfully.");
+  console.log("The global version 2.2.2 of Inter was loaded successfully.");
 })();

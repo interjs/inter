@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.2.1
+ * Version - 2.2.2
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021 - 2024
@@ -8,7 +8,7 @@
  * Module version
  */
 
-export const interVersion = "2.2.1";
+export const interVersion = "2.2.2";
 
 function runInvalidTemplateArgumentError(arg) {
   syErr(`The argument of the template function must be a plain Javascript object,
@@ -2762,7 +2762,9 @@ function runContainerDiffing(newContainer, oldContainer, diff) {
     target,
   } = oldContainer;
 
-  const { reactor } = newChildren;
+  let reactor;
+
+  if (isArray(newChildren)) reactor = newChildren.reactor;
 
   if (reactor != void 0)
     runNestedListDiffing(reactor, target, newChildren, oldChildren);
