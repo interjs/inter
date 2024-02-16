@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.2.2
+ * Version - 2.2.3
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021 - 2024
@@ -8,7 +8,7 @@
  * Module version
  */
 
-export const interVersion = "2.2.2";
+export const interVersion = "2.2.3";
 
 function runInvalidTemplateArgumentError(arg) {
   syErr(`The argument of the template function must be a plain Javascript object,
@@ -576,6 +576,7 @@ function toIterable(data) {
 
 function Iterable(data) {
   this.source = toIterable(data);
+  this.break = !1;
 }
 
 Iterable.prototype.each = function (callBack) {
@@ -585,6 +586,8 @@ Iterable.prototype.each = function (callBack) {
     index++;
 
     callBack(data, index, this.source.type);
+
+    if (this.break) break;
   }
 };
 
@@ -597,6 +600,10 @@ function isNegativeValue(value) {
 
 function isPositiveValue(value) {
   return !isNegativeValue(value);
+}
+
+function isTringOrNumber(value) {
+  typeof value == "string" || typeof value == "number";
 }
 
 //</>
@@ -1840,11 +1847,11 @@ function createChildren(root, children) {
  *
  */
 
-function checkType(arg, call) {
-  if (isObj(arg)) defineReactiveObj(arg, call);
-  else if (isArray(arg)) defineReactiveArray(arg, call);
+function checkType(arg, call, _, indexObj) {
+  if (isObj(arg)) defineReactiveObj(arg, call, indexObj);
+  else if (isArray(arg)) defineReactiveArray(arg, call, indexObj);
   else if (isMap(arg)) defineReactiveMap(arg, call);
-  else if (isSet(arg)) defineReactiveSet(arg, call);
+  else if (isSet(arg)) defineReactiveSet(arg, call, false, null, indexObj);
 }
 
 function defineReactiveSymbol(obj) {
@@ -1862,7 +1869,7 @@ function hasReactiveSymbol(obj) {
   return hasOwnProperty(obj, symbol);
 }
 
-function defineReactiveObj(obj, renderingSystem) {
+function defineReactiveObj(obj, renderingSystem, indexObj) {
   const reservedProps = new Set(["setProps", "defineProps", "deleteProps"]);
 
   function defineReservedProps(props) {
@@ -1873,6 +1880,11 @@ function defineReactiveObj(obj, renderingSystem) {
     }
   }
 
+  const indexSymbol = Symbol.for("index");
+  if (isObj(indexObj)) {
+    obj[indexSymbol] = indexObj;
+  }
+
   function defineReactiveProp(prop) {
     let readValue = obj[prop];
 
@@ -1880,8 +1892,22 @@ function defineReactiveObj(obj, renderingSystem) {
     Object.defineProperty(obj, prop, {
       set(newValue) {
         readValue = newValue;
-        renderingSystem();
-        checkType(newValue, renderingSystem);
+
+        if (isTringOrNumber(newValue) && readValue == newValue) return;
+
+        if (obj[indexSymbol]) {
+          const index = obj[indexSymbol].index;
+          renderingSystem(index);
+        } else renderingSystem();
+
+        const hasIndexObj = isObj(indexObj);
+
+        checkType(
+          newValue,
+          renderingSystem,
+          null,
+          hasIndexObj ? indexObj : null
+        );
       },
 
       get() {
@@ -1893,26 +1919,27 @@ function defineReactiveObj(obj, renderingSystem) {
 
   function deleteProps(props) {
     if (!isArray(props)) runInvalidDeletePropsValueError(props);
-
+    const index = isObj(indexObj) ? indexObj.index : void 0;
     for (const prop of props) {
       if (typeof prop !== "string") continue;
       else if (!hasOwnProperty(obj, prop)) continue;
       else if (!reservedProps.has(prop)) delete obj[prop];
     }
 
-    renderingSystem();
+    renderingSystem(index);
   }
 
   function defineProps(props) {
     if (!isObj(props)) runInvalidDefinePropsValueError(props);
-
+    const index = isObj(indexObj) ? indexObj.index : void 0;
     for (const [prop, value] of Object.entries(props)) {
       if (!(prop in this) && !reservedProps.has(prop)) {
         obj[prop] = value;
         defineReactiveProp(prop);
+        checkType(obj[prop], renderingSystem, null, indexObj);
       }
 
-      renderingSystem();
+      renderingSystem(index);
     }
   }
 
@@ -1921,7 +1948,6 @@ function defineReactiveObj(obj, renderingSystem) {
 
     for (const [prop, value] of Object.entries(props)) {
       if (!reservedProps.has(prop)) obj[prop] = value;
-      checkType(value, renderingSystem);
     }
   }
 
@@ -1941,7 +1967,8 @@ function defineReactiveObj(obj, renderingSystem) {
     if (reservedProps.has(prop)) runDetecteReservedPropdWarnig(prop);
 
     defineReactiveProp(prop);
-    checkType(obj[prop], renderingSystem);
+
+    checkType(obj[prop], renderingSystem, null, indexObj);
   }
 
   const reservedPropsSetting = [
@@ -2068,6 +2095,7 @@ function createObjReactor(each, renderingSystem, root) {
   return new Proxy(each, {
     set(target, prop, value, proxy) {
       if (specialProps.has(prop)) return false;
+      if (isTringOrNumber(value) && value == target[prop]) return false;
 
       Reflect.set(...arguments);
 
@@ -2121,7 +2149,7 @@ function mutateArrayMap(array) {
   });
 }
 
-function defineReactiveArray(array, renderingSystem) {
+function defineReactiveArray(array, renderingSystem, indexObj) {
   if (hasReactiveSymbol(array)) return false;
 
   const mutationMethods = [
@@ -2180,11 +2208,11 @@ function defineReactiveArray(array, renderingSystem) {
 
         if (method === "push" || method === "unshift") {
           for (const arg of arguments) {
-            checkType(arg, renderingSystem);
+            checkType(arg, renderingSystem, null, indexObj);
           }
         } else if (method === "splice" && isDefined(items)) {
           for (const item of items) {
-            checkType(item, renderingSystem);
+            checkType(item, renderingSystem, null, indexObj);
           }
         }
 
@@ -2193,7 +2221,7 @@ function defineReactiveArray(array, renderingSystem) {
     });
   }
 
-  walkArray(array, renderingSystem);
+  walkArray(array, renderingSystem, indexObj);
   defineReactiveSymbol(array);
   mutateArrayMap(array);
 }
@@ -2231,7 +2259,7 @@ function defineReactiveMap(map, renderingSystem, listReactor, root) {
   if (listReactor) defineListReactorSetProps(map, renderingSystem);
 }
 
-function defineReactiveSet(set, renderingSystem, listReactor, root) {
+function defineReactiveSet(set, renderingSystem, listReactor, root, indexObj) {
   if (hasReactiveSymbol(set)) return false;
 
   const mutationMethods = ["add", "clear", "delete"];
@@ -2256,7 +2284,7 @@ function defineReactiveSet(set, renderingSystem, listReactor, root) {
     });
   }
 
-  walkSet(set, renderingSystem);
+  walkSet(set, renderingSystem, indexObj);
   defineReactiveSymbol(set);
 }
 
@@ -2272,20 +2300,20 @@ function walkMap(map, call) {
   });
 }
 
-function walkArray(array, call) {
+function walkArray(array, call, indexObj) {
   for (const item of array) {
-    checkType(item, call);
+    checkType(item, call, null, indexObj);
   }
 }
 
-function walkSet(set, call) {
+function walkSet(set, call, indexObj) {
   set.forEach((value) => {
-    checkType(value, call);
+    checkType(value, call, null, indexObj);
   });
 }
 
 function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
-  function render(item, i, start) {
+  function render(item, i, start, secondI) {
     const temp = DO.call(pro, item, i, pro);
     const newChild = toDOM(temp.element);
     const domChild = htmlEl.children[start];
@@ -2298,7 +2326,9 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
       htmlEl.appendChild(newChild);
     }
 
-    checkType(item, renderingSystem);
+    if (isDefined(secondI)) i = secondI;
+
+    renderingSystem(i, true);
   }
 
   function ArrayPrototypeShiftHandler() {
@@ -2340,7 +2370,8 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
 
     if (arguments.length == 1) render(...arguments, array.length - 1);
     else if (arguments.length > 1) {
-      for (const item of arguments) render(item, array.length - 1);
+      let length = arguments.length;
+      for (const item of arguments) render(item, array.length - length--);
     }
 
     renderingSystem();
@@ -2356,9 +2387,10 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
     );
 
     if (arguments.length > 1) {
-      let i = arguments.length - 1;
+      let i = arguments.length;
 
-      for (; i > -1; i--) render(arguments[i], 0, 0);
+      for (let index = i - 1; index > -1; index--)
+        render(arguments[--i], 0, 0, i);
     } else if (arguments.length == 1) render(...arguments, 0, 0);
 
     renderingSystem();
@@ -2395,6 +2427,7 @@ function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
     else if (deleteCount == 0 && items.length > 0) insertBehind();
 
     renderingSystem();
+
     runObserveCallBack(array);
 
     return ArrayPrototypeSpliceReturn;
@@ -2453,7 +2486,7 @@ export function renderList(options) {
 
   /*eslint-disable prefer-const*/
 
-  let { in: IN, each, do: DO } = options;
+  let { in: IN, each, do: DO, optimize } = options;
 
   /*eslint-enable prefer-const*/
 
@@ -2468,6 +2501,16 @@ export function renderList(options) {
   if (!isCallable(DO)) {
     syErr(
       "The value of the 'do' option in renderList must be only a function."
+    );
+  }
+
+  if (isDefined(optimize) && !isTrue(optimize)) {
+    syErr("The value of the 'optimize' option in renderList must be only true");
+  }
+
+  if (isDefined(optimize) && !isArray(each)) {
+    syErr(
+      "The 'optimize' option can only be enabled when the each's value is an Array."
     );
   }
 
@@ -2562,21 +2605,53 @@ export function renderList(options) {
 
   if (typeof each !== "number") proSetup();
 
-  function renderingSystem() {
+  function renderingSystem(__index__, perfOptimization) {
     const iterable = new Iterable(each);
 
     synchronizeRootChildrenLengthAndSourceLength(root, iterable);
 
     iterable.each((data, index, type) => {
-      let newTemp;
+      let newTemp, indexObj;
 
-      if (firstRender) {
+      if (type == "array") {
+        if (isDefined(__index__)) {
+          data = pro[__index__];
+          index = __index__;
+          iterable.break = true;
+        }
+
+        const indexSymbol = Symbol.for("index");
+        const canOptimize = () =>
+          isTrue(optimize) &&
+          (isObj(data) || isArray(data) || isSet(data)) &&
+          !hasOwnProperty(data, indexSymbol);
+        indexObj = {
+          index: index,
+          sourceLength: pro.length,
+        };
+
+        if (canOptimize()) data[indexSymbol] = indexObj;
+        else if (
+          (isObj(data) || isArray(data) || isSet(data)) &&
+          hasOwnProperty(data, indexSymbol)
+        ) {
+          const hasDifferentSourceLength = () =>
+            data[indexSymbol].sourceLength !== indexObj.sourceLength;
+          if (hasDifferentSourceLength())
+            shareProps(data[indexSymbol], indexObj);
+        }
+      }
+
+      if (firstRender || perfOptimization) {
         checkType(
           type !== "object" ? data : data[1] /*obj prop*/,
           renderingSystem,
-          DO
+          DO,
+          isTrue(optimize) ? indexObj : null
         );
       }
+
+      if (perfOptimization) return;
 
       function checkIterationSourceType() {
         if (type === "array") {
@@ -2596,23 +2671,23 @@ export function renderList(options) {
 
       // The  function is returning the template.
       if (isValidTemplateReturn(newTemp)) {
-        const actualEl = root.children[index];
+        const currentEl = root.children[index];
 
-        if (!isAtag(actualEl)) {
+        if (!isAtag(currentEl)) {
           root.appendChild(toDOM(newTemp.element));
         } else {
-          if (!actualEl.template) {
+          if (!currentEl.template) {
             consW("Avoid manipulating what Inter manipulates.");
 
             /**
-             * ActualEl was not rendered by Inter, in
+             * currentEl was not rendered by Inter, in
              * this case we must replace it with an element
              * rendered by Inter to avoid diffing problems.
              */
 
-            root.replaceChild(toDOM(newTemp.element), actualEl);
+            root.replaceChild(toDOM(newTemp.element), currentEl);
           } else {
-            runDiff(newTemp.element, actualEl.template, actualEl);
+            runDiff(newTemp.element, currentEl.template, currentEl);
           }
         }
       } else runInvalidTemplateReturnError();
@@ -2655,6 +2730,7 @@ function getValue(text) {
 }
 
 function runNestedListDiffing(reactor, target, newChildren, oldChildren) {
+  if (reactor.mutationInfo == void 0) return;
   const {
     mutationInfo: { method, start, deleteCount, itemsLength },
   } = reactor;
@@ -2967,7 +3043,6 @@ function runChildrenDiffing(__new, __old, realParent) {
     const oldText = getValue(oldChild.text);
     const newTag = getValue(newChild.tag);
     const oldTag = getValue(oldChild.tag);
-
     function insertConditionally() {
       const newELement = toDOM(newChild, true, index);
 
@@ -2988,9 +3063,9 @@ function runChildrenDiffing(__new, __old, realParent) {
     if (newChildren.length !== oldChildren.length) {
       const { reactor } = newChildren;
 
-      if (reactor != void 0)
+      if (reactor != void 0) {
         runNestedListDiffing(reactor, target, newChildren, oldChildren);
-      else if (target && target.parentNode != null) {
+      } else if (target && target.parentNode != null) {
         const newElement = toDOM(newChild, true, index);
 
         realParent.replaceChild(newElement, target);
