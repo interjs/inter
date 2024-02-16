@@ -231,6 +231,7 @@ function toIterable(data) {
 
 export function Iterable(data) {
   this.source = toIterable(data);
+  this.break = !1;
 }
 
 Iterable.prototype.each = function (callBack) {
@@ -240,6 +241,8 @@ Iterable.prototype.each = function (callBack) {
     index++;
 
     callBack(data, index, this.source.type);
+
+    if (this.break) break;
   }
 };
 
@@ -252,6 +255,10 @@ export function isNegativeValue(value) {
 
 export function isPositiveValue(value) {
   return !isNegativeValue(value);
+}
+
+export function isTringOrNumber(value) {
+  typeof value == "string" || typeof value == "number";
 }
 
 //</>

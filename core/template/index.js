@@ -79,7 +79,7 @@ function createStyles(styles, container) {
       if (isDefined(styleValue)) {
         container.style[name] = styleValue;
         container.template.styles[name] = styleValue;
-        if (!container.style[name]) runInvalidStyleValue(name, styleValue)
+        if (!container.style[name]) runInvalidStyleValue(name, styleValue);
       }
     } else runInvalidStyleWarning(name);
   });
