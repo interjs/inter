@@ -1,3 +1,5 @@
+import { templateReturn } from "./template";
+
 interface renderListOptionsInterface<T> {
   in: string;
   each: T;
@@ -5,7 +7,7 @@ interface renderListOptionsInterface<T> {
 }
 
 type universalReactorPropsType<T> = {
-  obserseve(callBack: (Reactor: T) => unknown): boolean;
+  obserseve(callBack: (reactor: T) => void): boolean;
 };
 
 interface ArrayReactor<T> extends universalReactorPropsType<T> {
@@ -13,23 +15,23 @@ interface ArrayReactor<T> extends universalReactorPropsType<T> {
 }
 
 interface ObjectReactor<T> extends universalReactorPropsType<T> {
-    setProps: Object,
+    setProps: object,
     
 }
 
 interface objectProps {
-    setProps: object,
-    defineProps: object,
-    deleteProps: string[]
+    setProps?: object,
+    defineProps?: object,
+    deleteProps?: string[]
 }
 
 type eachTypes = any[] | Object | Set<any> | Map<any, any>;
 type PropValueType<T> = T[keyof T];
 
 type doOptionsType<T> = T extends any[]
-  ? (item: T[any], index: number, reactor: T) => void
+  ? (item: T[any], index: number, reactor: T) => templateReturn
   : T extends object
-  ? (prop: string, value: PropValueType<T>, reactor: T) => void
+  ? (prop: string, value: PropValueType<T>, reactor: T) => templateReturn
   : null;
 type Item<T> = T[any] extends object ?  T[any] & objectProps : T[any]
 type returnReactorType<T> = T extends any[]
