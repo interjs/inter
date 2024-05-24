@@ -1,18 +1,19 @@
 /**
  * Written by Denis Power.
- * 
+ *
  * globalconfig.json options.
  *
  *  {
  *  files: [],
  *  dir: "./core",
+ *   types: "./types"
  * }
  *
  *
  *
  */
 
-const { writeFileSync, readFileSync } = require("fs");
+const { writeFileSync, readFileSync, readdirSync } = require("fs");
 const { format } = require("prettier");
 const config = getConfig();
 const Package = JSON.parse(readFileSync("./package.json"));
@@ -22,6 +23,7 @@ const buildYear = process.argv[3];
 const buildType = process.argv[4];
 const isGlobalBuild = buildType.toUpperCase() == "GLOBAL";
 const isModuleBuild = buildType.toUpperCase() == "MODULE";
+const isTsDeclaration = buildType.toUpperCase() == "TYPES";
 
 class Inter {
   #source;
@@ -135,6 +137,19 @@ function getConfig() {
 
 if (!config.hasFile) throw new Error("No `globalconfig.json` file found");
 
+function buildTsDeclaration() {
+  const { types } = config.file;
+  const files = readdirSync(types);
+  let body = "";
+
+  for (const file of files) {
+    const fileString = readFileSync(`${types}/${file}`);
+    body += fileString;
+  }
+
+  writeFileSync("inter.m.d.ts", body);
+}
+
 function build() {
   const { files, dir } = config.file;
 
@@ -230,4 +245,5 @@ ${builtCode}
   writeFileSync("package-lock.json", JSON.stringify(packageLock));
 }
 
-build();
+if (isTsDeclaration) buildTsDeclaration();
+else build();

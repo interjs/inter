@@ -14,5 +14,6 @@
         "renderList/index.js",
         "ajax/index.js"
     ],
-    "dir": "./core"
+    "dir": "./core",
+    "types": "./types"
 }
