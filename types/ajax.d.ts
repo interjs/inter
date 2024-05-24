@@ -25,11 +25,16 @@ interface ajaxOptions {
   type: httpRequestMethods;
   path: string;
   headers?: object;
+  timeout?: number;
   events?: {
-    onprogress?(args: { progress: number; abort(): void }): void;
+    onprogress?(args: { readonly progress: number; abort(): void }): void;
     onabort?(): void;
     ontimeout?(): void;
   };
+  security?: {
+    username: string;
+    password: string
+  }
   body?: any;
 }
 

@@ -1,7 +1,7 @@
 type attrType = string | number | null;
-
-interface toAttrsMethods {
-  setAttrs?: object;
+type attrs <T> = T[keyof T];
+interface toAttrsMethods<T>{
+  setAttrs?: T[keyof T]
   observe?(attr: string, value: attrType): boolean;
 }
 
@@ -13,5 +13,5 @@ interface toAttrsOptionsInterface<T> {
 export declare function toAttrs<T extends object>(
   options: toAttrsOptionsInterface<T>
 ): {
-  [prop in keyof T]: toAttrsMethods & T[prop];
+  [prop in keyof T]: toAttrsMethods<T> & T[prop];
 };

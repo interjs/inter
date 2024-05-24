@@ -9,32 +9,42 @@ interface renderListOptionsInterface<T> {
 
 type universalReactorPropsType<T> = {
   obserseve(callBack: (reactor: T) => void): boolean;
+  setEach: eachTypes;
 };
 
+
 interface ArrayReactor<T> extends universalReactorPropsType<T> {
-  addItems(items: Array<any>, index?: number): boolean;
+  addItems(items: any[], index?: number): boolean;
 }
 
 interface ObjectReactor<T> extends universalReactorPropsType<T> {
-    setProps: object,
-    
+  setProps?: T;
 }
 
-interface objectProps {
-    setProps?: object,
-    defineProps?: object,
-    deleteProps?: string[]
+interface objectProps<T> {
+  setProps?: T;
+  defineProps?: object;
+  deleteProps?: Array<keyof T>;
 }
 
-type eachTypes = any[] | Object | Set<any> | Map<any, any>;
+type eachTypes = any[] | Object | Set<any> | Map<any, any> | number;
 type PropValueType<T> = T[keyof T];
-
 type doOptionsType<T> = T extends any[]
-  ? (item: T[any], index: number, reactor: T) => templateReturn
+  ? (
+      this: returnReactorType<T>,
+      item: Item<T>,
+      index: number,
+      reactor: T
+    ) => templateReturn
   : T extends object
-  ? (prop: string, value: PropValueType<T>, reactor: T) => templateReturn
-  : null;
-type Item<T> = T[any] extends object ?  T[any] & objectProps : T[any]
+  ? (
+      this: returnReactorType<T>,
+      prop: string,
+      value: PropValueType<T>,
+      reactor: returnReactorType<T>
+    ) => templateReturn
+  : templateReturn;
+type Item<T> = T[any] extends object ? T[any] & objectProps<T[any]> : T[any];
 type returnReactorType<T> = T extends any[]
   ? Item<T>[] & ArrayReactor<T>
   : T extends object

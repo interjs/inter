@@ -1,6 +1,8 @@
 type refValueType = boolean;
 type renderIfMethods<T> = {
-  setConds: Object;
+  setConds: {
+    [prop in keyof T]?: refValueType
+  };
   observe(ref: keyof T, value: refValueType): boolean;
 };
 

@@ -1,10 +1,12 @@
 
+type HTMLTags =  keyof HTMLElementTagNameMap;
+type textTypes = string | number | null | void
 interface templateOptionsInterface {
-    tag: keyof HTMLElementTagNameMap,
-    text?: string | number | null | void | (() => void),
+    tag: HTMLTags| ((this: void) => HTMLTags),
+    text?: textTypes | ((this: void) => textTypes),
     renderIf?: boolean,
     events?: {
-     [event in keyof GlobalEventHandlers]?: GlobalEventHandlers[event];
+     [event in keyof GlobalEventHandlers]?: (this: Document, event: Event) => void;
     }
     attrs?: object,
     styles?: {

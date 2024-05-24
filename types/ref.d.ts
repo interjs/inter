@@ -1,6 +1,8 @@
 type refValueType = string | number | null | void;
 type refMethods<T> = {
-  setRefs: T;
+    setRefs?: {
+      [ref in keyof T]?: refValueType
+    }
   observe(
     ref: string,
     value: refValueType,
