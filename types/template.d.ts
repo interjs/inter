@@ -3,9 +3,13 @@ interface templateOptionsInterface {
     tag: keyof HTMLElementTagNameMap,
     text?: string | number | null | void | (() => void),
     renderIf?: boolean,
-    events?: GlobalEventHandlers,
+    events?: {
+     [event in keyof GlobalEventHandlers]?: GlobalEventHandlers[event];
+    }
     attrs?: object,
-    styles?: CSSStyleDeclaration
+    styles?: {
+       [style in keyof  CSSStyleDeclaration]?: CSSStyleDeclaration[style]
+    }
     children?: templateOptionsInterface[]
 }
 

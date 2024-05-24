@@ -3,6 +3,7 @@ import { templateReturn } from "./template";
 interface renderListOptionsInterface<T> {
   in: string;
   each: T;
+  optimize?: boolean;
   do: doOptionsType<T>;
 }
 
