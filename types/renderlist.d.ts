@@ -12,7 +12,6 @@ type universalReactorPropsType<T> = {
   setEach: eachTypes;
 };
 
-
 interface ArrayReactor<T> extends universalReactorPropsType<T> {
   addItems(items: any[], index?: number): boolean;
 }
