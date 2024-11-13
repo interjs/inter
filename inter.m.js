@@ -1,6 +1,6 @@
 /**
  * Interjs
- * Version - 2.2.3
+ * Version - 2.2.4
  * MIT LICENSED BY - Denis Power
  * Repo - https://github.com/interjs/inter
  * 2021 - 2024
@@ -8,7 +8,7 @@
  * Module version
  */
 
-export const interVersion = "2.2.3";
+export const interVersion = "2.2.4";
 
 function runInvalidTemplateArgumentError(arg) {
   syErr(`The argument of the template function must be a plain Javascript object,
@@ -218,9 +218,9 @@ function runNotDefinedConditionalPropWarning(prop) {
   consW(`"${prop}" was not defined as a conditional property.`);
 }
 
-function runTwoElseIfElementsCanNotHaveTheSamePropError(prop) {
+function runAlreadyUsedPropInConditionalGroupError(prop) {
   err(`
-    Two elements with the "_elseIf" attribute can not have the same conditional property.
+    Two elements in the conditional group can not have the same conditional property.
     Property: "${prop}"
     `);
 }
@@ -246,7 +246,11 @@ function runHasMoreThanOneCondtionalAttributeError(child) {
     element which has more than one conditional atribute, it's forbidden.`);
 }
 
-function runNotDefinedIfNotPropWarning(child, _ifNot, data) {
+function runNotDefinedIfNotPropWarning(child, _ifNot /*propValue*/, data) {
+  if (_ifNot.trim().length == 0) {
+    runInvalidConditionalAttrs("_ifNot");
+    return;
+  }
   ParserWarning(`
                     
     The conditional rendering parser found
@@ -262,12 +266,23 @@ function runNotDefinedIfNotPropWarning(child, _ifNot, data) {
     `);
 }
 
-function runNotDefinedElseIfPropWarning(propValue) {
-  ParserWarning(`The conditional rendering parser found an element which has the "_elseIf"
-     conditional property whose the value is: "${propValue}",
-     but you did not define any conditional property with that name.
-  
+function runInvalidConditionalAttrs(attrName) {
+  ParserWarning(`The conditional rendering parser found an ${attrName} attribute that does not
+    have a value assigned to it. Assign a value to the ${attrName} attribute.
     `);
+}
+
+function runNotDefinedElseIfPropWarning(propValue) {
+  if (propValue.trim().length == 0) {
+    runInvalidConditionalAttrs("_elseIf");
+    return;
+  }
+
+  ParserWarning(`The conditional rendering parser found an element which has the "_elseIf"
+    conditional property whose the value is: "${propValue}",
+    but you did not define any conditional property with that name.
+ 
+   `);
 }
 
 function runInvalidElseAttributeError() {
@@ -289,6 +304,10 @@ function runInvalidSetCondsValueError(arg) {
 }
 
 function runNotDefinedIfPropWarning(propValue, child, data) {
+  if (propValue.trim().length == 0) {
+    runInvalidConditionalAttrs("_if");
+    return;
+  }
   ParserWarning(`
     The conditional rendering parser found
     an element which has the "_if" attribute and the value
@@ -1263,7 +1282,7 @@ export function renderIf(obj) {
           if (!this.conditionalProps.has(prop)) {
             this.elseIfs.add(elseIfOptions);
             this.conditionalProps.add(prop);
-          } else runTwoElseIfElementsCanNotHaveTheSamePropError(prop);
+          } else runAlreadyUsedPropInConditionalGroupError(prop);
         },
 
         deleteData() {
