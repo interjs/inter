@@ -21,9 +21,9 @@ export function runNotDefinedConditionalPropWarning(prop) {
   consW(`"${prop}" was not defined as a conditional property.`);
 }
 
-export function runTwoElseIfElementsCanNotHaveTheSamePropError(prop) {
+export function runAlreadyUsedPropInConditionalGroupError(prop) {
   err(`
-    Two elements with the "_elseIf" attribute can not have the same conditional property.
+    Two elements in the conditional group can not have the same conditional property.
     Property: "${prop}"
     `);
 }
@@ -49,7 +49,11 @@ export function runHasMoreThanOneCondtionalAttributeError(child) {
     element which has more than one conditional atribute, it's forbidden.`);
 }
 
-export function runNotDefinedIfNotPropWarning(child, _ifNot, data) {
+export function runNotDefinedIfNotPropWarning(child, _ifNot/*propValue*/, data) {
+  if (_ifNot.trim().length == 0) {
+    runInvalidConditionalAttrs("_ifNot");
+    return;
+ }
   ParserWarning(`
                     
     The conditional rendering parser found
@@ -65,12 +69,26 @@ export function runNotDefinedIfNotPropWarning(child, _ifNot, data) {
     `);
 }
 
+function runInvalidConditionalAttrs(attrName) {
+
+  ParserWarning(`The conditional rendering parser found an ${attrName} attribute that does not
+    have a value assigned to it. Assign a value to the ${attrName} attribute.
+    `)
+
+}
+
 export function runNotDefinedElseIfPropWarning(propValue) {
+  if (propValue.trim().length == 0) {
+     runInvalidConditionalAttrs("_elseIf");
+     return;
+  }
+
   ParserWarning(`The conditional rendering parser found an element which has the "_elseIf"
-     conditional property whose the value is: "${propValue}",
-     but you did not define any conditional property with that name.
-  
-    `);
+    conditional property whose the value is: "${propValue}",
+    but you did not define any conditional property with that name.
+ 
+   `);
+
 }
 
 export function runInvalidElseAttributeError() {
@@ -92,6 +110,10 @@ export function runInvalidSetCondsValueError(arg) {
 }
 
 export function runNotDefinedIfPropWarning(propValue, child, data) {
+  if (propValue.trim().length == 0) {
+    runInvalidConditionalAttrs("_if");
+    return;
+ }
   ParserWarning(`
     The conditional rendering parser found
     an element which has the "_if" attribute and the value

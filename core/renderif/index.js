@@ -13,6 +13,7 @@ import {
 } from "../helpers.js";
 
 import {
+  runAlreadyUsedPropInConditionalGroupError,
   runHasMoreThanOneCondtionalAttributeError,
   runInvalidConditionalPropValueError,
   runInvalidElseAttributeError,
@@ -26,7 +27,6 @@ import {
   runNotDefinedElseIfPropWarning,
   runNotDefinedIfNotPropWarning,
   runNotDefinedIfPropWarning,
-  runTwoElseIfElementsCanNotHaveTheSamePropError,
 } from "./errors.js";
 
 function getChildNodes(root) {
@@ -141,7 +141,7 @@ export function renderIf(obj) {
           if (!this.conditionalProps.has(prop)) {
             this.elseIfs.add(elseIfOptions);
             this.conditionalProps.add(prop);
-          } else runTwoElseIfElementsCanNotHaveTheSamePropError(prop);
+          } else runAlreadyUsedPropInConditionalGroupError(prop);
         },
 
         deleteData() {
