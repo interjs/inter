@@ -28,7 +28,7 @@ import {
 
 } from "./interfaces.js";
 
-function toObj(obj: any) {
+function toObj(obj: any): Object | string {
   if (obj !== void 0) {
     try {
       return JSON.parse(obj);
@@ -44,7 +44,7 @@ function openRequest(
   path: string,
   username?: string,
   userpassword?: string
-) {
+): void {
   req.open(method, path, true, username, userpassword);
 }
 
@@ -84,7 +84,7 @@ function createAjaxEvents(
   });
 }
 
-function convertStringToObj(string: string, reqObj: ajaxInstance) {
+function convertStringToObj(string: string, reqObj: ajaxInstance): Object {
   function createGetter(obj: Object, prop: string) {
     //At first we must define the property this way
     // so that the methods Object.keys and Object.values

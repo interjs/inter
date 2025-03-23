@@ -14,4 +14,12 @@ export interface targetObjInterface {
     
 }
 
+export interface customArray<T> extends Array<any>  {
+
+    reactor?: T
+
+}
+
 export type renderingSystemType = (index?: number, perfOptimization?: boolean) => void;
+export type iterableEachTypes = Array<any> | Set<any> | Map<any, any> | Object
+export type arrayMapHanderType =  (item: unknown, index: number, thisValue: unknown[]) => unknown[];

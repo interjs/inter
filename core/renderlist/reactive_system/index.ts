@@ -1,10 +1,10 @@
-import { hasOwnProperty, isArray, isDefined, isMap, isNotConfigurable, isObj, isSet, isTringOrNumber, isValidTemplateReturn } from "helpers";
-import { runCanNotDefineReactivePropWarning, runDetecteReservedPropdWarnig, runInvalidDefinePropsValueError, runInvalidDeletePropsValueError, runInvalidSetPropsValueError, runNotConfigurableArrayError } from "renderlist/errors";
-import { indexObjType, renderingSystemType, reservedPropsSettingInterface } from "renderlist/interfaces";
-import { defineProps, defineReactiveProp, deleteProps, hasReactiveSymbol, setProps } from "./helpers";
-import { runObserveCallBack } from "renderif/rendering/helpers";
+import { consW, hasOwnProperty, isArray, isDefined, isMap, isNotConfigurable, isObj, isSet, isTringOrNumber, isValidTemplateReturn, validEachProperty } from "helpers";
+import { runCanNotDefineReactivePropWarning, runDetecteReservedPropdWarnig, runInvalidDefinePropsValueError, runInvalidDeletePropsValueError, runInvalidSetPropsValueError, runInvalidTemplateReturnError, runNotConfigurableArrayError } from "renderlist/errors";
+import { arrayMapHanderType, customArray, indexObjType, renderingSystemType, reservedPropsSettingInterface } from "renderlist/interfaces";
+import { defineProps, defineReactiveProp, defineReservedProps, deleteProps, hasReactiveSymbol, setProps } from "./helpers";
+import { runObserveCallBack } from "./helpers";
 
-export function checkType(arg: any, call: Function, _, indexObj: indexObjType) {
+export function checkType(arg: any, call: Function, _?, indexObj?: indexObjType) {
     
     if (isObj(arg)) defineReactiveObj(arg, call, indexObj);
     else if (isArray(arg)) defineReactiveArray(arg, call, indexObj);
@@ -25,7 +25,7 @@ export function checkType(arg: any, call: Function, _, indexObj: indexObjType) {
   
 
   
-  export function defineReactiveObj(obj: Object, renderingSystem: Function, indexObj: indexObjType) {
+  export function defineReactiveObj(obj: Object, renderingSystem: renderingSystemType, indexObj: indexObjType) {
     const reservedProps = new Set(["setProps", "defineProps", "deleteProps"]);
     const indexSymbol = Symbol.for("index");
 
@@ -49,7 +49,7 @@ export function checkType(arg: any, call: Function, _, indexObj: indexObjType) {
       if (reservedProps.has(prop)) runDetecteReservedPropdWarnig(prop);
     
   
-      defineReactiveProp(prop);
+      defineReactiveProp(prop, obj, indexObj, renderingSystem);
       
   
       checkType(obj[prop], renderingSystem, null, indexObj);
@@ -62,7 +62,8 @@ export function checkType(arg: any, call: Function, _, indexObj: indexObjType) {
       
     ];
   
-    defineReservedProps(reservedPropsSetting);
+    
+    defineReservedProps(reservedPropsSetting, obj);
     defineReactiveSymbol(obj);
   }
 
@@ -83,24 +84,28 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
         Reflect.set(target, prop, value, proxy);
   
         runObserveCallBack(each, proxy);
-
   
         renderingSystem();
+
+        /**
+         * object type = Array, Object Literal, instantiated Classes, Sets and Maps.
+         * These are the types that must be proxied to be reactive.
+         */
   
-        if (typeof value !== "number" && validEachProperty(value))
+        if (typeof value == "object" && validEachProperty(value))
           checkType(value, renderingSystem);
-          
-  
         return true;
       },
   
       get(target, prop) {
         /**
          * Note: Don't use Reflet.get(...arguments) here, because if
-         * it's an Array of objects it will return an empty object.
+         * it's an Array of objects it will return an empty object
+         * if  trying to access via index like: arrayOfObj[0] == {} even
+         * though the obj is populated.
          *
          */
-  
+        
         return target[prop];
       },
     });
@@ -114,7 +119,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
   
         for (const [prop, value] of Object.entries(props)) {
           if (isObj(obj)) this[prop] = value;
-          else if (isMap(obj)) obj.set(prop, value);
+          else if (isMap(obj)) (obj as Map<any, any>).set(prop, value);
   
           checkType(value, renderingSystem);
         }
@@ -124,15 +129,16 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
     });
   }
   
-  export function createObjReactor(each, renderingSystem, root) {
+  export function createObjReactor(each: Object, renderingSystem: renderingSystemType, root: Element) {
     if (isNotConfigurable(each)) runNotConfigurableArrayError();
   
     defineListReactorSetProps(each, renderingSystem);
   
-    const specialProps = new Set(["observe"]);
-    const settableRservedProps = new Set(["setEach", "setProps"]);
+    const specialProps: Set<string> = new Set(["observe"]);
+    const settableRservedProps: Set<string> = new Set(["setEach", "setProps"]);
+    
   
-    function isNotReservedSettableProp(prop) {
+    function isNotReservedSettableProp(prop: string): boolean {
       return !settableRservedProps.has(prop);
     }
     defineReactiveSymbol(each);
@@ -143,13 +149,13 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
         if (specialProps.has(prop)) return false;
         if (isTringOrNumber(value) && value == target[prop]) return false;
   
-        Reflect.set(...arguments);
+        Reflect.set(target, prop, value, proxy);
   
         if (isNotReservedSettableProp(prop)) {
           renderingSystem();
           runObserveCallBack(each, proxy);
   
-          if (typeof value !== "number" && validEachProperty(value))
+          if (typeof value == "object" && validEachProperty(value))
             checkType(value, renderingSystem);
         }
   
@@ -160,7 +166,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
         return Reflect.get(...arguments);
       },
   
-      deleteProperty(target, prop, proxy) {
+      deleteProperty(target: Object, prop: string) {
         if (prop in target) {
           exactElToRemove(target, prop, root);
           Reflect.deleteProperty(...arguments);
@@ -178,10 +184,11 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
   
   export function mutateArrayMap(array) {
     Object.defineProperty(array, "map", {
-      value(callBack) {
-        const newArray = new Array();
+      value(callBack: arrayMapHanderType) {
+        const newArray: customArray<any[]> = [];
+
         
-        newArray.reactor = this;
+        newArray.reactor  = this;
         let index = -1;
   
         for (const item of this) {
@@ -189,6 +196,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
   
           const returnValue = callBack(item, index, this);
           newArray.push(returnValue);
+        
         }
   
         return newArray;
@@ -196,10 +204,10 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
     });
   }
   
-  export function defineReactiveArray(array, renderingSystem, indexObj) {
+  export function defineReactiveArray(array: any[], renderingSystem: renderingSystemType, indexObj) {
     if (hasReactiveSymbol(array)) return false;
   
-    const mutationMethods = [
+    const mutationMethods: string[] = [
       "push",
       "unshift",
       "pop",
@@ -211,7 +219,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
   
     for (const method of mutationMethods) {
       Object.defineProperty(array, method, {
-        value(start, deleteCount, ...items) {
+        value(start: number, deleteCount: number, ...items: any[]) {
           if (method == "pop")
             this.mutationInfo = {
               method: "pop",
@@ -273,7 +281,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
     mutateArrayMap(array);
   }
   
-  function defineReactiveMap(map, renderingSystem, listReactor, root) {
+  function defineReactiveMap(map: Map<any, any>, renderingSystem: renderingSystemType, listReactor?: boolean, root?: Element) {
     if (hasReactiveSymbol(map)) return false;
   
     const mutationMethods = ["set", "delete", "clear"];
@@ -287,7 +295,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
             this,
             arguments
           );
-          if (listReactor) runObserveCallBack(this);
+          if (listReactor) runObserveCallBack(this,this);
           renderingSystem();
   
           if (method == "set") {
@@ -306,10 +314,10 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
     if (listReactor) defineListReactorSetProps(map, renderingSystem);
   }
   
-  export function defineReactiveSet(set, renderingSystem, listReactor, root, indexObj) {
+  export function defineReactiveSet(set: Set<any>, renderingSystem: Function, listReactor: boolean, root: Element, indexObj) {
     if (hasReactiveSymbol(set)) return false;
   
-    const mutationMethods = ["add", "clear", "delete"];
+    const mutationMethods: string[] = ["add", "clear", "delete"];
   
     for (const method of mutationMethods) {
       Object.defineProperty(set, method, {
@@ -321,7 +329,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
             arguments
           );
           renderingSystem();
-          if (listReactor) runObserveCallBack(this);
+          if (listReactor) runObserveCallBack(this, this);
           if (method === "add") {
             checkType(arguments[0], renderingSystem);
           }
@@ -335,7 +343,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
     defineReactiveSymbol(set);
   }
   
-  function walkMap(map, call) {
+  function walkMap(map: Map<any, any>, call: Function) {
     /**
      * The goal here is to iterate through the map collection
      * and if we found an object, an array, a set or even a map, we must make it reactive.
@@ -347,23 +355,24 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
     });
   }
   
-  function walkArray(array, call, indexObj) {
+  function walkArray(array: any[], call: Function, indexObj) {
     for (const item of array) {
       checkType(item, call, null, indexObj);
     }
   }
   
-  function walkSet(set, call, indexObj) {
+  function walkSet(set: Set<any>, call: Function, indexObj) {
     set.forEach((value) => {
       checkType(value, call, null, indexObj);
     });
   }
   
-  function redefineArrayMutationMethods(array, htmlEl, renderingSystem, DO, pro) {
-    function render(item, i, start, secondI) {
+  function redefineArrayMutationMethods(array: any[], htmlEl: Element, renderingSystem: renderingSystemType, DO, pro) {
+    function render(item: unknown, i: number, start: number, secondI: number) {
       const temp = DO.call(pro, item, i, pro);
       const newChild = toDOM(temp.element);
       const domChild = htmlEl.children[start];
+
   
       if (!isValidTemplateReturn(temp)) runInvalidTemplateReturnError();
   
@@ -389,7 +398,7 @@ export function createArrayReactor(each: any[], renderingSystem: renderingSystem
         htmlEl.removeChild(firstNodeElement);
   
         renderingSystem();
-        runObserveCallBack(array);
+        runObserveCallBack(array, array);
       }
   
       return ArrayPrototypeShiftReturn;

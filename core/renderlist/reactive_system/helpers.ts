@@ -1,6 +1,6 @@
-import { hasOwnProperty, isArray, isObj, isTringOrNumber } from "helpers";
+import { hasOwnProperty, isArray, isObj, isTringOrNumber, isDefined } from "helpers";
 import { runInvalidDefinePropsValueError, runInvalidDeletePropsValueError, runInvalidSetPropsValueError } from "renderlist/errors";
-import { indexObjType, renderingSystemType, reservedPropsSettingInterface } from "renderlist/interfaces";
+import { indexObjType, iterableEachTypes, renderingSystemType, reservedPropsSettingInterface } from "renderlist/interfaces";
 import { checkType } from "./index";
 
 export function deleteProps(obj: Object,props: string[], reservedProps: Set<string>, indexObj: indexObjType, renderingSystem: renderingSystemType) {
@@ -37,7 +37,7 @@ export function deleteProps(obj: Object,props: string[], reservedProps: Set<stri
       if (!reservedProps.has(prop)) targetObj[prop] = value;
     }
   }
- export  function defineReservedProps(props: reservedPropsSettingInterface, targetObj: Object): void {
+ export  function defineReservedProps(props: reservedPropsSettingInterface[], targetObj: Object): void {
     
     for (const { name, setHandler } of props) {
       Object.defineProperty(targetObj, name, {
@@ -82,4 +82,12 @@ export function deleteProps(obj: Object,props: string[], reservedProps: Set<stri
     const symbol: symbol = Symbol.for("reactive");
   
     return hasOwnProperty(obj, symbol);
-  }
+ 
+ 
+ }
+
+ export function runObserveCallBack(each: iterableEachTypes , proxy: iterableEachTypes) {
+  const observe = Symbol.for("observe");
+  if (typeof each[observe] === "function")
+    each[observe](isDefined(proxy) ? proxy : each);
+}
