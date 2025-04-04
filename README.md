@@ -34,7 +34,7 @@
 <h1 align="center"> <a href="http://interjs.github.io">Interjs</a></h1>
 
 
-**WARNING**: In version 3, Inter will be rewritten in TypeScript.
+**WARNING**: Version 3 is now under development. It will be release soon.
 
 Inter is a Javascript framework designed to build highly interactive front-end web applications.
 It's: **simple**, **intuitive** and **powerful**.
