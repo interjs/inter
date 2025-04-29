@@ -19,8 +19,16 @@ import {
   runUnsupportedRequestTypeWarning,
   runInvalidAjaxEventsOptionError,
 } from "./errors.js";
+import {
+  ajaxInstance,
+  BackendInterface,
+  BackendRequesHandlersInterface,
+  BackendRequestOptionsType,
+  BackendRequestResponseInterface,
 
-function toObj(obj) {
+} from "./interfaces.js";
+
+function toObj(obj: any) {
   if (obj !== void 0) {
     try {
       return JSON.parse(obj);
@@ -30,17 +38,27 @@ function toObj(obj) {
   }
 }
 
-function openRequest(req, method, path, username, userpassword) {
+function openRequest(
+  req: ajaxInstance,
+  method: string,
+  path: string,
+  username?: string,
+  userpassword?: string
+) {
   req.open(method, path, true, username, userpassword);
 }
 
-function createHeaders(headers, req) {
+function createHeaders(headers: Object, req: ajaxInstance) {
   Object.entries(headers).forEach(([header, value]) => {
     req.setRequestHeader(header, value);
   });
 }
 
-function createAjaxEvents(req, events, allowedEvents) {
+function createAjaxEvents(
+  req: ajaxInstance,
+  events: Object,
+  allowedEvents: Set<string>
+) {
   Object.entries(events).forEach(([name, handler]) => {
     if (allowedEvents.has(name)) {
       if (name !== "onprogress") {
@@ -49,20 +67,25 @@ function createAjaxEvents(req, events, allowedEvents) {
         };
       } else {
         req.onprogress = (ev) => {
-          const Arg = {
+          interface argInterface {
+            abort(): void;
+            readonly progress: number;
+          }
+
+          const arg: argInterface = {
             abort: () => req.abort(),
             progress: (ev.loaded * 100) / ev.total,
           };
 
-          handler(Arg);
+          handler(arg);
         };
       }
     } else runInvalidAjaxEventWarning(name);
   });
 }
 
-function convertStringToObj(string, reqObj) {
-  function createGetter(obj, prop) {
+function convertStringToObj(string: string, reqObj: ajaxInstance) {
+  function createGetter(obj: Object, prop: string) {
     //At first we must define the property this way
     // so that the methods Object.keys and Object.values
     //work fine.
@@ -74,24 +97,26 @@ function convertStringToObj(string, reqObj) {
     });
   }
 
-  const pattern = /(:?[\S]+):/g;
+  const pattern: RegExp = /(:?[\S]+):/g;
   const headers = {};
 
   string.replace(pattern, (match) => {
     match = match.replace(":", "");
     if (reqObj.getResponseHeader(match)) createGetter(headers, match);
+
+    return String();
   });
 
   return Object.freeze(headers);
 }
 
-function createRequestBody(body) {
+function createRequestBody(body: FormData | string) {
   if (!isDefined(body)) return null;
   else if (body instanceof FormData || typeof body == "string") return body;
-  else return JSON.stringify(body);
+  return JSON.stringify(body);
 }
 
-function isJSON(data) {
+function isJSON(data: any) {
   try {
     const parsed = JSON.parse(data);
 
@@ -101,18 +126,8 @@ function isJSON(data) {
   }
 }
 
-export function Backend() {
-  if (new.target === void 0) {
-    err("Backend is a constructor, call it with the new keyword.");
-  }
-}
-
-Backend.prototype = {
-  get [Symbol.toStringTag]() {
-    return "Ajax";
-  },
-
-  request(obj) {
+export class Backend implements BackendInterface {
+  request(obj: BackendRequestOptionsType) {
     if (!isObj(obj)) runIvalidRequestArgumentError(obj);
 
     const {
@@ -141,11 +156,15 @@ Backend.prototype = {
     let requestOpened = false;
 
     function call() {
-      const req = new XMLHttpRequest();
+      const req: ajaxInstance = new XMLHttpRequest();
       const method = type.toUpperCase();
-      const allowedEvents = new Set(["onprogress", "ontimeout", "onabort"]);
+      const allowedEvents: Set<string> = new Set([
+        "onprogress",
+        "ontimeout",
+        "onabort",
+      ]);
 
-      const AjaxResponse = {
+      const AjaxResponse: BackendRequestResponseInterface = {
         get status() {
           return req.status;
         },
@@ -173,7 +192,7 @@ Backend.prototype = {
         },
       };
 
-      if (isObj(security) && Object.keys(security).length >= 2) {
+      if (isObj(security) && Object.keys(security).length === 2) {
         if (security.username && security.password) {
           openRequest(req, method, path, security.username, security.password);
 
@@ -216,7 +235,7 @@ Backend.prototype = {
       req.send(createRequestBody(body));
     }
 
-    const responseMethods = {
+    const responseMethods: BackendRequesHandlersInterface = {
       okay(callBack) {
         if (!isCallable(callBack)) runInvalidCallBackError();
 
@@ -246,7 +265,7 @@ Backend.prototype = {
     };
 
     return responseMethods;
-  },
-};
+  }
+}
 
 Object.freeze(Backend.prototype);

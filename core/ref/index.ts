@@ -1,168 +1,15 @@
-import { isObj, syErr, isCallable, getId, hasOwnProperty } from "../helpers.js";
-
+import { isObj, isCallable, syErr, getId, hasOwnProperty } from "../helpers.js";
+import { getRefs, hasRefs, runRefParsing } from "./parser";
+import { refOptionsInterface, refParserInterface } from "./interfaces.ts";
 import {
-  runInvalidSetRefsValueError,
+  runInvalidRefArgument,
   runInvalidRefDataProperty,
   runInvalidRefInProperty,
-  runInvalidRefArgument,
+  runInvalidSetRefsValueError,
   runReservedRefNameWarning,
-} from "./errors.js";
+} from "./errors.ts";
 
-function hasProp(object) {
-  return Object.keys(object).length > 0;
-}
-
-function hasRefs(text) {
-  return /{\s*.*\s*}/.test(text);
-}
-
-function getRefs(text) {
-  /**
-   *
-   * @text must be a string containing refs.
-   *
-   * This function is used in reference computation,
-   * it helps Inter making an eficient reference computation.
-   *
-   */
-
-  const ref = /{\s*(:?[\w-\s]+)\s*}/g;
-
-  const refs = new Set();
-
-  text.replace(ref, (plainRef) => {
-    const refName = plainRef.replace("{", "").replace("}", "").trim();
-
-    refs.add(refName);
-  });
-
-  return Array.from(refs);
-}
-
-function hasRefNamed(text, refName) {
-  const pattern = new RegExp(`{\\s*${refName}\\s*}`);
-
-  return pattern.test(text);
-}
-
-/**
- *
- * We are considering them as special attributes
- * because we must not use the setAttribute method
- * to set them.
- *
- */
-
-const specialAttrs = new Set(["currentTime", "value"]);
-
-function runRefParsing(rootElement, refs, refCache) {
-  function getTextNodes(el) {
-    const _childNodes = new Set();
-
-    if (el.hasChildNodes())
-      for (const child of el.childNodes) {
-        if (
-          child.nodeType == 3 &&
-          child.textContent.trim().length > 0 &&
-          hasRefs(child.textContent)
-        ) {
-          _childNodes.add(child);
-        }
-      }
-
-    return Array.from(_childNodes);
-  }
-
-  const children = rootElement.getElementsByTagName("*");
-
-  function runTextRefParsing(parentNode) {
-    function parseRefsInText(node) {
-      for (const ref in refs) {
-        if (
-          node.textContent.trim().length > 0 &&
-          hasRefNamed(node.textContent, ref)
-        ) {
-          const setting = {
-            target: node,
-            text: node.textContent,
-          };
-
-          refCache.add(setting);
-
-          break;
-        }
-      }
-    }
-
-    if (parentNode.nodeType == 1) {
-      for (const node of parentNode.childNodes) {
-        if (node.hasChildNodes() && node.nodeType == 1) {
-          runTextRefParsing(node);
-          continue;
-        }
-
-        parseRefsInText(node);
-      }
-    } else if (parentNode.nodeType == 3) {
-      // Parsing the references
-      // in the main container
-      // text nodes.
-
-      parseRefsInText(parentNode);
-    }
-  }
-
-  function parseRefsInAttrs(elementNode) {
-    const setting = {
-      target: elementNode,
-      attrs: Object.create(null),
-      refs: refs,
-    };
-
-    for (const attr of elementNode.attributes) {
-      for (const ref in refs) {
-        if (hasRefNamed(attr.value, ref)) {
-          if (!specialAttrs.has(attr.name)) {
-            setting.attrs[attr.name] = attr.value;
-          } else {
-            refCache.specialAttrs.add({
-              target: elementNode,
-              attr: {
-                [attr.name]: attr.value,
-              },
-            });
-
-            elementNode.removeAttribute(attr.name);
-          }
-
-          break;
-        }
-      }
-    }
-
-    if (hasProp(setting.attrs)) {
-      // The true argument says to the parser
-      // to register the reference as an attribute reference.
-      refCache.add(setting, true);
-    }
-  }
-
-  const textNodes = getTextNodes(rootElement);
-
-  if (textNodes.length > 0) {
-    for (const text of textNodes) {
-      runTextRefParsing(text);
-    }
-  }
-
-  for (const child of children) {
-    runTextRefParsing(child);
-    parseRefsInAttrs(child);
-  }
-
-  refCache.updateRefs();
-}
-export function Ref(obj) {
+export function Ref(obj: refOptionsInterface) {
   if (new.target != void 0) {
     syErr("Do not call the Ref function with the new keyword.");
   } else if (!isObj(obj)) runInvalidRefArgument();
@@ -173,7 +20,7 @@ export function Ref(obj) {
 
     if (!isObj(data)) runInvalidRefDataProperty();
 
-    const reservedRefNames = new Set(["setRefs", "observe"]);
+    const reservedRefNames: Set<string> = new Set(["setRefs", "observe"]);
 
     for (const refName in data) {
       if (reservedRefNames.has(refName)) {
@@ -189,7 +36,7 @@ export function Ref(obj) {
     }
 
     const proxyTarget = Object.assign({}, data);
-    const refParser = {
+    const refParser: refParserInterface = {
       attrs: new Set(), // Attribute reference.
       texts: new Set(), // Text reference.
       specialAttrs: new Set(),
@@ -208,13 +55,13 @@ export function Ref(obj) {
       },
 
       updateSpecialAttrs() {
-        for (const special of this.specialAttrs) {
+        for (const special of Array.from(this.specialAttrs)) {
           const { target } = special;
 
           // eslint-disable-next-line prefer-const
           let [attrName, attrValue] = Object.entries(special.attr)[0];
 
-          const refs = getRefs(attrValue);
+          const refs = getRefs(attrValue as string);
 
           for (const ref of refs) {
             if (reservedRefNames.has(ref)) continue;
@@ -235,20 +82,21 @@ export function Ref(obj) {
 
           // eslint-disable-next-line prefer-const
           for (let [name, value] of Object.entries(attrs)) {
-            const refNames = getRefs(value);
+            const refNames: string[] = getRefs(value as string);
 
             for (const refName of refNames) {
               if (reservedRefNames.has(refName)) continue;
               if (refName in this.refs) {
                 const pattern = new RegExp(`{\\s*(:?${refName})\\s*}`, "g");
 
-                value = value.replace(pattern, this.refs[refName]);
+                value = (value as string).replace(pattern, this.refs[refName]);
 
-                if (!hasRefs(value)) break;
+                if (!hasRefs(value as string)) break;
               }
             }
 
-            if (target.getAttribute(name) !== value) {
+            if (target.
+              (name) !== value) {
               target.setAttribute(name, value);
             }
           }
@@ -299,6 +147,8 @@ export function Ref(obj) {
       }
     }
 
+    
+
     const reactor = new Proxy(proxyTarget, {
       set(target, key, value, proxy) {
         if (key in target && target[key] == value) return false;
@@ -308,7 +158,7 @@ export function Ref(obj) {
         if (isCallable(value)) {
           value = value.call(proxy);
         }
-        Reflect.set(...arguments);
+        Reflect.set(target, key, value, proxy);
         runObserveCallBack(key, value, oldValue);
         if (!(key in proxy)) {
           // Dynamic ref.

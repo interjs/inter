@@ -1,40 +1,40 @@
 // Helpers functions.
 
-export function isValidTemplateReturn(arg) {
+export function isValidTemplateReturn(arg: any): boolean {
   return isObj(arg) && arg.element && arg[Symbol.for("template")];
 }
 
-export function isNotConfigurable(obj) {
+export function isNotConfigurable(obj: any): boolean {
   return (
     Object.isFrozen(obj) || Object.isSealed(obj) || !Object.isExtensible(obj)
   );
 }
 
-export function isObj(arg) {
+export function isObj(arg: any): boolean {
   // For plain objects.
 
   return Object.prototype.toString.apply(arg, void 0) == "[object Object]";
 }
 
-export function getTagName(elementNode) {
+export function getTagName(elementNode: any): string {
   return elementNode.nodeName.toLowerCase();
 }
 
-export function isSet(arg) {
+export function isSet(arg: any): boolean {
   return arg instanceof Set;
 }
 
-export function hasOwnProperty(target, prop) {
+export function hasOwnProperty(target: Object, prop): boolean {
   const hasOwn = Object.prototype.hasOwnProperty.call(target, prop);
 
   return hasOwn;
 }
 
-export function isMap(arg) {
+export function isMap(arg: any): boolean {
   return arg instanceof Map;
 }
 
-export function isDefined(arg) {
+export function isDefined(arg: any): boolean {
   return arg != void 0;
 }
 
@@ -45,25 +45,25 @@ export function isDefined(arg) {
  *
  */
 
-export function isTrue(v) {
+export function isTrue(v: any): boolean {
   return Object.is(v, true);
 }
 
-export function isFalse(v) {
+export function isFalse(v: any): boolean {
   return Object.is(v, false);
 }
 
 /*</>*/
 
-export function isCallable(fn) {
+export function isCallable(fn: any): boolean {
   return typeof fn == "function";
 }
 
-export function isEmptyObj(obj) {
+export function isEmptyObj(obj: any): boolean {
   return Object.keys(obj).length == 0;
 }
 
-export function isAtag(tag) {
+export function isAtag(tag: any): boolean {
   return tag instanceof HTMLElement;
 }
 
@@ -71,15 +71,15 @@ export function validDomEvent(eventName) {
   return eventName in HTMLElement.prototype;
 }
 
-export function validStyleName(styeName) {
+export function validStyleName(styeName): boolean {
   return styeName in document.createElement("p").style;
 }
 
-export function createText(text) {
+export function createText(text): Text {
   return document.createTextNode(text);
 }
 
-export function validTagOption(option) {
+export function validTagOption(option): boolean {
   return typeof option == "string";
 }
 
@@ -130,25 +130,25 @@ export function syErr(err) {
   throw new Error(`Inter syntaxError : ${err}`);
 }
 
-export function err(e) {
+export function err(e): void {
   throw new Error(`Inter error: ${e}`);
 }
 
-export function consW(w) {
+export function consW(w): void {
   console.warn(`Inter warning: ${w}`);
 }
 
-export function ParserWarning(w) {
+export function ParserWarning(w): void {
   console.error(`Inter parser error: ${w}`);
 }
 
 //
 
-export function isArray(arg) {
+export function isArray(arg): boolean {
   return Array.isArray(arg);
 }
 
-function type(val) {
+function type(val)  {
   // All Javascript objects.
 
   const isAnobject =
@@ -246,19 +246,19 @@ Iterable.prototype.each = function (callBack) {
   }
 };
 
-export function isNegativeValue(value) {
+export function isNegativeValue(value: any): boolean {
   value = typeof value == "string" ? value.trim() : value;
   const nevagativeValues = new Set([0, false, null, undefined, ""]);
 
   return nevagativeValues.has(value);
 }
 
-export function isPositiveValue(value) {
+export function isPositiveValue(value: any): boolean {
   return !isNegativeValue(value);
 }
 
-export function isTringOrNumber(value) {
-  typeof value == "string" || typeof value == "number";
+export function isTringOrNumber(value: any): boolean {
+ return typeof value == "string" || typeof value == "number";
 }
 
 //</>
