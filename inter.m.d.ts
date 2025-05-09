@@ -158,7 +158,6 @@ type returnReactorType<T> = T extends any[]
 export declare function renderList<T extends eachTypes>(
   renderListOption: renderListOptionsInterface<T>
 ): returnReactorType<T>;
-
 type HTMLTags = keyof HTMLElementTagNameMap;
 type textTypes = string | number | null | void;
 interface templateOptionsInterface {

@@ -4,5 +4,6 @@ inter.js
 inter.min.js
 inter-test.js
 test.js
+.eslintrc.js
 node_modules
 .vscode
