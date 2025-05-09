@@ -16,7 +16,7 @@
  *
  */
 
-console.log("Building...")
+console.log("Building...");
 
 import builderconfig from "./builderconfig.js";
 import { writeFileSync, readFileSync, readdirSync } from "node:fs";
@@ -254,4 +254,4 @@ buildTsDeclaration();
 build("global");
 build("module");
 
-console.log("Inter Built Successfully")
+console.log("Inter Built Successfully");
