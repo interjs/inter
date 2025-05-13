@@ -49,11 +49,15 @@ export function runHasMoreThanOneCondtionalAttributeError(child) {
     element which has more than one conditional atribute, it's forbidden.`);
 }
 
-export function runNotDefinedIfNotPropWarning(child, _ifNot/*propValue*/, data) {
+export function runNotDefinedIfNotPropWarning(
+  child,
+  _ifNot /*propValue*/,
+  data
+) {
   if (_ifNot.trim().length == 0) {
     runInvalidConditionalAttrs("_ifNot");
     return;
- }
+  }
   ParserWarning(`
                     
     The conditional rendering parser found
@@ -70,17 +74,15 @@ export function runNotDefinedIfNotPropWarning(child, _ifNot/*propValue*/, data) 
 }
 
 function runInvalidConditionalAttrs(attrName) {
-
   ParserWarning(`The conditional rendering parser found an ${attrName} attribute that does not
     have a value assigned to it. Assign a value to the ${attrName} attribute.
-    `)
-
+    `);
 }
 
 export function runNotDefinedElseIfPropWarning(propValue) {
   if (propValue.trim().length == 0) {
-     runInvalidConditionalAttrs("_elseIf");
-     return;
+    runInvalidConditionalAttrs("_elseIf");
+    return;
   }
 
   ParserWarning(`The conditional rendering parser found an element which has the "_elseIf"
@@ -88,7 +90,6 @@ export function runNotDefinedElseIfPropWarning(propValue) {
     but you did not define any conditional property with that name.
  
    `);
-
 }
 
 export function runInvalidElseAttributeError() {
@@ -113,7 +114,7 @@ export function runNotDefinedIfPropWarning(propValue, child, data) {
   if (propValue.trim().length == 0) {
     runInvalidConditionalAttrs("_if");
     return;
- }
+  }
   ParserWarning(`
     The conditional rendering parser found
     an element which has the "_if" attribute and the value

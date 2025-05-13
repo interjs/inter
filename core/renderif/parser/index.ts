@@ -35,7 +35,6 @@ export function parseAttrs(
   const rootElementChildNodes = getChildNodes(rootElement);
   const rootElementInitialLength = rootElementChildNodes.length;
   for (const child of rootElementChildNodes) {
-    
     index++;
 
     child.index = index;

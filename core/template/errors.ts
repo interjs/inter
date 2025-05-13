@@ -7,7 +7,7 @@ export function runInvalidTemplateArgumentError(arg) {
     `);
 }
 
-export function runInvalidEventHandlerWarning(eventName) {
+export function runInvalidEventHandlerWarning(eventName: string) {
   ParserWarning(`The "${eventName}" event was not created because
     its handler is not a function, in the tempate function.`);
 }
@@ -18,11 +18,11 @@ export function runIllegalTextWarning() {
     and in this case Inter ignores the text property.`);
 }
 
-export function runInvalidEventWarning(eventName) {
+export function runInvalidEventWarning(eventName: string) {
   ParserWarning(`"${eventName}" doesn't seem to be a valid dom event.`);
 }
 
-export function runInvalidStyleWarning(styleName) {
+export function runInvalidStyleWarning(styleName: string) {
   ParserWarning(`"${styleName}" doesn't seem to be a valid style name.`);
 }
 
@@ -42,7 +42,7 @@ export function runInvalidObjectOptionsError() {
      one or more of those options as plain Javascript object.`);
 }
 
-export function runIllegalAttrsPropWarning(prop) {
+export function runIllegalAttrsPropWarning(prop: string) {
   const styleProp = `You should not use the style attribute(in attrs object) to create styles for the element,
          use the "styles" object instead, like:
 
@@ -62,6 +62,6 @@ export function runIllegalAttrsPropWarning(prop) {
   consW(prop.startsWith("on") ? event : styleProp);
 }
 
-export function runInvalidStyleValue(name, value) {
+export function runInvalidStyleValue(name: string, value: string) {
   ParserWarning(`"${value}" is an invalid value for the "${name}" style.`);
 }

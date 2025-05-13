@@ -1,7 +1,7 @@
 type attrType = string | number | null;
-type attrs <T> = T[keyof T];
-interface toAttrsMethods<T>{
-  setAttrs?: T[keyof T]
+type attrs<T> = T[keyof T];
+interface toAttrsMethods<T> {
+  setAttrs?: T[keyof T];
   observe?(attr: string, value: attrType): boolean;
 }
 

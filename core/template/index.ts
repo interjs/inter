@@ -10,7 +10,7 @@ import {
   isFalse,
   isNegativeValue,
   hasOwnProperty,
-} from "../helpers.js";
+} from "../helpers";
 
 import {
   runCanNotRenderConditionallyWarning,
@@ -23,9 +23,15 @@ import {
   runInvalidTagOptionError,
   runInvalidTemplateArgumentError,
   runInvalidStyleValue,
-} from "./errors.js";
+} from "./errors.ts";
 
-function createEvents(events, container) {
+import {
+  htmlEvents,
+  htmlStyles,
+  interHTMLContainerInterface,
+} from "./interfaces.js";
+
+function createEvents(events: htmlEvents, container: Element) {
   Object.entries(events).forEach((event) => {
     const [name, handler] = event;
 
@@ -37,7 +43,7 @@ function createEvents(events, container) {
   });
 }
 
-function createAttrs(attrs, container) {
+function createAttrs(attrs: Object, container) {
   Object.entries(attrs).forEach((attr) => {
     // eslint-disable-next-line prefer-const
     let [name, value] = attr;
@@ -49,7 +55,7 @@ function createAttrs(attrs, container) {
       hasWarning = true;
     }
 
-    const setAttr = (attrValue) => {
+    const setAttr = (attrValue: string) => {
       if (isDefined(attrValue) && !isFalse(attrValue)) {
         if (!specialAttrs.has(name)) container.setAttribute(name, attrValue);
         else container[name] = attrValue;
@@ -69,11 +75,12 @@ function createAttrs(attrs, container) {
   });
 }
 
-function createStyles(styles, container) {
+function createStyles(styles: htmlStyles, container) {
   Object.entries(styles).forEach((style) => {
     const [name, value] = style;
 
     if (validStyleName(name)) {
+      //@ts-ignore
       const styleValue = isCallable(value) ? value() : value;
 
       if (isDefined(styleValue)) {
@@ -85,10 +92,15 @@ function createStyles(styles, container) {
   });
 }
 
-function createTextOrChildren(text, children, container) {
+function createTextOrChildren(
+  text: string,
+  children: interHTMLContainerInterface[],
+  container
+) {
   if (isDefined(text) && children.length == 0) {
     const textContent = isCallable(text)
-      ? createText(text())
+      ? //@ts-ignore
+        createText(text())
       : createText(text);
 
     if (isDefined(textContent)) container.appendChild(textContent);
@@ -102,23 +114,28 @@ function createTextOrChildren(text, children, container) {
   }
 }
 
-export function template(obj) {
+export function template(obj: interHTMLContainerInterface) {
   if (isObj(obj)) {
-    const temp = Symbol.for("template");
+    const templateSymbol = Symbol.for("template");
 
     return {
-      [temp]: !0,
+      [templateSymbol]: !0,
       element: obj,
     };
   } else runInvalidTemplateArgumentError(obj);
 }
 
-export function toDOM(obj, isChild, index) {
+export function toDOM(
+  obj: interHTMLContainerInterface,
+  isChild?: boolean,
+  index?: number
+) {
   /* eslint-disable prefer-const */
   let { tag, text, attrs = {}, events = {}, styles = {}, children = [] } = obj;
 
   /*eslint-enable prefer-const*/
 
+  // @ts-ignore
   tag = isCallable(tag) ? tag() : tag;
   text = isCallable(text) ? text() : text;
   const hasRenderIfProp = hasOwnProperty(obj, "renderIf");
@@ -131,7 +148,9 @@ export function toDOM(obj, isChild, index) {
   if (!validObjectOptions(attrs, styles, events))
     runInvalidObjectOptionsError();
 
+  // @ts-ignore
   const container = document.createElement(tag);
+  // @ts-ignore
   container.template = Object.assign(obj, {
     target: container,
     tag: tag,
@@ -139,6 +158,7 @@ export function toDOM(obj, isChild, index) {
   }); // For diffing task.
 
   if (isChild) {
+    // @ts-ignore
     container.index = index;
   }
 
@@ -150,7 +170,10 @@ export function toDOM(obj, isChild, index) {
   return container;
 }
 
-function createChildren(root, children) {
+function createChildren(
+  root: Element,
+  children: interHTMLContainerInterface[]
+) {
   let index = -1;
 
   for (const child of children) {
@@ -170,6 +193,7 @@ function createChildren(root, children) {
     index++;
     child.index = index;
 
+    // @ts-ignore
     tag = isCallable(tag) ? tag() : tag;
     text = isCallable(text) ? text() : text;
 
@@ -181,8 +205,10 @@ function createChildren(root, children) {
     if (!validObjectOptions(attrs, styles, events))
       runInvalidObjectOptionsError();
 
-    const container = document.createElement(tag);
+    const container = document.createElement(tag as string);
+    // @ts-ignore
     container.index = index;
+    // @ts-ignore
     container.template = Object.assign(child, {
       target: container,
       tag: tag,

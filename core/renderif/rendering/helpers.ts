@@ -59,7 +59,12 @@ function renderIfObserveHandler(
   return false;
 }
 
-function renderIfsetCondsHandler(options: renderIfDataOptionInterface, data: renderIfDataOptionInterface, proxyTarget: renderIfDataOptionInterface, observer: observerType) {
+function renderIfsetCondsHandler(
+  options: renderIfDataOptionInterface,
+  data: renderIfDataOptionInterface,
+  proxyTarget: renderIfDataOptionInterface,
+  observer: observerType
+) {
   const reservedProps = new Set(["observe", "setConds"]);
   if (!isObj(options)) runInvalidSetCondsValueError(options);
 

@@ -1,17 +1,14 @@
 {
-    "compilerOptions": {
-        "target": "esnext",
-        "module": "es6",
-        "lib": ["es2022", "DOM", ],
-        "allowImportingTsExtensions": true,
-        "noEmit": true,
-        "baseUrl": ".",
-        "paths": {
-            "*":["core/*"]
-        }
-    
-    },
-    "exclude": [
-        "node_modules",
-    ]
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "es6",
+    "lib": ["es2022", "DOM"],
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "*": ["core/*"]
+    }
+  },
+  "exclude": ["node_modules"]
 }

@@ -1,16 +1,19 @@
-import { Iterable, consW, hasOwnProperty, isArray, isAtag, isDefined, isObj, isSet, isTrue, isValidTemplateReturn } from "helpers";
+import { consW, eachOptionIterable, hasOwnProperty, isArray, isAtag, isCallable, isDefined, isFalse, isNegativeValue, isObj, isPositiveValue, isSet, isTrue, isValidTemplateReturn, validDomEvent, validStyleName } from "helpers";
 import { runInvalidTemplateReturnError } from "renderlist/errors";
-import { isDate } from "util/types";
+import { interHTMLContainerInterface } from "template/interfaces";
+import { AreBothArray, getGreater, getValue, isOneAnArrayAndOtherNot, shareProps } from "./helpers";
+import { runIllegalAttrsPropWarning, runInvalidEventHandlerWarning, runInvalidEventWarning, runInvalidStyleValue, runInvalidStyleWarning } from "template/errors";
+import { toDOM } from "template/index";
+;
 
-function renderingSystem(__index__, perfOptimization) {
-    const iterable = new Iterable(each);
-
-    
+function renderingSystem(__index__: number, perfOptimization: boolean, root: Element, each: any) {
+    const iterable = new eachOptionIterable(each);
 
     synchronizeRootChildrenLengthAndSourceLength(root, iterable);
 
     iterable.each((data, index, type) => {
-      let newTemp, indexObj;
+      
+      let newTemp: { element: interHTMLContainerInterface  }, indexObj;
 
       if (type == "array") {
         if (isDefined(__index__)) {
@@ -113,22 +116,9 @@ function runDiff(newTemp, oldTemp, oldRoot) {
   }
 }
 
-function isOneAnArrayAndOtherNot(first, second) {
-  return (
-    (isArray(first) && !isArray(second)) || (!isArray(first) && isArray(second))
-  );
-}
 
-function AreBothArray(first, second) {
-  return isArray(first) && isArray(second);
-}
 
-function getValue(text) {
-  if (typeof text === "function") text = text();
-  return text;
-}
-
-function runNestedListDiffing(reactor, target, newChildren, oldChildren) {
+function runNestedListDiffing(reactor, target, newChildren: interHTMLContainerInterface[], oldChildren: interHTMLContainerInterface[]) {
   if (reactor.mutationInfo == void 0) return;
   const {
     mutationInfo: { method, start, deleteCount, itemsLength },
@@ -145,8 +135,8 @@ function runNestedListDiffing(reactor, target, newChildren, oldChildren) {
     }
   }
 
-  function AddByUnShiftOrSplice(mutationMethod) {
-    function insertBehind(start, itemsLength) {
+  function AddByUnShiftOrSplice(mutationMethod: string) {
+    function insertBehind(start: number, itemsLength: number) {
       for (let i = itemsLength - 1; i > -1; i--) {
         const child = target.children[start];
         const virtualChild = newChildren[i];
@@ -173,7 +163,7 @@ function runNestedListDiffing(reactor, target, newChildren, oldChildren) {
 
       insertBehind(start, itemsLength);
 
-      oldChildren.splice(start, deleteCount, addedtems);
+      oldChildren.splice(start, deleteCount, ...addedtems);
     } else if (mutationMethod == "unshift") {
       insertBehind(0, itemsLength);
 
@@ -291,13 +281,7 @@ function runContainerDiffing(newContainer, oldContainer, diff) {
   runStyleDiffing(target, oldStyles, newStyles);
 }
 
-function shareProps(target, source) {
-  Object.assign(target, source);
-}
 
-function getGreater(firstArray, secondArray) {
-  return firstArray.length > secondArray.length ? firstArray : secondArray;
-}
 
 function runAttributeDiffing(target, oldAttributes, newAttributes) {
   function removeAttr(attr) {
@@ -411,7 +395,7 @@ function insertBefore(root, index, virtualElement) {
   }
 }
 
-function runChildrenDiffing(__new, __old, realParent) {
+function runChildrenDiffing(__new: interHTMLContainerInterface[], __old: interHTMLContainerInterface[], realParent: Element) {
   const newContainer = Array.from(__new),
     oldContainer = Array.from(__old);
 
@@ -433,6 +417,7 @@ function runChildrenDiffing(__new, __old, realParent) {
       events: oldEvents = {},
       attrs: oldAttrs = {},
       styles: oldStyles = {},
+      // @ts-ignore
       target,
       index,
     } = oldChild;
@@ -446,7 +431,7 @@ function runChildrenDiffing(__new, __old, realParent) {
       const newELement = toDOM(newChild, true, index);
 
       Object.assign(oldChild, newChild);
-
+    //@ts-ignore
       oldChild.target = newELement;
 
       if (theLastElement && theLastElement.index > index) {
@@ -460,6 +445,7 @@ function runChildrenDiffing(__new, __old, realParent) {
       theLastElement = realParent.children[realParent.children.length - 1];
     }
     if (newChildren.length !== oldChildren.length) {
+      //@ts-ignore
       const { reactor } = newChildren;
 
       if (reactor != void 0) {
@@ -470,6 +456,7 @@ function runChildrenDiffing(__new, __old, realParent) {
         realParent.replaceChild(newElement, target);
 
         Object.assign(oldChild, newChild);
+        //@ts-ignore
         oldChild.target = newElement;
 
         continue;
@@ -483,6 +470,7 @@ function runChildrenDiffing(__new, __old, realParent) {
 
       if (target && target.parentNode != null) {
         realParent.replaceChild(newELement, target);
+        // @ts-ignore
         oldChild.target = newELement;
       }
       continue;

@@ -25,7 +25,6 @@ import {
   BackendRequesHandlersInterface,
   BackendRequestOptionsType,
   BackendRequestResponseInterface,
-
 } from "./interfaces.js";
 
 function toObj(obj: any): Object | string {

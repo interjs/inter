@@ -1,5 +1,11 @@
 // Helpers functions.
 
+import {
+  eachOptionIterableInterace,
+  iterableInterface,
+} from "helpersInterfaces";
+import { eachTypes } from "types/renderlist";
+
 export function isValidTemplateReturn(arg: any): boolean {
   return isObj(arg) && arg.element && arg[Symbol.for("template")];
 }
@@ -56,7 +62,7 @@ export function isFalse(v: any): boolean {
 /*</>*/
 
 export function isCallable(fn: any): boolean {
-  return typeof fn == "function";
+  return fn instanceof Function;
 }
 
 export function isEmptyObj(obj: any): boolean {
@@ -148,7 +154,7 @@ export function isArray(arg): boolean {
   return Array.isArray(arg);
 }
 
-function type(val)  {
+function type(val) {
   // All Javascript objects.
 
   const isAnobject =
@@ -197,8 +203,8 @@ export function validEachProperty(each) {
   );
 }
 
-function toIterable(data) {
-  const iterable = {
+function toIterable(data): iterableInterface {
+  const iterable: iterableInterface = {
     values: new Array(),
     type: void 0,
   };
@@ -229,22 +235,28 @@ function toIterable(data) {
   return iterable;
 }
 
-export function Iterable(data) {
-  this.source = toIterable(data);
-  this.break = !1;
-}
+export class eachOptionIterable implements eachOptionIterableInterace {
+  public source: iterableInterface;
+  public break: boolean = !1;
 
-Iterable.prototype.each = function (callBack) {
-  let index = -1;
-
-  for (const data of this.source.values) {
-    index++;
-
-    callBack(data, index, this.source.type);
-
-    if (this.break) break;
+  constructor(possibleValues: eachTypes | number) {
+    this.source = toIterable(possibleValues);
   }
-};
+
+  each(
+    callBack: (item: unknown, index: number, sourceType: string) => any
+  ): void {
+    let index = -1;
+
+    for (const data of this.source.values) {
+      index++;
+
+      callBack(data, index, this.source.type);
+
+      if (this.break) break;
+    }
+  }
+}
 
 export function isNegativeValue(value: any): boolean {
   value = typeof value == "string" ? value.trim() : value;
@@ -258,7 +270,7 @@ export function isPositiveValue(value: any): boolean {
 }
 
 export function isTringOrNumber(value: any): boolean {
- return typeof value == "string" || typeof value == "number";
+  return typeof value == "string" || typeof value == "number";
 }
 
 //</>

@@ -47,8 +47,6 @@ import {
   runInvalidStyleValue,
 } from "../template/errors.js";
 
-
-
 function exactElToRemove(obj) {
   if (isObj(obj)) _inObj(...arguments);
   else if (isSet(obj)) _inSet(...arguments);

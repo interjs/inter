@@ -33,8 +33,8 @@ interface ajaxOptions {
   };
   security?: {
     username: string;
-    password: string
-  }
+    password: string;
+  };
   body?: any;
 }
 

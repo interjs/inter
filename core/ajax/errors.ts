@@ -1,6 +1,6 @@
 import { syErr, err, consW, valueType } from "../helpers.js";
 
-export function runIvalidRequestArgumentError(arg): void  {
+export function runIvalidRequestArgumentError(arg): void {
   syErr(`The argument of [Backend instance].request method
       must be a plain javascript object, and you defined "${valueType(arg)}"
       as its argument.`);
