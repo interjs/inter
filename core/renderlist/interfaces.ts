@@ -1,5 +1,5 @@
 import { templateReturnInterface } from "template/interfaces";
-import { eachTypes } from "types/renderlist";
+
 export type indexObjType = {
   index: number;
 };
@@ -23,11 +23,11 @@ export interface renderingSystemOptionsInterface  {
   __index__?: number,
   perfOptimization?: boolean,
   firstRender?: boolean,
-  do?: (item: any, index?: number, proxy?: eachTypes) => templateReturnInterface
+  do?: (item: any, index?: number, proxy?: eachType) => templateReturnInterface
   optimize?: boolean,
-  pro?: eachTypes,
+  pro?: eachType,
   root?: Element,
-  each?: eachTypes
+  each?: eachType
 
 }
 
@@ -41,3 +41,12 @@ export type arrayMapHanderType = (
   index: number,
   thisValue: unknown[]
 ) => unknown[];
+
+export type eachType = any[] | Set<any> | Map<any, any>
+
+export interface renderingListOptionsInterface {
+  in: string,
+  each: eachType,
+  optimize?: boolean,
+  do:(...args: any[]) => templateReturnInterface
+}

@@ -1,6 +1,5 @@
 import {
   consW,
-  hasOwnProperty,
   isArray,
   isDefined,
   isMap,
@@ -14,8 +13,6 @@ import {
 import {
   runCanNotDefineReactivePropWarning,
   runDetecteReservedPropdWarnig,
-  runInvalidDefinePropsValueError,
-  runInvalidDeletePropsValueError,
   runInvalidSetPropsValueError,
   runInvalidTemplateReturnError,
   runNotConfigurableArrayError,
@@ -36,10 +33,12 @@ import {
   setProps,
 } from "./helpers";
 import { runObserveCallBack } from "./helpers";
+import { exactElToRemove } from "renderlist/rendering_system/index";
+import { toDOM } from "template/index";
 
 export function checkType(
   arg: any,
-  call: Function,
+  call: renderingSystemType,
   _?,
   indexObj?: indexObjType
 ) {
@@ -49,7 +48,7 @@ export function checkType(
   else if (isSet(arg)) defineReactiveSet(arg, call, false, null, indexObj);
 }
 
-function defineReactiveSymbol(obj: Object) {
+export function defineReactiveSymbol(obj: Object) {
   if (hasReactiveSymbol(obj)) return false;
   const symbol = Symbol.for("reactive");
 
@@ -58,7 +57,7 @@ function defineReactiveSymbol(obj: Object) {
   });
 }
 
-export function defineReactiveObj(
+ export function defineReactiveObj(
   obj: Object,
   renderingSystem: renderingSystemType,
   indexObj: indexObjType
@@ -323,7 +322,7 @@ export function defineReactiveArray(
   mutateArrayMap(array);
 }
 
-function defineReactiveMap(
+export function defineReactiveMap(
   map: Map<any, any>,
   renderingSystem: renderingSystemType,
   listReactor?: boolean,
@@ -363,7 +362,7 @@ function defineReactiveMap(
 
 export function defineReactiveSet(
   set: Set<any>,
-  renderingSystem: Function,
+  renderingSystem: renderingSystemType,
   listReactor: boolean,
   root: Element,
   indexObj
@@ -396,7 +395,7 @@ export function defineReactiveSet(
   defineReactiveSymbol(set);
 }
 
-function walkMap(map: Map<any, any>, call: Function) {
+function walkMap(map: Map<any, any>, call: renderingSystemType) {
   /**
    * The goal here is to iterate through the map collection
    * and if we found an object, an array, a set or even a map, we must make it reactive.
@@ -408,26 +407,26 @@ function walkMap(map: Map<any, any>, call: Function) {
   });
 }
 
-function walkArray(array: any[], call: Function, indexObj) {
+function walkArray(array: any[], call: renderingSystemType, indexObj) {
   for (const item of array) {
     checkType(item, call, null, indexObj);
   }
 }
 
-function walkSet(set: Set<any>, call: Function, indexObj) {
+function walkSet(set: Set<any>, call: renderingSystemType, indexObj) {
   set.forEach((value) => {
     checkType(value, call, null, indexObj);
   });
 }
 
-function redefineArrayMutationMethods(
+export function redefineArrayMutationMethods(
   array: any[],
   htmlEl: Element,
   renderingSystem: renderingSystemType,
-  DO,
+  DO: Function,
   pro
 ) {
-  function render(item: unknown, i: number, start: number, secondI: number) {
+  function render(item: unknown, i: number, start?: number, secondI?: number) {
     const temp = DO.call(pro, item, i, pro);
     const newChild = toDOM(temp.element);
     const domChild = htmlEl.children[start];

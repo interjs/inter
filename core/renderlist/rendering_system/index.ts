@@ -1,109 +1,10 @@
-import { consW, eachOptionIterable, hasOwnProperty, isArray, isAtag, isCallable, isDefined, isFalse, isNegativeValue, isObj, isPositiveValue, isSet, isTrue, isValidTemplateReturn, validDomEvent, validStyleName } from "helpers";
-import { runInvalidTemplateReturnError } from "renderlist/errors";
+import {hasOwnProperty, isArray, isAtag, isCallable, isDefined, isFalse, isNegativeValue, isObj, isPositiveValue, isSet, validDomEvent, validStyleName } from "helpers";
 import { interHTMLContainerInterface } from "template/interfaces";
 import { AreBothArray, getGreater, getValue, isOneAnArrayAndOtherNot, shareProps } from "./helpers";
 import { runIllegalAttrsPropWarning, runInvalidEventHandlerWarning, runInvalidEventWarning, runInvalidStyleValue, runInvalidStyleWarning } from "template/errors";
 import { toDOM } from "template/index";
-;
 
-function renderingSystem(__index__: number, perfOptimization: boolean, root: Element, each: any) {
-    const iterable = new eachOptionIterable(each);
-
-    synchronizeRootChildrenLengthAndSourceLength(root, iterable);
-
-    iterable.each((data, index, type) => {
-      
-      let newTemp: { element: interHTMLContainerInterface  }, indexObj;
-
-      if (type == "array") {
-        if (isDefined(__index__)) {
-          data = pro[__index__];
-          index = __index__;
-          iterable.break = true;
-        }
-
-        const indexSymbol = Symbol.for("index");
-        const canOptimize = () =>
-          isTrue(optimize) &&
-          (isObj(data) || isArray(data) || isSet(data)) &&
-          !hasOwnProperty(data, indexSymbol);
-        indexObj = {
-          index: index,
-          sourceLength: pro.length,
-        };
-
-        if (canOptimize()) data[indexSymbol] = indexObj;
-        else if (
-          (isObj(data) || isArray(data) || isSet(data)) &&
-          hasOwnProperty(data, indexSymbol)
-        ) {
-          const hasDifferentSourceLength = () =>
-            data[indexSymbol].sourceLength !== indexObj.sourceLength;
-          if (hasDifferentSourceLength())
-            shareProps(data[indexSymbol], indexObj);
-        }
-      }
-
-      if (firstRender || perfOptimization) {
-        checkType(
-          type !== "object" ? data : data[1] /*obj prop*/,
-          renderingSystem,
-          DO,
-          isTrue(optimize) ? indexObj : null
-        );
-      }
-
-      if (perfOptimization) return;
-
-      function checkIterationSourceType() {
-        if (type === "array") {
-          newTemp = DO.call(pro, data, index, pro);
-        } else if (type === "object") {
-          newTemp = DO.call(pro, data[0] /*prop*/, data[1] /*value*/, pro);
-        } else if (type === "number") {
-          newTemp = DO(data);
-        } else {
-          //The type is set.
-
-          newTemp = DO.call(pro, data, pro);
-        }
-      }
-
-      checkIterationSourceType();
-
-      // The  function is returning the template.
-      if (isValidTemplateReturn(newTemp)) {
-        const currentEl = root.children[index];
-
-        if (!isAtag(currentEl)) {
-          root.appendChild(toDOM(newTemp.element));
-        } else {
-          if (!currentEl.template) {
-            consW("Avoid manipulating what Inter manipulates.");
-
-            /**
-             * currentEl was not rendered by Inter, in
-             * this case we must replace it with an element
-             * rendered by Inter to avoid diffing problems.
-             */
-
-            root.replaceChild(toDOM(newTemp.element), currentEl);
-          } else {
-            runDiff(newTemp.element, currentEl.template, currentEl);
-          }
-        }
-      } else runInvalidTemplateReturnError();
-    });
-  }
-
-  renderingSystem();
-
-  firstRender = false;
-
-  return pro;
-}
-
-function runDiff(newTemp, oldTemp, oldRoot) {
+export function runDiff(newTemp: interHTMLContainerInterface, oldTemp: interHTMLContainerInterface, oldRoot: Element) {
   const diff = {
     children: true,
     continue: true,
@@ -118,7 +19,7 @@ function runDiff(newTemp, oldTemp, oldRoot) {
 
 
 
-function runNestedListDiffing(reactor, target, newChildren: interHTMLContainerInterface[], oldChildren: interHTMLContainerInterface[]) {
+function runNestedListDiffing(reactor: any, target: Element, newChildren: interHTMLContainerInterface[], oldChildren: interHTMLContainerInterface[]) {
   if (reactor.mutationInfo == void 0) return;
   const {
     mutationInfo: { method, start, deleteCount, itemsLength },
@@ -517,6 +418,52 @@ function synchronizeRootChildrenLengthAndSourceLength(root, iterable) {
       root.removeChild(lastElement);
     }
   }
+}
+
+
+export function exactElToRemove(obj: object | Set<any> | Map<any, any>, key: string, root: Element) {
+  if (isObj(obj)) _inObj(obj, key, root);
+  else if (isSet(obj)) _inSet((obj as Set<any>), key, root);
+  else _inMap((obj as Map<any, any>), key, root);
+}
+
+function _inObj(obj, key, root) {
+  const keys = Object.keys(obj);
+
+  keys.some((prop, i) => {
+    if (prop == key) _exactRemove(root, i);
+  });
+}
+
+function _inSet(set: Set<any>, key: string, root: Element) {
+  const obj = Array.from(set);
+
+  obj.some((item, i) => {
+    if (item == key) _exactRemove(root, i);
+  });
+}
+
+function _inMap(map: Map<any, any>, key: string, root: Element) {
+  let i = -1;
+
+  map.forEach(() => {
+    i++;
+    const prop = arguments[1];
+
+    if (prop == key) _exactRemove(root, i);
+  });
+}
+
+function _exactRemove(root, i) {
+  const elToRmove = root.children[i];
+
+  if (isAtag(elToRmove)) root.removeChild(elToRmove);
+}
+
+function runObserveCallBack(each, proxy) {
+  const observe = Symbol.for("observe");
+  if (typeof each[observe] === "function")
+    each[observe](isDefined(proxy) ? proxy : each);
 }
 
 /**

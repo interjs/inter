@@ -273,4 +273,9 @@ export function isTringOrNumber(value: any): boolean {
   return typeof value == "string" || typeof value == "number";
 }
 
+export function defineProp(obj: object, prop: string, descriptiors: object) {
+  Object.defineProperty(obj, prop, descriptiors);
+}
+
+
 //</>
